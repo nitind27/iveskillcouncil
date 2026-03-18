@@ -17,9 +17,14 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const WELCOME_PUBLIC_PREFIX = "/uploads/userpanel/welcome/";
+const HERO_PUBLIC_PREFIX = "/uploads/userpanel/hero/";
 
 function isLocalWelcomeUrl(url: unknown): url is string {
   return typeof url === "string" && url.startsWith(WELCOME_PUBLIC_PREFIX);
+}
+
+function isLocalHeroUrl(url: unknown): url is string {
+  return typeof url === "string" && url.startsWith(HERO_PUBLIC_PREFIX);
 }
 
 async function safeUnlink(filePath: string) {
@@ -76,6 +81,27 @@ export async function PUT(request: NextRequest) {
 
     if (isLocalWelcomeUrl(prevWelcomeUrl) && prevWelcomeUrl !== nextWelcomeUrl) {
       const oldAbs = path.join(process.cwd(), "public", prevWelcomeUrl.replace(/^\//, ""));
+      await safeUnlink(oldAbs);
+    }
+
+    // Cleanup: if hero images changed, delete old local uploads that are no longer referenced.
+    const prevHeroImagesRaw = Array.isArray(prevConfig?.hero?.backgroundImages)
+      ? (prevConfig.hero.backgroundImages as unknown[])
+      : prevConfig?.hero?.backgroundImage
+        ? [prevConfig.hero.backgroundImage]
+        : [];
+    const nextHeroImagesRaw = Array.isArray((config as any)?.hero?.backgroundImages)
+      ? ((config as any).hero.backgroundImages as unknown[])
+      : (config as any)?.hero?.backgroundImage
+        ? [(config as any).hero.backgroundImage]
+        : [];
+
+    const prevHeroLocal = prevHeroImagesRaw.filter(isLocalHeroUrl);
+    const nextHeroUrlsSet = new Set(nextHeroImagesRaw.filter(isLocalHeroUrl) as string[]);
+
+    for (const oldUrl of prevHeroLocal) {
+      if (nextHeroUrlsSet.has(oldUrl)) continue;
+      const oldAbs = path.join(process.cwd(), "public", oldUrl.replace(/^\//, ""));
       await safeUnlink(oldAbs);
     }
 

@@ -96,6 +96,9 @@ export default function ManageUserPanelForm() {
   const [welcomeUploading, setWelcomeUploading] = useState(false);
   const [welcomeUploadError, setWelcomeUploadError] = useState<string | null>(null);
   const [welcomePreviewOpen, setWelcomePreviewOpen] = useState(false);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
+  const [heroUrlDraft, setHeroUrlDraft] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/userpanel-config")
@@ -132,6 +135,58 @@ export default function ManageUserPanelForm() {
       setWelcomeUploadError("Network error. Please try again.");
     } finally {
       setWelcomeUploading(false);
+    }
+  };
+
+  const getHeroImages = (c: UserPanelConfig) => {
+    if (Array.isArray(c.hero.backgroundImages) && c.hero.backgroundImages.length > 0) {
+      return c.hero.backgroundImages.filter(Boolean);
+    }
+    return c.hero.backgroundImage ? [c.hero.backgroundImage] : [];
+  };
+
+  const setHeroImages = (nextImages: string[]) => {
+    setConfig((c) => ({
+      ...c,
+      hero: {
+        ...c.hero,
+        backgroundImages: nextImages.length > 0 ? nextImages : undefined,
+        // Keep first image in `backgroundImage` for backward compatibility.
+        backgroundImage: nextImages[0] ?? "",
+      },
+    }));
+  };
+
+  const uploadHeroImages = async (files: File[]) => {
+    if (!files.length) return;
+    setHeroUploadError(null);
+    setHeroUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const res = await fetch("/api/admin/hero-background-image", {
+          method: "POST",
+          body: fd,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data?.success || !data?.data?.url) {
+          setHeroUploadError(data?.error || "Upload failed");
+          return;
+        }
+
+        uploadedUrls.push(data.data.url as string);
+      }
+
+      const prev = getHeroImages(config);
+      setHeroImages([...prev, ...uploadedUrls]);
+    } catch {
+      setHeroUploadError("Network error. Please try again.");
+    } finally {
+      setHeroUploading(false);
     }
   };
 
@@ -453,25 +508,125 @@ export default function ManageUserPanelForm() {
                 Hero & Banner
               </h2>
               <div>
-                <label className={labelClass}>Banner / background image URL</label>
-                <input
-                  className={inputClass}
-                  placeholder="https://..."
-                  value={config.hero.backgroundImage}
-                  onChange={(e) =>
-                    setConfig((c) => ({ ...c, hero: { ...c.hero, backgroundImage: e.target.value } }))
-                  }
-                />
-                {config.hero.backgroundImage && (
-                  <div className="mt-3 relative h-40 w-full max-w-xl rounded-lg overflow-hidden bg-muted border border-border">
-                    <img
-                      src={config.hero.backgroundImage}
-                      alt="Banner preview"
-                      className="object-cover w-full h-full"
-                      onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
+                <label className={labelClass}>Hero background images</label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Add multiple images. Paste image URL(s) or upload files. Rotation will use this list.
+                </p>
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Add image URL</label>
+                    <div className="flex gap-3 mt-1">
+                      <input
+                        className={inputClass}
+                        placeholder="https://example.com/image.jpg"
+                        value={heroUrlDraft}
+                        onChange={(e) => setHeroUrlDraft(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = heroUrlDraft.trim();
+                          if (!url) return;
+                          const prev = getHeroImages(config);
+                          setHeroImages([...prev, url]);
+                          setHeroUrlDraft("");
+                        }}
+                        className={btnAdd}
+                        disabled={heroUploading}
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add
+                      </button>
+                    </div>
                   </div>
-                )}
+
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Upload image files</label>
+                    <div className="mt-2 flex items-center gap-3 flex-wrap">
+                      <label
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/70 transition-colors cursor-pointer",
+                          heroUploading && "opacity-60 pointer-events-none"
+                        )}
+                      >
+                        <Images className="w-4 h-4" />
+                        {heroUploading ? "Uploading..." : "Upload images (multiple)"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files ?? []);
+                            if (files.length) uploadHeroImages(files);
+                            e.target.value = "";
+                          }}
+                          disabled={heroUploading}
+                        />
+                      </label>
+                      {heroUploadError && <div className="text-sm text-destructive">{heroUploadError}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                {(() => {
+                  const heroImages = getHeroImages(config);
+                  return (
+                    <div className="mt-5 space-y-4">
+                      {heroImages.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">
+                          No hero images yet. Add a URL or upload files above.
+                        </div>
+                      ) : (
+                        heroImages.map((img, i) => (
+                          <div
+                            key={`${img}-${i}`}
+                            className="rounded-lg border border-border bg-muted/30 p-3 space-y-3"
+                          >
+                            <div className="flex items-start gap-3 flex-col sm:flex-row sm:items-center">
+                              <div className="flex-1">
+                                <label className={labelClass}>{`Image #${i + 1} URL`}</label>
+                                <input
+                                  className={inputClass}
+                                  placeholder="https://..."
+                                  value={img}
+                                  onChange={(e) => {
+                                    const next = getHeroImages(config)
+                                      .map((x, j) => (j === i ? e.target.value.trim() : x))
+                                      .filter(Boolean);
+                                    setHeroImages(next);
+                                  }}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className={btnRemove}
+                                onClick={() => {
+                                  const next = getHeroImages(config).filter((_, j) => j !== i);
+                                  setHeroImages(next);
+                                }}
+                                aria-label={`Remove hero image ${i + 1}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="relative h-40 w-full max-w-xl rounded-lg overflow-hidden bg-background border border-border">
+                              {/* Preview only; rotation uses the same URLs from config */}
+                              <img
+                                src={img}
+                                alt={`Hero image ${i + 1}`}
+                                className="object-cover w-full h-full"
+                                onError={(e) => (e.currentTarget.style.display = "none")}
+                              />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label className={labelClass}>Greeting prefix</label>

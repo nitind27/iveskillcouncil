@@ -35,6 +35,44 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [nextIndex, setNextIndex] = useState(0);
 
+  // Content changes together with the rotating background images.
+  // (We cycle through these slides if admin provides more images.)
+  const heroSlides = [
+    {
+      badge: "Career-Ready Learning",
+      subtitle:
+        "Explore job-focused programs designed to help you learn faster, practice more, and move ahead with confidence.",
+      stats: [
+        { dot: "bg-emerald-500", text: "120+ Projects" },
+        { dot: "bg-indigo-500", text: "Hands-on Training" },
+        { dot: "bg-[var(--up-accent)]", text: "Mentor Support" },
+      ],
+    },
+    {
+      badge: "Industry-Led Programs",
+      subtitle:
+        "Learn with modern modules, real workflows, and structured coaching. Get stronger concepts and better outcomes.",
+      stats: [
+        { dot: "bg-amber-500", text: "Certification Ready" },
+        { dot: "bg-cyan-500", text: "Live Guidance" },
+        { dot: "bg-[var(--up-accent)]", text: "Skilled Curriculum" },
+      ],
+    },
+    {
+      badge: "Upgrade Your Skills",
+      subtitle:
+        "From beginner to advanced, choose the right path. Enrol now and start your learning journey today.",
+      stats: [
+        { dot: "bg-rose-500", text: "Flexible Batches" },
+        { dot: "bg-violet-500", text: "Daily Practice" },
+        { dot: "bg-[var(--up-accent)]", text: "Fast Progress" },
+      ],
+    },
+  ] as const;
+
+  const activeIndex = isFlipping ? nextIndex : currentIndex;
+  const slide = heroSlides[activeIndex % heroSlides.length];
+
   const goToNext = useCallback(() => {
     if (images.length <= 1 || isFlipping) return;
     const next = (currentIndex + 1) % images.length;
@@ -70,8 +108,13 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
             <>
               {/* Incoming page (from right, behind) */}
               <motion.div
-                initial={{ rotateY: 92, scale: 1.03 }}
-                animate={{ rotateY: 0, scale: 1.02 }}
+                initial={{ rotateY: 92, scale: 1.06, opacity: 0.78 }}
+                animate={{
+                  rotateY: 0,
+                  // Zoom-in then slightly zoom-out while the flip completes
+                  scale: [1.08, 1.02, 0.99],
+                  opacity: [0.78, 0.98, 0.93],
+                }}
                 transition={{
                   duration: HERO_FLIP_DURATION,
                   ease: [0.22, 1, 0.36, 1],
@@ -83,12 +126,17 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
                   backfaceVisibility: "hidden",
                   backgroundImage: `url(${images[nextIndex]})`,
                   zIndex: 1,
+                  filter: "brightness(1.03) saturate(1.05)",
                 }}
               />
               {/* Outgoing page (flips left, on top) */}
               <motion.div
-                initial={{ rotateY: 0, scale: 1.02 }}
-                animate={{ rotateY: -92, scale: 0.98 }}
+                initial={{ rotateY: 0, scale: 1.02, opacity: 0.98 }}
+                animate={{
+                  rotateY: -92,
+                  scale: [1.02, 0.985, 0.97],
+                  opacity: [0.98, 0.9, 0.82],
+                }}
                 transition={{
                   duration: HERO_FLIP_DURATION,
                   ease: [0.22, 1, 0.36, 1],
@@ -100,18 +148,21 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
                   backgroundImage: `url(${images[currentIndex]})`,
                   zIndex: 2,
                   boxShadow: "-20px 0 60px rgba(0,0,0,0.25)",
+                  filter: "brightness(1.03) saturate(1.05)",
                 }}
               />
             </>
           ) : (
             <motion.div
               initial={false}
-              animate={{ scale: 1.02 }}
+              key={currentIndex}
+              animate={{ scale: [1.06, 1.02] }}
               transition={{ duration: 0.3 }}
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{
                 backgroundImage: `url(${images[currentIndex]})`,
                 backfaceVisibility: "hidden",
+                filter: "brightness(1.03) saturate(1.05)",
               }}
             />
           )}
@@ -136,6 +187,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
         className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center panel-3d"
       >
         <motion.p
+          key={`badge-${activeIndex}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -145,7 +197,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--up-accent)] opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--up-accent)]" />
           </span>
-          {hero.greetingPrefix}
+          {slide.badge || hero.greetingPrefix}
         </motion.p>
 
         <motion.h1
@@ -159,12 +211,13 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
         </motion.h1>
 
         <motion.p
+          key={`subtitle-${activeIndex}`}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="text-lg sm:text-xl md:text-2xl text-[var(--up-text-muted)] max-w-2xl mx-auto mb-12 leading-relaxed font-medium"
         >
-          {hero.subtitle}
+          {slide.subtitle || hero.subtitle}
         </motion.p>
 
         <motion.div
@@ -198,20 +251,18 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
         </motion.div>
 
         <motion.div
+          key={`stats-${activeIndex}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
           className="mt-16 flex flex-wrap justify-center gap-8 text-[var(--up-text-muted)] text-sm font-medium"
         >
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" /> 24+ Courses
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500" /> 1800+ Enrolled
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--up-accent)]" /> 12 Branches
-          </span>
+          {slide.stats.map((s) => (
+            <span key={s.text} className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+              {s.text}
+            </span>
+          ))}
         </motion.div>
       </motion.div>
 

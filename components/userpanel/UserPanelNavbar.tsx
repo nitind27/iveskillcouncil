@@ -50,13 +50,13 @@ export default function UserPanelNavbar({
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
         className={cn(
-          "fixed top-0 left-0 right-0 z-[100] transition-all duration-500 border-b flex flex-col",
+          "fixed top-0 left-0 right-0 z-[100] transition-all duration-500 border-b",
           isScrolled 
             ? "panel-glass border-[var(--up-border)] shadow-[var(--up-nav-shadow)]" 
             : "border-transparent"
         )}
       >
-        <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full", isScrolled ? "py-3" : "py-5")}>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-[var(--up-header-height)] flex items-center">
           {/* subtle top accent line (like screenshot) */}
           <div className={cn("absolute left-0 right-0 top-0 h-[3px] bg-gradient-to-r from-[var(--up-accent)] via-[var(--up-accent-2)] to-[var(--up-accent)]", !isScrolled && "opacity-80")} />
           <div className="flex items-center justify-between">
@@ -135,37 +135,60 @@ export default function UserPanelNavbar({
             </div>
           </div>
         </div>
+      </motion.nav>
 
-        {/* Marquee strip — clearly below nav bar, no overlap with page content */}
-        <div
-          className={cn(
-            "w-full overflow-hidden relative shrink-0 border-t",
-            isScrolled 
-              ? "bg-[var(--up-bg-muted)]/80 border-[var(--up-border)] py-1.5" 
-              : "bg-[var(--up-bg)]/95 border-transparent py-2"
-          )}
-          aria-live="polite"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-16 bg-gradient-to-r from-[var(--up-bg)] to-transparent z-10" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-16 bg-gradient-to-l from-[var(--up-bg)] to-transparent z-10" />
-            <div className="marquee-track flex shrink-0 items-center gap-8">
-              {[1, 2].map((i) => (
-                <span key={i} className="marquee-content flex shrink-0 items-center gap-8 whitespace-nowrap text-sm font-medium text-[var(--up-text)]">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--up-accent)]/15 px-2 py-0.5 text-xs font-bold text-[var(--up-accent)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--up-accent)] animate-pulse" />
-                    Welcome
-                  </span>
-                  {marqueeText}
-                  <span className="text-[var(--up-text-subtle)]">✦</span>
-                  {marqueeText}
-                  <span className="text-[var(--up-text-subtle)]">✦</span>
+      {/* Marquee strip (separate fixed row so header + marquee never mix) */}
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className={cn(
+          "fixed left-0 right-0 z-[99] overflow-hidden",
+          "border-b border-white/20",
+          "bg-[var(--up-accent)]"
+        )}
+        style={{ top: "var(--up-header-height)", height: "var(--up-marquee-height)" }}
+        aria-live="polite"
+      >
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center relative">
+          <div className="pointer-events-none absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_80%_50%,rgba(255,255,255,0.45),transparent_40%)]" />
+
+          <div className="relative w-full overflow-hidden">
+            <div className="flex items-center gap-3">
+              <span className="flex-shrink-0 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-white">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40 opacity-70" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white/80" />
                 </span>
-              ))}
+                Live
+              </span>
+
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="marquee-track flex items-center gap-10 py-1">
+                  {[1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="marquee-content flex shrink-0 items-center gap-10 whitespace-nowrap text-[13px] sm:text-sm font-semibold tracking-wide text-white"
+                    >
+                      <span className="inline-flex items-center gap-2 text-white/90">
+                        {marqueeText}
+                      </span>
+                      <span className="inline-flex items-center gap-2 text-white/70">
+                        <span className="h-1 w-7 rounded-full bg-white/35" />
+                        <span className="h-1 w-1 rounded-full bg-white/50" />
+                        <span className="h-1 w-7 rounded-full bg-white/25" />
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* shimmer highlight */}
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)] translate-x-[-60%] animate-shine-sweep" />
           </div>
         </div>
-      </motion.nav>
+      </motion.div>
 
       {/* --- PROFESSIONAL DRAWER MENU (MOBILE) --- */}
       <AnimatePresence>
