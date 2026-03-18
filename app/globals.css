@@ -1,0 +1,276 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 228 16% 6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-border: 228 16% 12%;
+    --sidebar-accent: 228 16% 12%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    /* Sidebar - Using #0D0E12 color */
+    --sidebar-background: 228 16% 6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-border: 228 16% 12%;
+    --sidebar-accent: 228 16% 12%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  /* Sidebar specific scrollbar - Black color */
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: #000000;
+    border-radius: 9999px;
+  }
+  
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #1a1a1a;
+  }
+
+  /* Gradient animation for error pages */
+  @keyframes gradient-x {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 3s ease infinite;
+  }
+
+  /* Fade in animation */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.15s ease-out;
+  }
+  
+  /* Fast fade in for dropdowns */
+  @keyframes fast-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fast-fade-in {
+    animation: fast-fade-in 0.1s ease-out;
+  }
+
+  /* Modal glow - themeable primary glow */
+  .modal-glow {
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(0, 0, 0, 0.05),
+      0 0 48px -8px hsl(var(--primary) / 0.4);
+  }
+  .dark .modal-glow {
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 48px -8px hsl(var(--primary) / 0.3);
+  }
+
+  /* User Panel: 3D & professional effects */
+  .panel-perspective {
+    perspective: 1200px;
+  }
+  .panel-3d {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+  .panel-glass {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .userpanel .panel-glass {
+    background: var(--up-nav-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--up-nav-border);
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-12px) translateZ(10px); }
+  }
+  @keyframes shine-sweep {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes gradient-orb {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+    50% { transform: scale(1.2) translate(5%, -5%); opacity: 0.6; }
+  }
+  @keyframes section-reveal {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+  .animate-shine-sweep {
+    background-size: 200% 100%;
+    animation: shine-sweep 3s ease-in-out infinite;
+  }
+  .animate-gradient-orb {
+    animation: gradient-orb 8s ease-in-out infinite;
+  }
+  .animate-section-reveal {
+    animation: section-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* User Panel: off-white professional theme */
+  .userpanel {
+    --up-bg: #fafaf9;
+    --up-bg-card: #ffffff;
+    --up-bg-muted: #f5f5f4;
+    --up-text: #1c1917;
+    --up-text-muted: #57534e;
+    --up-text-subtle: #78716c;
+    --up-border: #e7e5e4;
+    --up-border-strong: #d6d3d1;
+    /* Primary accent (screenshot-style rose/red) */
+    --up-accent: #e11d48;
+    --up-accent-hover: #be123c;
+    --up-accent-muted: #fb7185;
+    /* Secondary accent (soft purple) */
+    --up-accent-2: #7c3aed;
+    --up-accent-2-muted: #a78bfa;
+    /* Navbar glass */
+    --up-nav-bg: rgba(255, 255, 255, 0.92);
+    --up-nav-border: rgba(0, 0, 0, 0.06);
+    --up-nav-shadow: 0 10px 30px rgba(17, 24, 39, 0.06);
+    /* Fixed navbar + marquee total height so main content starts below */
+    --up-nav-height: 9rem;
+  }
+  .userpanel .hero-overlay {
+    background:
+      radial-gradient(1200px 420px at 15% 0%, rgba(124, 58, 237, 0.18), transparent 60%),
+      radial-gradient(900px 380px at 85% 10%, rgba(225, 29, 72, 0.18), transparent 60%),
+      linear-gradient(to bottom, rgba(250,250,249,0.75) 0%, rgba(250,250,249,0.92) 55%, #fafaf9 100%);
+  }
+
+  /* User Panel: header marquee */
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .marquee-track {
+    animation: marquee-scroll 35s linear infinite;
+    will-change: transform;
+  }
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* React-toastify: always show toasts above everything */
+.Toastify__toast-container {
+  z-index: 99999 !important;
+}
+

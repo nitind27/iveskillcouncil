@@ -1,0 +1,17 @@
+export { default as UserDashboard } from "./UsertDashboard";
+export { default as UserPanelNavbar } from "./UserPanelNavbar";
+export { default as HeroSection } from "./HeroSection";
+export { default as StatsSection } from "./StatsSection";
+export { default as AboutSection } from "./AboutSection";
+export { default as CoursesSection } from "./CoursesSection";
+export { default as FranchiseSection } from "./FranchiseSection";
+export { default as OffersSection } from "./OffersSection";
+export { default as GallerySection } from "./GallerySection";
+export { default as TestimonialsSection } from "./TestimonialsSection";
+export { default as CTAStrip } from "./CTAStrip";
+export { default as ScrollProgress } from "./ScrollProgress";
+export { default as UserPanelFooter } from "./UserPanelFooter";
+export { default as AnimatedCounter } from "./AnimatedCounter";
+export { default as OfferModal } from "./OfferModal";
+export { default as EnrollmentModal } from "./EnrollmentModal";
+export { default as FranchiseInquiryModal } from "./FranchiseInquiryModal";
