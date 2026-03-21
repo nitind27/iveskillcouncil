@@ -28,7 +28,7 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
 
-  const isSuperAdmin = user?.roleId === ROLES.SUPER_ADMIN;
+  const isSuperAdminOrAdmin = user?.roleId === ROLES.SUPER_ADMIN || user?.roleId === ROLES.ADMIN;
 
   useEffect(() => {
     (async () => {
@@ -70,7 +70,7 @@ export default function PermissionsPage() {
   }, []);
 
   const toggle = (roleId: number, permissionId: number) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setRolePerms((prev) => {
       const next = { ...prev };
       const set = new Set(next[roleId] ?? []);
@@ -82,7 +82,7 @@ export default function PermissionsPage() {
   };
 
   const saveRole = async (roleId: number) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setSaving(roleId);
     try {
       const res = await fetch(`/api/admin/roles/${roleId}/permissions`, {
@@ -150,7 +150,7 @@ export default function PermissionsPage() {
                   {roles.map((r) => (
                     <th key={r.id} className="text-center py-3 px-2 font-semibold text-foreground min-w-[100px]">
                       {ROLE_NAMES[r.id as keyof typeof ROLE_NAMES] ?? r.name}
-                      {isSuperAdmin && (
+                      {isSuperAdminOrAdmin && (
                         <button
                           type="button"
                           className="ml-2 mt-1 px-2 py-1 rounded bg-primary text-primary-foreground text-xs hover:bg-primary/90 disabled:opacity-50"
@@ -179,13 +179,13 @@ export default function PermissionsPage() {
                               <button
                                 type="button"
                                 onClick={() => toggle(r.id, p.id)}
-                                disabled={!isSuperAdmin}
+                                disabled={!isSuperAdminOrAdmin}
                                 className={cn(
                                   "w-8 h-8 rounded border flex items-center justify-center transition-colors",
                                   (rolePerms[r.id]?.has(p.id))
                                     ? "bg-primary border-primary text-primary-foreground"
                                     : "border-border hover:border-primary/50",
-                                  !isSuperAdmin && "cursor-not-allowed opacity-60"
+                                  !isSuperAdminOrAdmin && "cursor-not-allowed opacity-60"
                                 )}
                               >
                                 {(rolePerms[r.id]?.has(p.id)) && <Check className="w-4 h-4" />}

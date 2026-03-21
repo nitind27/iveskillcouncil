@@ -1,19 +1,23 @@
 import { NextRequest } from 'next/server';
+import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { cache, cacheKeys } from '@/lib/cache';
 import { rateLimiter, rateLimitConfig, getClientIdentifier } from '@/lib/rate-limit';
 import { successResponse, errorResponse, rateLimitResponse, unauthorizedResponse, forbiddenResponse } from '@/lib/api-response';
-import { getCurrentUser, requireSuperAdmin } from '@/lib/api-auth';
+import { getCurrentUser, requireSuperAdmin, requireSuperAdminOrAdmin } from '@/lib/api-auth';
 import { hashPassword } from '@/lib/auth';
 import { ROLES } from '@/lib/permissions';
 import { sendFranchiseCredentialsEmail } from '@/lib/email';
+import { generateFranchiseCredentialsPdf } from '@/lib/franchise-credentials-pdf';
 
 const SUB_ADMIN_ROLE_ID = ROLES.SUB_ADMIN;
 
+/** Generate cryptographically secure random password (12 chars: alphanumeric, no ambiguous chars). */
 function generatePassword(length = 12): string {
   const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bytes = randomBytes(length);
   let s = '';
-  for (let i = 0; i < length; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < length; i++) s += chars[bytes[i]! % chars.length];
   return s;
 }
 
@@ -176,8 +180,8 @@ export async function POST(request: NextRequest) {
     const createWithNewOwner = !ownerId && ownerEmail && ownerName;
 
     if (createWithNewOwner) {
-      const superAdmin = await requireSuperAdmin();
-      if (!superAdmin) return forbiddenResponse();
+      const admin = await requireSuperAdminOrAdmin();
+      if (!admin) return forbiddenResponse();
 
       if (!name || !planId || !subscriptionStart || !subscriptionEnd) {
         return errorResponse('Missing required fields: name, planId, subscriptionStart, subscriptionEnd', 400);
@@ -191,24 +195,22 @@ export async function POST(request: NextRequest) {
       const plainPassword = generatePassword(12);
       const hashedPassword = await hashPassword(plainPassword);
 
-      const [owner, plan] = await Promise.all([
-        prisma.user.create({
-          data: {
-            roleId: SUB_ADMIN_ROLE_ID,
-            fullName: ownerName,
-            email: ownerEmail,
-            phone: ownerPhone || null,
-            password: hashedPassword,
-            status: 'ACTIVE',
-          },
-        }),
-        prisma.subscriptionPlan.findUnique({ where: { id: planId } }),
-      ]);
+      const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+
+      // Use raw SQL to create owner with must_change_password (works when Prisma client is out of sync)
+      await prisma.$executeRaw`
+        INSERT INTO users (role_id, full_name, email, phone, password, must_change_password, status, created_at, updated_at)
+        VALUES (${SUB_ADMIN_ROLE_ID}, ${ownerName}, ${ownerEmail}, ${ownerPhone || null}, ${hashedPassword}, 1, 'ACTIVE', NOW(), NOW())
+      `;
+      const [idRow] = await prisma.$queryRaw<[{ id: bigint }]>`SELECT LAST_INSERT_ID() as id`;
+      const ownerId = idRow.id;
+
+      const owner = { id: ownerId, fullName: ownerName, email: ownerEmail };
 
       const franchise = await prisma.franchise.create({
         data: {
           name,
-          ownerId: owner.id,
+          ownerId,
           planId,
           subscriptionStart: new Date(subscriptionStart),
           subscriptionEnd: new Date(subscriptionEnd),
@@ -225,7 +227,7 @@ export async function POST(request: NextRequest) {
       });
 
       await prisma.user.update({
-        where: { id: owner.id },
+        where: { id: ownerId },
         data: { franchiseId: franchise.id },
       });
 
@@ -233,13 +235,49 @@ export async function POST(request: NextRequest) {
         ? `${process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`}/login`
         : 'https://example.com/login';
 
+      const appName = process.env.APP_NAME || 'Franchise Institute';
+      const subStart = subscriptionStart ? new Date(subscriptionStart).toLocaleDateString() : '';
+      const subEnd = subscriptionEnd ? new Date(subscriptionEnd).toLocaleDateString() : '';
+
+      let pdfBuffer: Buffer | undefined;
+      try {
+        pdfBuffer = await generateFranchiseCredentialsPdf({
+          franchiseName: franchise.name,
+          franchiseId: franchise.id.toString(),
+          ownerName: owner.fullName,
+          email: owner.email,
+          phone: ownerPhone || null,
+          planName: plan?.name ?? 'N/A',
+          subscriptionStart: subStart,
+          subscriptionEnd: subEnd,
+          address,
+          city,
+          state,
+          pincode,
+          loginUrl,
+          appName,
+        });
+      } catch (pdfErr) {
+        console.warn('Franchise credentials PDF generation failed:', pdfErr);
+      }
+
       const emailResult = await sendFranchiseCredentialsEmail(owner.email, {
         franchiseName: franchise.name,
+        franchiseId: franchise.id.toString(),
         loginUrl,
         email: owner.email,
         password: plainPassword,
         planName: plan?.name ?? 'N/A',
         ownerName: owner.fullName,
+        phone: ownerPhone || null,
+        subscriptionStart: subStart,
+        subscriptionEnd: subEnd,
+        address,
+        city,
+        state,
+        pincode,
+        pdfBuffer,
+        firstTimeSetup: true,
       });
 
       cache.delete(cacheKeys.franchises(1, 10));
@@ -258,6 +296,11 @@ export async function POST(request: NextRequest) {
           status: franchise.status,
           emailSent: emailResult.success,
           emailError: emailResult.error,
+          credentials: {
+            email: owner.email,
+            loginUrl,
+            firstTimeSetup: true,
+          },
         },
         'Franchise created. Login credentials sent by email.'
       );

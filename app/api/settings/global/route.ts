@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 import {
   successResponse,
   errorResponse,
@@ -36,7 +36,7 @@ function deepMerge(
 /** GET /api/settings/global - Get global settings (SUPER_ADMIN only). */
 export async function GET() {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return unauthorizedResponse();
 
     const row = await prisma.globalSetting.findUnique({
@@ -57,7 +57,7 @@ export async function GET() {
 /** PUT /api/settings/global - Update global settings (SUPER_ADMIN only). */
 export async function PUT(request: NextRequest) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return forbiddenResponse();
 
     const body = await request.json();

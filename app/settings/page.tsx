@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import useSWR from "swr";
 import { Breadcrumb } from "@/components/common";
+import { usePincodeLookup } from "@/hooks/usePincodeLookup";
 import {
   Card,
   CardHeader,
@@ -71,6 +72,17 @@ export default function GlobalSettingsPage() {
   const [config, setConfig] = useState<GlobalSettingsConfig>(DEFAULT_GLOBAL_CONFIG);
   const [saving, setSaving] = useState<SectionId | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>("general");
+
+  const { fetchByPincode, loading: pincodeLoading, error: pincodeError, clearError: clearPincodeError } = usePincodeLookup(
+    (data) =>
+      setConfig((prev) =>
+        mergeConfig(prev, "contact", {
+          address: prev.contact?.address || data.area,
+          city: data.city,
+          state: data.state,
+        })
+      )
+  );
 
   // Sync form when SWR data loads or after save
   React.useEffect(() => {
@@ -309,10 +321,36 @@ export default function GlobalSettingsPage() {
                       )
                     }
                     className={inputClass}
-                    placeholder="Street, area"
+                    placeholder="Street, area (auto from pincode)"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelClass}>Pincode</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={c.pincode ?? ""}
+                      onChange={(e) => {
+                        setConfig((prev) => mergeConfig(prev, "contact", { pincode: e.target.value }));
+                        clearPincodeError();
+                      }}
+                      className={inputClass}
+                      placeholder="6-digit pincode"
+                      maxLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fetchByPincode(c.pincode ?? "")}
+                      disabled={pincodeLoading || (c.pincode ?? "").trim().replace(/\D/g, "").length !== 6}
+                      className="px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium hover:bg-primary/20 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap flex items-center gap-2"
+                    >
+                      {pincodeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                      Get area
+                    </button>
+                  </div>
+                  {pincodeError && <p className="mt-1 text-xs text-amber-600">{pincodeError}</p>}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelClass}>City</label>
                     <input
@@ -324,6 +362,7 @@ export default function GlobalSettingsPage() {
                         )
                       }
                       className={inputClass}
+                      placeholder="Auto from pincode"
                     />
                   </div>
                   <div>
@@ -337,19 +376,7 @@ export default function GlobalSettingsPage() {
                         )
                       }
                       className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Pincode</label>
-                    <input
-                      type="text"
-                      value={c.pincode ?? ""}
-                      onChange={(e) =>
-                        setConfig((prev) =>
-                          mergeConfig(prev, "contact", { pincode: e.target.value })
-                        )
-                      }
-                      className={inputClass}
+                      placeholder="Auto from pincode"
                     />
                   </div>
                 </div>

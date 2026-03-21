@@ -50,6 +50,15 @@ export interface OfferItem {
   validUntil?: string;
 }
 
+export interface TestimonialItem {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  text: string;
+  rating: number;
+}
+
 export interface SocialLink {
   label: string;
   href: string;
@@ -71,6 +80,8 @@ export interface UserPanelConfig {
   site: {
     name: string;
     logoLetter: string;
+    /** Logo image URL - when set, shown instead of logoLetter everywhere */
+    logoUrl?: string | null;
     tagline: string;
     /** Welcome message shown in header marquee (optional). */
     headerMarquee?: string;
@@ -111,6 +122,10 @@ export interface UserPanelConfig {
     sectionTitle: string;
     images: { src: string; alt?: string }[];
   };
+  testimonials: {
+    sectionTitle: string;
+    items: TestimonialItem[];
+  };
   footer: {
     tagline: string;
     quickLinks: NavLink[];
@@ -133,6 +148,7 @@ const defaultConfig: UserPanelConfig = {
   site: {
     name: "Edu Institute",
     logoLetter: "E",
+    logoUrl: null as string | null,
     tagline: "Quality education for everyone. Courses, certifications, and franchise opportunities.",
     headerMarquee: "Welcome to Edu Institute — Explore courses, offers, and franchise opportunities. We're glad you're here!",
   },
@@ -141,7 +157,7 @@ const defaultConfig: UserPanelConfig = {
       { label: "Home", href: "/userpanel" },
       { label: "Courses", href: "/userpanel/courses" },
       { label: "Offers", href: "/userpanel#offers" },
-      { label: "Franchise", href: "/userpanel#franchise" },
+      { label: "Franchise", href: "/userpanel/franchises" },
       { label: "Gallery", href: "/userpanel#gallery" },
       { label: "Contact", href: "/userpanel#contact" },
     ],
@@ -160,12 +176,13 @@ const defaultConfig: UserPanelConfig = {
     ctaPrimary: { label: "View Courses", href: "/userpanel/courses" },
     ctaSecondary: { label: "Explore Offers", href: "/userpanel#offers" },
   },
+  /** Stats values are populated dynamically from database via /api/userpanel-config */
   stats: [
-    { id: "courses", label: "Total Courses", value: 24, iconKey: "courses", colorClass: "from-indigo-500 to-blue-600" },
-    { id: "enrollments", label: "Active Enrollments", value: 1847, iconKey: "enrollments", colorClass: "from-emerald-500 to-teal-600" },
-    { id: "branches", label: "Franchise Branches", value: 12, iconKey: "branches", colorClass: "from-amber-500 to-orange-600" },
-    { id: "events", label: "Upcoming Events", value: 8, iconKey: "events", colorClass: "from-rose-500 to-pink-600" },
-    { id: "offers", label: "Available Offers", value: 5, iconKey: "offers", colorClass: "from-violet-500 to-purple-600" },
+    { id: "courses", label: "Total Courses", value: 0, iconKey: "courses", colorClass: "from-indigo-500 to-blue-600" },
+    { id: "enrollments", label: "Active Enrollments", value: 0, iconKey: "enrollments", colorClass: "from-emerald-500 to-teal-600" },
+    { id: "branches", label: "Franchise Branches", value: 0, iconKey: "branches", colorClass: "from-amber-500 to-orange-600" },
+    { id: "events", label: "Upcoming Events", value: 0, iconKey: "events", colorClass: "from-rose-500 to-pink-600" },
+    { id: "offers", label: "Available Offers", value: 0, iconKey: "offers", colorClass: "from-violet-500 to-purple-600" },
   ],
   about: {
     title: "About Our Institute",
@@ -192,6 +209,7 @@ const defaultConfig: UserPanelConfig = {
       head: "Dr. Sarah Williams",
       contact: "+1 234 567 890",
       email: "downtown@institute.com",
+      detailsUrl: "/userpanel/franchises",
     },
   },
   offers: {
@@ -213,13 +231,21 @@ const defaultConfig: UserPanelConfig = {
       { src: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop", alt: "Graduation" },
     ],
   },
+  testimonials: {
+    sectionTitle: "What Our Students Say",
+    items: [
+      { id: "1", name: "Priya Sharma", role: "Full Stack Developer", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", text: "The course structure and hands-on projects helped me switch to tech. Instructors are industry experts and the placement support is excellent.", rating: 5 },
+      { id: "2", name: "Rahul Verma", role: "Data Analyst", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face", text: "Best investment in my career. From basics to advanced analytics, everything was well organized. Got placed within 2 months of completion.", rating: 5 },
+      { id: "3", name: "Anita Desai", role: "Digital Marketing Lead", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face", text: "Practical, up-to-date content and real campaigns. The certification is recognized by employers. Highly recommend for marketing professionals.", rating: 5 },
+    ],
+  },
   footer: {
     tagline: "Quality education for everyone. Courses, certifications, and franchise opportunities.",
     quickLinks: [
       { label: "Home", href: "/userpanel" },
       { label: "Courses", href: "/userpanel/courses" },
       { label: "Offers", href: "/userpanel#offers" },
-      { label: "Franchise", href: "/userpanel#franchise" },
+      { label: "Franchise", href: "/userpanel/franchises" },
       { label: "Gallery", href: "/userpanel#gallery" },
       { label: "Contact", href: "/userpanel#contact" },
     ],

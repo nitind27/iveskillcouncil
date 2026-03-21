@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** GET: List course enrolment requests (Enquire Now). Super admin only. */
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return unauthorizedResponse();
 
     const list = await prisma.courseEnrollmentRequest.findMany({
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 /** DELETE: Remove an enquiry by id (Super admin only). */
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return unauthorizedResponse();
 
     const { searchParams } = new URL(request.url);

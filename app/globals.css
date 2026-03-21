@@ -113,6 +113,15 @@
     background: #1a1a1a;
   }
 
+  /* Hide scrollbar but keep scroll */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Gradient animation for error pages */
   @keyframes gradient-x {
     0%, 100% {

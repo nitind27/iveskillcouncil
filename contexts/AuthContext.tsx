@@ -7,6 +7,7 @@ interface User {
   id: string;
   email: string;
   fullName: string;
+  phone?: string | null;
   roleId: number;
   roleName: string;
   franchiseId?: string;
@@ -22,6 +23,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -118,6 +120,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithOtp = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/verify-otp-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return false;
+      }
+
+      if (data.data?.user) {
+        setUser(data.data.user);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("❌ OTP Login error:", error);
+      return false;
+    }
+  };
+
   const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -134,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithOtp, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

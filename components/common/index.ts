@@ -47,3 +47,6 @@ export {
   type DataTableProps,
 } from "./DataTable";
 
+// Validated Input (email, phone, name with validation)
+export { ValidatedInput } from "./ValidatedInput";
+

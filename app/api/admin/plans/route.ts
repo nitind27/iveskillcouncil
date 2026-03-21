@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) return unauthorizedResponse();
-    const isSuperAdmin = Number(user.roleId) === ROLES.SUPER_ADMIN;
-    const canView = isSuperAdmin || (user.permissions && hasPermission(user.permissions, "subscription.plans.view"));
+    const roleId = Number(user.roleId);
+    const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+    const canView = isSuperAdminOrAdmin || (user.permissions && hasPermission(user.permissions, "subscription.plans.view"));
     if (!canView) {
       return errorResponse("Forbidden", 403);
     }

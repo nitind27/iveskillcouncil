@@ -17,7 +17,7 @@ import {
   Image,
   FileText,
   BarChart3,
-  DollarSign,
+  IndianRupee,
   ClipboardCheck,
   Users,
   Wallet,
@@ -25,6 +25,9 @@ import {
   MessageSquare,
   UserCheck,
   Monitor,
+  Tag,
+  HelpCircle,
+  Megaphone,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLES } from "./permissions";
@@ -46,83 +49,97 @@ export interface RoleMenuSection {
 
 /** Sidebar menu for SUPER_ADMIN */
 const SUPER_ADMIN_MENU: RoleMenuSection[] = [
+  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "main",
-    label: "Main",
+    id: "management",
+    label: "Management",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
       { id: "manage-plans", label: "Manage Plans", icon: Package, href: "/subscription/plans" },
+      { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
       { id: "manage-franchises", label: "Manage Franchises", icon: Building2, href: "/franchises" },
+      { id: "all-students", label: "All Students", icon: GraduationCap, href: "/students" },
+      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
       { id: "approvals", label: "Approvals", icon: FileCheck, href: "/franchises/pending" },
-      { id: "userpanel-settings", label: "User Panel Settings", icon: Monitor, href: "/dashboard/userpanel" },
       { id: "course-enquiries", label: "Course Enquiries", icon: MessageSquare, href: "/dashboard/enquiries" },
+      { id: "franchise-inquiries", label: "Franchise Inquiries", icon: Building2, href: "/dashboard/franchise-inquiries" },
+      { id: "offer-applications", label: "Offer Applications", icon: Tag, href: "/dashboard/offer-applications" },
+      { id: "support-requests", label: "Support Requests", icon: HelpCircle, href: "/dashboard/support" },
+      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
+    ],
+  },
+  { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
+  {
+    id: "settings",
+    label: "Settings",
+    items: [
+      { id: "userpanel-settings", label: "User Panel Settings", icon: Monitor, href: "/dashboard/userpanel" },
+      { id: "permissions", label: "Role Permissions", icon: Shield, href: "/dashboard/permissions" },
       { id: "global-settings", label: "Global Settings", icon: Settings, href: "/settings" },
     ],
   },
 ];
 
-/** Sidebar menu for ADMIN (Main Institute Admin) */
-const ADMIN_MENU: RoleMenuSection[] = [
-  {
-    id: "main",
-    label: "Main",
-    items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-      { id: "franchises", label: "Franchises", icon: Building2, href: "/franchises" },
-      { id: "students-all", label: "Students (All)", icon: GraduationCap, href: "/students" },
-      { id: "certificates", label: "Certificates", icon: Award, href: "/certificates/requests" },
-      { id: "events", label: "Events", icon: Calendar, href: "/events" },
-      { id: "blogs", label: "Blogs", icon: FileText, href: "/blogs" },
-      { id: "gallery", label: "Gallery", icon: Image, href: "/gallery" },
-      { id: "reports", label: "Reports", icon: BarChart3, href: "/reports" },
-    ],
-  },
-];
+/** Sidebar menu for ADMIN (Institute Admin) - Same as SUPER_ADMIN for full functionality */
+const ADMIN_MENU: RoleMenuSection[] = SUPER_ADMIN_MENU;
 
 /** Sidebar menu for SUB_ADMIN (Franchise Owner) */
 const SUB_ADMIN_MENU: RoleMenuSection[] = [
+  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "main",
-    label: "Main",
+    id: "management",
+    label: "Management",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+      { id: "my-courses", label: "My Courses", icon: BookOpen, href: "/dashboard/franchise-courses" },
       { id: "my-students", label: "My Students", icon: GraduationCap, href: "/students" },
-      { id: "fees-management", label: "Fees Management", icon: DollarSign, href: "/fees" },
+      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance/manual" },
       { id: "staff-management", label: "Staff Management", icon: Users, href: "/staff" },
-      { id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" },
       { id: "certificate-requests", label: "Certificate Requests", icon: Award, href: "/certificates/requests" },
+      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
     ],
+  },
+  { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
+  {
+    id: "settings",
+    label: "Settings",
+    items: [{ id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" }],
   },
 ];
 
 /** Sidebar menu for STUDENT */
 const STUDENT_MENU: RoleMenuSection[] = [
+  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "main",
-    label: "Main",
+    id: "management",
+    label: "Management",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
       { id: "my-course", label: "My Course", icon: BookOpen, href: "/my-course" },
-      { id: "my-fees", label: "My Fees", icon: DollarSign, href: "/my-fees" },
+      { id: "my-fees", label: "My Fees", icon: IndianRupee, href: "/my-fees" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
       { id: "feedback", label: "Feedback", icon: MessageSquare, href: "/feedback" },
       { id: "certificate", label: "Certificate", icon: Award, href: "/certificate" },
     ],
   },
+  { id: "analytics", label: "Analytics", items: [] },
+  { id: "settings", label: "Settings", items: [] },
 ];
 
 /** Sidebar menu for STAFF */
 const STAFF_MENU: RoleMenuSection[] = [
+  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "main",
-    label: "Main",
+    id: "management",
+    label: "Management",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
       { id: "assigned-students", label: "Assigned Students", icon: UserCheck, href: "/assigned-students" },
-      { id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" },
     ],
+  },
+  { id: "analytics", label: "Analytics", items: [] },
+  {
+    id: "settings",
+    label: "Settings",
+    items: [{ id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" }],
   },
 ];
 
@@ -148,19 +165,26 @@ export function getMenuForRole(roleId: number): RoleMenuSection[] {
 /** Paths allowed per role (for middleware/layout). Empty array = no access. */
 export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
   [ROLES.SUPER_ADMIN]: [
-    "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries",
+    "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications",
+    "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
+    "/profile", "/account",
   ],
   [ROLES.ADMIN]: [
-    "/dashboard", "/franchises", "/students", "/certificates", "/events", "/blogs", "/gallery", "/reports",
+    "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications", "/dashboard/support",
+    "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
+    "/profile", "/account",
   ],
   [ROLES.SUB_ADMIN]: [
-    "/dashboard", "/students", "/fees", "/attendance", "/staff", "/certificates",
+    "/dashboard", "/dashboard/franchise-courses", "/students", "/fees", "/attendance", "/staff", "/certificates", "/reports",
+    "/announcements", "/profile", "/account",
   ],
   [ROLES.STUDENT]: [
     "/dashboard", "/my-course", "/my-fees", "/attendance", "/feedback", "/certificate",
+    "/profile", "/account",
   ],
   [ROLES.STAFF]: [
     "/dashboard", "/attendance", "/assigned-students", "/staff",
+    "/profile", "/account",
   ],
 };
 
@@ -168,8 +192,8 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
 export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   const numRoleId = Number(roleId) || 0;
   const normalizedPath = (pathname || "").replace(/\/$/, "").trim() || "/";
-  // SUPER_ADMIN (1) has access to all protected routes
-  if (numRoleId === ROLES.SUPER_ADMIN) return true;
+  // SUPER_ADMIN and ADMIN (Institute Admin) have access to all protected routes
+  if (numRoleId === ROLES.SUPER_ADMIN || numRoleId === ROLES.ADMIN) return true;
   // Dashboard root is allowed for every authenticated user (all roles, including unknown)
   if (normalizedPath === "/dashboard") return true;
 

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { PlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, forbiddenResponse } from "@/lib/api-response";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ planId: string }> }
 ) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return forbiddenResponse();
 
     const { planId } = await params;

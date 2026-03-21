@@ -94,10 +94,10 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
           className="text-center mt-10"
         >
           <Link
-            href="/userpanel/courses"
+            href="/userpanel/franchises"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-[var(--up-border)] text-[var(--up-text)] font-semibold hover:border-[var(--up-accent)]/50 transition-colors"
           >
-            View all courses <FiArrowRight className="w-4 h-4" />
+            Browse branches & courses <FiArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
       </div>

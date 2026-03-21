@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const user = await getAuthUser();
-    if (!user || Number(user.roleId) !== ROLES.SUPER_ADMIN) {
+    if (!user || (Number(user.roleId) !== ROLES.SUPER_ADMIN && Number(user.roleId) !== ROLES.ADMIN)) {
       return unauthorizedResponse();
     }
 

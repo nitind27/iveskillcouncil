@@ -2,18 +2,30 @@ import nodemailer from "nodemailer";
 
 export interface FranchiseCredentialsEmailParams {
   franchiseName: string;
+  franchiseId?: string;
   loginUrl: string;
   email: string;
   password: string;
   planName: string;
   ownerName: string;
+  phone?: string | null;
+  subscriptionStart?: string;
+  subscriptionEnd?: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  /** PDF buffer to attach. If provided, will be attached as credentials.pdf */
+  pdfBuffer?: Buffer;
+  /** When true: do NOT send password. Add first-time OTP setup instructions instead. */
+  firstTimeSetup?: boolean;
 }
 
 function getTransporter() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
   if (!host || !user || !pass) {
     return null;
   }
@@ -26,7 +38,9 @@ function getTransporter() {
 }
 
 export function getFranchiseCredentialsHtml(params: FranchiseCredentialsEmailParams): string {
-  const { franchiseName, loginUrl, email, password, planName, ownerName } = params;
+  const { franchiseName, loginUrl, email, password, planName, ownerName, phone, subscriptionStart, subscriptionEnd, address, city, state, pincode, franchiseId, firstTimeSetup } = params;
+  const addressLine = [address, city, state, pincode].filter(Boolean).join(", ");
+  const showPassword = !firstTimeSetup && password;
   return `
 <!DOCTYPE html>
 <html>
@@ -49,21 +63,26 @@ export function getFranchiseCredentialsHtml(params: FranchiseCredentialsEmailPar
           <tr>
             <td style="padding: 32px;">
               <p style="margin: 0 0 16px; color: #374151; font-size: 16px;">Hello <strong>${escapeHtml(ownerName)}</strong>,</p>
-              <p style="margin: 0 0 24px; color: #6b7280; font-size: 15px; line-height: 1.6;">Your franchise <strong>${escapeHtml(franchiseName)}</strong> has been registered. Use the credentials below to sign in.</p>
+              <p style="margin: 0 0 24px; color: #6b7280; font-size: 15px; line-height: 1.6;">Your franchise <strong>${escapeHtml(franchiseName)}</strong> has been registered. ${firstTimeSetup ? "To set up your account, visit the login page and enter your email to receive an OTP. After OTP verification, you will set your password." : "Use the credentials below to sign in."}</p>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <tr>
                   <td style="padding: 20px 24px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                       <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Franchise</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${escapeHtml(franchiseName)}</td></tr>
+                      ${franchiseId ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Franchise ID</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px;">${escapeHtml(franchiseId)}</td></tr>` : ""}
                       <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Subscription Plan</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${escapeHtml(planName)}</td></tr>
+                      ${subscriptionStart ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Subscription</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px;">${escapeHtml(subscriptionStart)} – ${escapeHtml(subscriptionEnd || "")}</td></tr>` : ""}
+                      ${phone ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Phone</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(phone)}</td></tr>` : ""}
                       <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Login URL</td><td style="padding: 6px 0;"><a href="${escapeHtml(loginUrl)}" style="color: #3b82f6; text-decoration: none;">${escapeHtml(loginUrl)}</a></td></tr>
                       <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Username (Email)</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${escapeHtml(email)}</td></tr>
-                      <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Password</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600; font-family: monospace;">${escapeHtml(password)}</td></tr>
+                      ${showPassword ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Password</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600; font-family: monospace;">${escapeHtml(password)}</td></tr>` : ""}
+                      ${addressLine ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Address</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(addressLine)}</td></tr>` : ""}
                     </table>
                   </td>
                 </tr>
               </table>
-              <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">Please change your password after first login. Keep these credentials secure.</p>
+              ${firstTimeSetup ? `<p style="margin: 24px 0 0; color: #059669; font-size: 14px; font-weight: 600;">First-time setup: Visit login page → Enter your email → Receive OTP → Verify OTP → Set your password → Login.</p>` : "<p style=\"margin: 24px 0 0; color: #6b7280; font-size: 13px;\">Please change your password after first login. Keep these credentials secure.</p>"}
+              ${params.pdfBuffer ? `<p style="margin: 16px 0 0; color: #059669; font-size: 13px;">📎 A PDF with all details is attached to this email.</p>` : ""}
               <p style="margin: 24px 0 0;"><a href="${escapeHtml(loginUrl)}" style="display: inline-block; padding: 12px 24px; background: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">Sign In</a></p>
             </td>
           </tr>
@@ -99,13 +118,44 @@ export async function sendFranchiseCredentialsEmail(
   }
   const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@example.com";
   const appName = process.env.APP_NAME || "Franchise Institute";
+  const textParts = [
+    `Hello ${params.ownerName},`,
+    "",
+    `Your franchise ${params.franchiseName} has been registered.`,
+    "",
+    "Login:",
+    `  Email: ${params.email}`,
+    ...(!params.firstTimeSetup && params.password ? [`  Password: ${params.password}`] : []),
+    `  Login URL: ${params.loginUrl}`,
+    "",
+    `Plan: ${params.planName}`,
+  ];
+  if (params.firstTimeSetup) {
+    textParts.push("", "First-time setup: Visit the login page, enter your email to receive OTP, verify OTP, then set your password.");
+  } else {
+    textParts.push("", "Please change your password after first login.");
+  }
+  if (params.franchiseId) textParts.push(`Franchise ID: ${params.franchiseId}`);
+  if (params.phone) textParts.push(`Phone: ${params.phone}`);
+  if (params.subscriptionStart) textParts.push(`Subscription: ${params.subscriptionStart} – ${params.subscriptionEnd || ""}`);
+  if (params.address || params.city) {
+    textParts.push(`Address: ${[params.address, params.city, params.state, params.pincode].filter(Boolean).join(", ")}`);
+  }
+  if (!params.firstTimeSetup) textParts.push("", "Please change your password after first login. Keep these credentials secure.");
+  if (params.pdfBuffer) textParts.push("", "A PDF with all details is attached to this email.");
+
+  const attachments = params.pdfBuffer
+    ? [{ filename: "franchise-credentials.pdf", content: params.pdfBuffer }]
+    : undefined;
+
   try {
     await transporter.sendMail({
       from: `"${appName}" <${from}>`,
       to,
       subject: `Your ${appName} login credentials – ${params.franchiseName}`,
       html: getFranchiseCredentialsHtml(params),
-      text: `Hello ${params.ownerName},\n\nYour franchise ${params.franchiseName} has been registered.\nLogin URL: ${params.loginUrl}\nUsername: ${params.email}\nPassword: ${params.password}\nPlan: ${params.planName}\n\nPlease change your password after first login.`,
+      text: textParts.join("\n"),
+      attachments,
     });
     return { success: true };
   } catch (err: unknown) {
@@ -165,6 +215,113 @@ function getEnrollmentNotificationHtml(params: EnrollmentNotificationParams): st
   </table>
 </body>
 </html>`;
+}
+
+/** Params for student welcome / credentials email */
+export interface StudentWelcomeEmailParams {
+  fullName: string;
+  email: string;
+  password: string;
+  loginUrl: string;
+  courseName: string;
+  franchiseName: string;
+  totalFee: number;
+  paidFee: number;
+  pendingFee: number;
+  admissionDate: string;
+  address?: string | null;
+  area?: string | null;
+  pincode?: string | null;
+  city?: string | null;
+  state?: string | null;
+  initialPaymentAmount?: number;
+}
+
+function getStudentWelcomeHtml(params: StudentWelcomeEmailParams): string {
+  const { fullName, email, password, loginUrl, courseName, franchiseName, totalFee, paidFee, pendingFee, admissionDate, address, area, pincode, city, state, initialPaymentAmount } = params;
+  const addressLine = [address, area, city, state, pincode].filter(Boolean).join(", ");
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Welcome – Student Account</title></head>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5; padding: 24px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); overflow: hidden;">
+        <tr><td style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 28px 32px; text-align: center;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">Welcome to ${escapeHtml(franchiseName)}</h1>
+          <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Your student account has been created</p>
+        </td></tr>
+        <tr><td style="padding: 32px;">
+          <p style="margin: 0 0 16px; color: #374151; font-size: 16px;">Hello <strong>${escapeHtml(fullName)}</strong>,</p>
+          <p style="margin: 0 0 24px; color: #6b7280; font-size: 15px; line-height: 1.6;">You have been enrolled in <strong>${escapeHtml(courseName)}</strong> at <strong>${escapeHtml(franchiseName)}</strong>. Use the credentials below to sign in to your student portal.</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <tr><td style="padding: 20px 24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Course</td><td style="padding: 6px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${escapeHtml(courseName)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Franchise</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(franchiseName)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Admission Date</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(admissionDate)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Total Fee</td><td style="padding: 6px 0; color: #0f172a; font-weight: 600;">₹${Number(totalFee).toLocaleString("en-IN")}</td></tr>
+                ${initialPaymentAmount && initialPaymentAmount > 0 ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Amount Paid</td><td style="padding: 6px 0; color: #059669; font-weight: 600;">₹${Number(initialPaymentAmount).toLocaleString("en-IN")}</td></tr>` : ""}
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Pending Fee</td><td style="padding: 6px 0; color: #0f172a;">₹${Number(pendingFee).toLocaleString("en-IN")}</td></tr>
+                ${addressLine ? `<tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Your Address</td><td style="padding: 6px 0; color: #0f172a;">${escapeHtml(addressLine)}</td></tr>` : ""}
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Login URL</td><td style="padding: 6px 0;"><a href="${escapeHtml(loginUrl)}" style="color: #3b82f6;">${escapeHtml(loginUrl)}</a></td></tr>
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Email (Username)</td><td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${escapeHtml(email)}</td></tr>
+                <tr><td style="padding: 6px 0; color: #64748b; font-size: 13px;">Password</td><td style="padding: 6px 0; color: #0f172a; font-weight: 600; font-family: monospace;">${escapeHtml(password)}</td></tr>
+              </table>
+            </td></tr>
+          </table>
+          <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">Please change your password after first login. Keep these credentials secure.</p>
+          <p style="margin: 24px 0 0;"><a href="${escapeHtml(loginUrl)}" style="display: inline-block; padding: 12px 24px; background: #059669; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">Sign In</a></p>
+        </td></tr>
+        <tr><td style="padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; text-align: center;">Franchise Institute Management System</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+/** Send welcome email to student with credentials and all details. */
+export async function sendStudentWelcomeEmail(
+  to: string,
+  params: StudentWelcomeEmailParams
+): Promise<{ success: boolean; error?: string }> {
+  const transporter = getTransporter();
+  if (!transporter) return { success: false, error: "SMTP not configured" };
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@example.com";
+  const appName = process.env.APP_NAME || "Franchise Institute";
+  const textParts = [
+    `Hello ${params.fullName},`,
+    "",
+    `You have been enrolled in ${params.courseName} at ${params.franchiseName}.`,
+    "",
+    "Login:",
+    `  Email: ${params.email}`,
+    `  Password: ${params.password}`,
+    `  URL: ${params.loginUrl}`,
+    "",
+    `Total Fee: ₹${params.totalFee}`,
+    `Paid: ₹${params.paidFee}`,
+    `Pending: ₹${params.pendingFee}`,
+  ];
+  if (params.address || params.area || params.city) {
+    textParts.push("", `Address: ${[params.address, params.area, params.city, params.state, params.pincode].filter(Boolean).join(", ")}`);
+  }
+  textParts.push("", "Please change your password after first login.");
+  try {
+    await transporter.sendMail({
+      from: `"${appName}" <${from}>`,
+      to,
+      subject: `Welcome – Your ${appName} student account (${params.courseName})`,
+      html: getStudentWelcomeHtml(params),
+      text: textParts.join("\n"),
+    });
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
 }
 
 /** Send course enquiry notification to super admin (and optionally confirmation to user). Uses SMTP. */

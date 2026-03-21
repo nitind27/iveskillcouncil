@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { FiImage } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiImage, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { createPortal } from "react-dom";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 
 interface GallerySectionProps {
@@ -11,8 +13,87 @@ interface GallerySectionProps {
 export default function GallerySection({ config }: GallerySectionProps) {
   const { gallery } = config;
   const images = gallery?.images || [];
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIndex(null);
+      if (e.key === "ArrowLeft") setLightboxIndex((i) => (i === null ? null : (i - 1 + images.length) % images.length));
+      if (e.key === "ArrowRight") setLightboxIndex((i) => (i === null ? null : (i + 1) % images.length));
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [lightboxIndex, images.length]);
+
+  useEffect(() => {
+    if (lightboxIndex !== null) document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [lightboxIndex]);
 
   if (images.length === 0) return null;
+
+  const lightboxContent = (
+    <AnimatePresence>
+      {lightboxIndex !== null && (
+        <motion.div
+          key="gallery-lightbox"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Gallery image"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            aria-label="Close"
+          >
+            <FiX className="w-6 h-6" />
+          </button>
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i! - 1 + images.length) % images.length); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                aria-label="Previous"
+              >
+                <FiChevronLeft className="w-8 h-8" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i! + 1) % images.length); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                aria-label="Next"
+              >
+                <FiChevronRight className="w-8 h-8" />
+              </button>
+            </>
+          )}
+          <motion.img
+            key={lightboxIndex}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            src={images[lightboxIndex]?.src}
+            alt={images[lightboxIndex]?.alt || `Gallery ${lightboxIndex + 1}`}
+            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {images.length > 1 && (
+            <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm">
+              {lightboxIndex + 1} / {images.length}
+            </span>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <section id="gallery" className="relative py-24 px-4 sm:px-6 lg:px-8 panel-perspective overflow-hidden bg-[var(--up-bg-muted)]">
@@ -41,7 +122,8 @@ export default function GallerySection({ config }: GallerySectionProps) {
               viewport={{ once: true, margin: "-20px" }}
               transition={{ type: "spring", stiffness: 100, delay: (i % 6) * 0.05 }}
               whileHover={{ y: -6, scale: 1.02 }}
-              className="relative aspect-[4/3] rounded-2xl overflow-hidden group panel-3d border border-[var(--up-border)] shadow-sm"
+              onClick={() => setLightboxIndex(i)}
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden group panel-3d border border-[var(--up-border)] shadow-sm cursor-pointer"
             >
               <div className="absolute -inset-0.5 bg-[var(--up-accent)]/10 rounded-2xl blur opacity-0 group-hover:opacity-60 transition duration-500 z-10 pointer-events-none" />
               <motion.img
@@ -59,6 +141,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
           ))}
         </div>
       </div>
+      {typeof window !== "undefined" && createPortal(lightboxContent, document.body)}
     </section>
   );
 }

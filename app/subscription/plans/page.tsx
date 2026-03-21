@@ -32,7 +32,7 @@ export default function SubscriptionPlansPage() {
   const [editingPlan, setEditingPlan] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ price: number; durationInDays: number; status: string } | null>(null);
 
-  const isSuperAdmin = Number(user?.roleId) === ROLES.SUPER_ADMIN || user?.roleName === "SUPER_ADMIN";
+  const isSuperAdminOrAdmin = Number(user?.roleId) === ROLES.SUPER_ADMIN || Number(user?.roleId) === ROLES.ADMIN || user?.roleName === "SUPER_ADMIN" || user?.roleName === "Admin";
 
   const loadData = React.useCallback(async () => {
     try {
@@ -83,7 +83,7 @@ export default function SubscriptionPlansPage() {
   }, [loading]);
 
   const togglePlanPerm = (planId: number, permissionId: number) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setPlanPerms((prev) => {
       const set = new Set(prev[planId] ?? []);
       if (set.has(permissionId)) set.delete(permissionId);
@@ -93,7 +93,7 @@ export default function SubscriptionPlansPage() {
   };
 
   const savePlanPerms = async (planId: number) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setSaving(planId);
     try {
       const res = await fetch(`/api/admin/plans/${planId}/permissions`, {
@@ -111,7 +111,7 @@ export default function SubscriptionPlansPage() {
   };
 
   const startEdit = (plan: Plan) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setEditingPlan(plan.id);
     setEditForm({
       price: plan.price,
@@ -185,7 +185,7 @@ export default function SubscriptionPlansPage() {
           <Card key={plan.id}>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">{plan.name}</CardTitle>
-              {isSuperAdmin && (
+              {isSuperAdminOrAdmin && (
                 <button
                   type="button"
                   onClick={() => startEdit(plan)}
@@ -316,7 +316,7 @@ export default function SubscriptionPlansPage() {
                       {plans.map((plan) => (
                         <th key={plan.id} className="text-center py-3 px-2 font-semibold text-foreground w-[140px] min-w-[140px] bg-primary/10 text-primary border-l border-border whitespace-nowrap">
                           <span className="block text-primary">{plan.name}</span>
-                          {isSuperAdmin && (
+                          {isSuperAdminOrAdmin && (
                             <button
                               type="button"
                               className="mt-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1"
@@ -345,7 +345,7 @@ export default function SubscriptionPlansPage() {
                                     type="checkbox"
                                     checked={planPerms[plan.id]?.has(p.id) ?? false}
                                     onChange={() => togglePlanPerm(plan.id, p.id)}
-                                    disabled={!isSuperAdmin}
+                                    disabled={!isSuperAdminOrAdmin}
                                     className="w-5 h-5 rounded border-2 border-primary text-primary focus:ring-2 focus:ring-primary/30 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                                   />
                                     {/* <span className="">{p.label} for {plan.name}</span> */}

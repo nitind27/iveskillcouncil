@@ -4,9 +4,15 @@
  */
 export async function fetcher<T = unknown>(url: string): Promise<T> {
   const res = await fetch(url, { credentials: "include" });
-  const json = await res.json();
+  let json: Record<string, unknown>;
+  try {
+    json = await res.json();
+  } catch {
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+    throw new Error("Invalid response from server");
+  }
   if (!res.ok) {
-    const err = new Error(json?.error || json?.message || "Request failed") as Error & { status?: number };
+    const err = new Error(String(json?.error ?? json?.message ?? "Request failed")) as Error & { status?: number };
     err.status = res.status;
     throw err;
   }

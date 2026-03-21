@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase } from "react-icons/fi";
+import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase, FiExternalLink } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import FranchiseInquiryModal from "./FranchiseInquiryModal";
 
@@ -12,8 +13,14 @@ interface FranchiseSectionProps {
 
 export default function FranchiseSection({ config }: FranchiseSectionProps) {
   const [inquiryOpen, setInquiryOpen] = useState(false);
+  const [inquiryFranchise, setInquiryFranchise] = useState<{ id?: string; name: string } | null>(null);
   const { franchise } = config;
   const highlight = franchise?.highlight;
+
+  const openInquiry = (f?: { id?: string; name: string } | null) => {
+    setInquiryFranchise(f ?? null);
+    setInquiryOpen(true);
+  };
 
   return (
     <>
@@ -44,7 +51,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                 </div>
                 <motion.button
                   type="button"
-                  onClick={() => setInquiryOpen(true)}
+                  onClick={() => openInquiry(null)}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex-shrink-0 px-8 py-4 rounded-xl bg-[var(--up-accent)] font-bold text-white shadow-lg border border-[var(--up-border)] hover:bg-[var(--up-accent-hover)] transition-all"
@@ -110,15 +117,28 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                         {highlight.email}
                       </li>
                     </ul>
-                    <motion.a
-                      href={highlight.detailsUrl || "#contact"}
-                      whileHover={{ x: 6 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-bg-muted)] border border-[var(--up-border)] hover:bg-[var(--up-accent)]/15 hover:border-[var(--up-accent)]/30 font-semibold w-fit transition-all text-[var(--up-text)]"
-                    >
-                      View Details
-                      <FiArrowRight className="w-4 h-4" />
-                    </motion.a>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                      <motion.button
+                        type="button"
+                        onClick={() => openInquiry({ name: highlight.name })}
+                        whileHover={{ scale: 1.03, boxShadow: "0 8px 25px -5px rgb(0 0 0 / 0.1)" }}
+                        whileTap={{ scale: 0.98 }}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-accent)] text-white font-semibold shadow-lg hover:bg-[var(--up-accent-hover)] transition-all"
+                      >
+                        Visit & Enquire
+                        <FiExternalLink className="w-4 h-4" />
+                      </motion.button>
+                      <Link href={highlight.detailsUrl || "/userpanel/franchises"}>
+                        <motion.span
+                          whileHover={{ x: 6 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-bg-muted)] border border-[var(--up-border)] hover:bg-[var(--up-accent)]/15 hover:border-[var(--up-accent)]/30 font-semibold w-fit transition-all text-[var(--up-text)] cursor-pointer"
+                        >
+                          View All Franchises
+                          <FiArrowRight className="w-4 h-4" />
+                        </motion.span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -129,7 +149,8 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
 
       <FranchiseInquiryModal
         open={inquiryOpen}
-        onClose={() => setInquiryOpen(false)}
+        onClose={() => { setInquiryOpen(false); setInquiryFranchise(null); }}
+        franchise={inquiryFranchise}
       />
     </>
   );

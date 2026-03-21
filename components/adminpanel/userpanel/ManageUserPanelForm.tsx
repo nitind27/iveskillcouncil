@@ -22,11 +22,14 @@ import {
   Footprints,
   CheckCircle2,
   Sparkles,
+  MessageSquare,
+  Pencil,
 } from "lucide-react";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import { defaultConfig } from "@/config/userpanel.config";
 import { cn } from "@/lib/utils";
 import WelcomePopupModal from "@/components/userpanel/WelcomePopupModal";
+import { ImageEditorModal } from "@/components/common/ImageEditorModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
 
@@ -56,6 +59,7 @@ const TABS = [
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "franchise", label: "Franchise", icon: Building2 },
   { id: "offers", label: "Offers", icon: Tag },
+  { id: "testimonials", label: "Testimonials", icon: MessageSquare },
   { id: "gallery", label: "Gallery", icon: Images },
   { id: "footer", label: "Footer", icon: Footprints },
 ] as const;
@@ -73,6 +77,7 @@ function ensureConfig(c: Partial<UserPanelConfig> | null): UserPanelConfig {
     franchise: c.franchise ?? defaultConfig.franchise,
     offers: c.offers ?? defaultConfig.offers,
     gallery: c.gallery ?? defaultConfig.gallery,
+    testimonials: c.testimonials ?? defaultConfig.testimonials,
     footer: c.footer ?? defaultConfig.footer,
   };
 }
@@ -85,20 +90,36 @@ const btnAdd =
 const btnRemove =
   "inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors";
 
+function getFullImageUrl(url: string): string {
+  if (typeof window === "undefined") return url;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:")) return url;
+  if (url.startsWith("/")) return window.location.origin + url;
+  return url;
+}
+
 export default function ManageUserPanelForm() {
   const { user } = useAuth();
-  const isSuperAdmin = Number(user?.roleId) === ROLES.SUPER_ADMIN;
+  const isSuperAdminOrAdmin = Number(user?.roleId) === ROLES.SUPER_ADMIN || Number(user?.roleId) === ROLES.ADMIN;
   const [config, setConfig] = useState<UserPanelConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("site");
+  const [activeTab, setActiveTab] = useState<string>("welcomePopup");
   const [welcomeUploading, setWelcomeUploading] = useState(false);
   const [welcomeUploadError, setWelcomeUploadError] = useState<string | null>(null);
   const [welcomePreviewOpen, setWelcomePreviewOpen] = useState(false);
   const [heroUploading, setHeroUploading] = useState(false);
   const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
   const [heroUrlDraft, setHeroUrlDraft] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const [aboutImageUploading, setAboutImageUploading] = useState(false);
+  const [aboutImageUploadError, setAboutImageUploadError] = useState<string | null>(null);
+  const [imageEditorOpen, setImageEditorOpen] = useState(false);
+  const [imageEditorSource, setImageEditorSource] = useState<File | string | null>(null);
+  const [imageEditorType, setImageEditorType] = useState<"welcome" | "logo" | "hero" | "about" | null>(null);
+  const [imageEditorHeroIndex, setImageEditorHeroIndex] = useState<number | null>(null);
+  const [heroFilesQueue, setHeroFilesQueue] = useState<File[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/userpanel-config")
@@ -157,6 +178,127 @@ export default function ManageUserPanelForm() {
     }));
   };
 
+  const uploadLogo = async (file: File) => {
+    setLogoUploadError(null);
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (config.site.logoUrl) fd.append("oldUrl", config.site.logoUrl);
+
+      const res = await fetch("/api/admin/logo-upload", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success || !data?.data?.url) {
+        setLogoUploadError(data?.error || "Upload failed");
+        return;
+      }
+      setConfig((c) => ({ ...c, site: { ...c.site, logoUrl: data.data.url } }));
+    } catch {
+      setLogoUploadError("Upload failed");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const openImageEditor = (source: File | string, type: "welcome" | "logo" | "hero" | "about", heroIndex?: number) => {
+    setImageEditorSource(source);
+    setImageEditorType(type);
+    setImageEditorHeroIndex(heroIndex ?? null);
+    setImageEditorOpen(true);
+  };
+
+  const handleImageEditorSave = async (file: File) => {
+    if (!imageEditorType) return;
+    if (imageEditorType === "welcome") {
+      await uploadWelcomeImage(file);
+    } else if (imageEditorType === "logo") {
+      await uploadLogo(file);
+    } else if (imageEditorType === "about") {
+      await uploadAboutImage(file);
+    } else if (imageEditorType === "hero") {
+      if (imageEditorHeroIndex !== null) {
+        const res = await uploadHeroImageAndGetUrl(file);
+        if (res) {
+          setConfig((c) => {
+            const prev = getHeroImages(c);
+            const next = prev.map((u, j) => (j === imageEditorHeroIndex ? res : u));
+            return {
+              ...c,
+              hero: {
+                ...c.hero,
+                backgroundImages: next.length > 0 ? next : undefined,
+                backgroundImage: next[0] ?? "",
+              },
+            };
+          });
+        }
+      } else {
+        await uploadHeroImages([file]);
+        const rest = heroFilesQueue.slice(1);
+        setHeroFilesQueue(rest);
+        if (rest.length > 0) {
+          setImageEditorSource(rest[0]);
+          setImageEditorType("hero");
+          setImageEditorOpen(true);
+          setImageEditorHeroIndex(null);
+          return;
+        }
+      }
+    }
+    setImageEditorOpen(false);
+    setImageEditorSource(null);
+    setImageEditorType(null);
+    setImageEditorHeroIndex(null);
+  };
+
+  const uploadHeroImageAndGetUrl = async (file: File): Promise<string | null> => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/hero-background-image", { method: "POST", body: fd });
+      const data = await res.json();
+      return res.ok && data?.success && data?.data?.url ? (data.data.url as string) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const closeImageEditor = () => {
+    setImageEditorOpen(false);
+    setImageEditorSource(null);
+    setImageEditorType(null);
+    setImageEditorHeroIndex(null);
+    setHeroFilesQueue([]);
+  };
+
+  const uploadAboutImage = async (file: File) => {
+    setAboutImageUploadError(null);
+    setAboutImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (config.about.image) fd.append("oldUrl", config.about.image);
+
+      const res = await fetch("/api/admin/about-image", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success || !data?.data?.url) {
+        setAboutImageUploadError(data?.error || "Upload failed");
+        return;
+      }
+      setConfig((c) => ({ ...c, about: { ...c.about, image: data.data.url } }));
+    } catch {
+      setAboutImageUploadError("Upload failed");
+    } finally {
+      setAboutImageUploading(false);
+    }
+  };
+
   const uploadHeroImages = async (files: File[]) => {
     if (!files.length) return;
     setHeroUploadError(null);
@@ -191,7 +333,7 @@ export default function ManageUserPanelForm() {
   };
 
   const handleSave = async () => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdminOrAdmin) return;
     setSaving(true);
     setSaved(false);
     try {
@@ -252,7 +394,7 @@ export default function ManageUserPanelForm() {
               View User Panel
               <ExternalLink className="w-4 h-4 opacity-60" />
             </Link>
-            {isSuperAdmin ? (
+            {isSuperAdminOrAdmin ? (
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -370,6 +512,17 @@ export default function ManageUserPanelForm() {
                       <Monitor className="w-4 h-4" />
                       Preview
                     </button>
+                    {config.welcomePopup.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => openImageEditor(getFullImageUrl(config.welcomePopup.imageUrl!), "welcome")}
+                        disabled={welcomeUploading}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit image
+                      </button>
+                    )}
                     <label className={cn("inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer", welcomeUploading && "opacity-60 pointer-events-none")}>
                       <input
                         type="file"
@@ -377,7 +530,7 @@ export default function ManageUserPanelForm() {
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];
-                          if (f) uploadWelcomeImage(f);
+                          if (f) openImageEditor(f, "welcome");
                           e.currentTarget.value = "";
                         }}
                       />
@@ -464,15 +617,77 @@ export default function ManageUserPanelForm() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Logo letter</label>
+                  <label className={labelClass}>Logo letter (fallback)</label>
                   <input
                     className={cn(inputClass, "max-w-[100px]")}
                     value={config.site.logoLetter}
                     maxLength={2}
+                    placeholder="E"
                     onChange={(e) =>
                       setConfig((c) => ({ ...c, site: { ...c.site, logoLetter: e.target.value || "E" } }))
                     }
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">Shown when no logo URL is set.</p>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Logo</label>
+                  <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3 mt-1.5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Upload logo file</p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG (max 2MB). Same logo shows in user panel, login, and admin.
+                        </p>
+                      </div>
+                      <label className={cn("inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer", logoUploading && "opacity-60 pointer-events-none")}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) openImageEditor(f, "logo");
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                        {logoUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        {logoUploading ? "Uploading…" : "Choose file"}
+                      </label>
+                    </div>
+                    {config.site.logoUrl && (
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <img src={config.site.logoUrl} alt="Logo" className="h-12 w-auto max-w-[120px] object-contain rounded border border-border" />
+                        <button
+                          type="button"
+                          onClick={() => openImageEditor(getFullImageUrl(config.site.logoUrl!), "logo")}
+                          disabled={logoUploading}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfig((c) => ({ ...c, site: { ...c.site, logoUrl: null } }))}
+                          className="text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          Remove logo
+                        </button>
+                      </div>
+                    )}
+                    {logoUploadError && <p className="text-sm text-destructive">{logoUploadError}</p>}
+                  </div>
+                  <div className="mt-2">
+                    <label className="text-xs text-muted-foreground">Or paste URL</label>
+                    <input
+                      className={inputClass}
+                      placeholder="/logo/1.png or https://..."
+                      value={config.site.logoUrl ?? ""}
+                      onChange={(e) =>
+                        setConfig((c) => ({ ...c, site: { ...c.site, logoUrl: e.target.value.trim() || null } }))
+                      }
+                    />
+                  </div>
                 </div>
               </div>
               <div>
@@ -559,7 +774,14 @@ export default function ManageUserPanelForm() {
                           className="hidden"
                           onChange={(e) => {
                             const files = Array.from(e.target.files ?? []);
-                            if (files.length) uploadHeroImages(files);
+                            if (files.length) {
+                              if (files.length === 1) {
+                                openImageEditor(files[0], "hero");
+                              } else {
+                                setHeroFilesQueue(files);
+                                openImageEditor(files[0], "hero");
+                              }
+                            }
                             e.target.value = "";
                           }}
                           disabled={heroUploading}
@@ -599,6 +821,15 @@ export default function ManageUserPanelForm() {
                                   }}
                                 />
                               </div>
+                              <button
+                                type="button"
+                                onClick={() => openImageEditor(getFullImageUrl(img), "hero", i)}
+                                disabled={heroUploading}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
                               <button
                                 type="button"
                                 className={btnRemove}
@@ -879,12 +1110,62 @@ export default function ManageUserPanelForm() {
                 />
               </div>
               <div>
-                <label className={labelClass}>About image URL</label>
-                <input
-                  className={inputClass}
-                  value={config.about.image}
-                  onChange={(e) => setConfig((c) => ({ ...c, about: { ...c.about, image: e.target.value } }))}
-                />
+                <label className={labelClass}>About image</label>
+                <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3 mt-1.5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Upload image file</p>
+                      <p className="text-xs text-muted-foreground">
+                        PNG, JPG (max 5MB). Shown in the About section on user panel.
+                      </p>
+                    </div>
+                    <label className={cn("inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer", aboutImageUploading && "opacity-60 pointer-events-none")}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) openImageEditor(f, "about");
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      {aboutImageUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                      {aboutImageUploading ? "Uploading…" : "Choose file"}
+                    </label>
+                  </div>
+                  {config.about.image && (
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <img src={config.about.image} alt="About" className="h-24 w-auto max-w-[200px] object-cover rounded border border-border" />
+                      <button
+                        type="button"
+                        onClick={() => openImageEditor(getFullImageUrl(config.about.image), "about")}
+                        disabled={aboutImageUploading}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig((c) => ({ ...c, about: { ...c.about, image: "" } }))}
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                  {aboutImageUploadError && <p className="text-sm text-destructive">{aboutImageUploadError}</p>}
+                </div>
+                <div className="mt-2">
+                  <label className="text-xs text-muted-foreground">Or paste URL</label>
+                  <input
+                    className={inputClass}
+                    placeholder="https://... or /path/to/image.jpg"
+                    value={config.about.image}
+                    onChange={(e) => setConfig((c) => ({ ...c, about: { ...c.about, image: e.target.value } }))}
+                  />
+                </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -1216,6 +1497,23 @@ export default function ManageUserPanelForm() {
                     }
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>View Details URL (e.g. /userpanel/franchises)</label>
+                  <input
+                    className={inputClass}
+                    placeholder="/userpanel/franchises"
+                    value={config.franchise.highlight.detailsUrl ?? ""}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        franchise: {
+                          ...c.franchise,
+                          highlight: c.franchise.highlight ? { ...c.franchise.highlight, detailsUrl: e.target.value || undefined } : null,
+                        },
+                      }))
+                    }
+                  />
+                </div>
               </div>
               )}
             </div>
@@ -1303,6 +1601,126 @@ export default function ManageUserPanelForm() {
                   className={btnAdd}
                 >
                   <Plus className="w-4 h-4" /> Add offer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Testimonials */}
+          {activeTab === "testimonials" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                What Our Students Say
+              </h2>
+              <div>
+                <label className={labelClass}>Section title</label>
+                <input
+                  className={inputClass}
+                  value={config.testimonials.sectionTitle}
+                  onChange={(e) =>
+                    setConfig((c) => ({ ...c, testimonials: { ...c.testimonials, sectionTitle: e.target.value } }))
+                  }
+                />
+              </div>
+              <div className="space-y-4">
+                {config.testimonials.items.map((t, i) => (
+                  <div key={t.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className={labelClass}>Name</label>
+                        <input
+                          className={inputClass}
+                          value={t.name}
+                          onChange={(e) =>
+                            setConfig((c) => ({
+                              ...c,
+                              testimonials: { ...c.testimonials, items: c.testimonials.items.map((it, j) => (j === i ? { ...it, name: e.target.value } : it)) },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Role / Designation</label>
+                        <input
+                          className={inputClass}
+                          value={t.role}
+                          onChange={(e) =>
+                            setConfig((c) => ({
+                              ...c,
+                              testimonials: { ...c.testimonials, items: c.testimonials.items.map((it, j) => (j === i ? { ...it, role: e.target.value } : it)) },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className={labelClass}>Avatar image URL</label>
+                        <input
+                          className={inputClass}
+                          value={t.avatar}
+                          onChange={(e) =>
+                            setConfig((c) => ({
+                              ...c,
+                              testimonials: { ...c.testimonials, items: c.testimonials.items.map((it, j) => (j === i ? { ...it, avatar: e.target.value } : it)) },
+                            }))
+                          }
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className={labelClass}>Testimonial text</label>
+                        <textarea
+                          className={inputClass}
+                          rows={3}
+                          value={t.text}
+                          onChange={(e) =>
+                            setConfig((c) => ({
+                              ...c,
+                              testimonials: { ...c.testimonials, items: c.testimonials.items.map((it, j) => (j === i ? { ...it, text: e.target.value } : it)) },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Rating (1-5)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={5}
+                          className={inputClass}
+                          value={t.rating}
+                          onChange={(e) =>
+                            setConfig((c) => ({
+                              ...c,
+                              testimonials: { ...c.testimonials, items: c.testimonials.items.map((it, j) => (j === i ? { ...it, rating: Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 1)) } : it)) },
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConfig((c) => ({ ...c, testimonials: { ...c.testimonials, items: c.testimonials.items.filter((_, j) => j !== i) } }))}
+                      className="text-sm text-muted-foreground hover:text-destructive"
+                    >
+                      Remove testimonial
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setConfig((c) => ({
+                      ...c,
+                      testimonials: {
+                        ...c.testimonials,
+                        items: [...c.testimonials.items, { id: `test-${Date.now()}`, name: "New Student", role: "Role", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face", text: "Testimonial text...", rating: 5 }],
+                      },
+                    }))
+                  }
+                  className={btnAdd}
+                >
+                  <Plus className="w-4 h-4" /> Add testimonial
                 </button>
               </div>
             </div>
@@ -1433,6 +1851,22 @@ export default function ManageUserPanelForm() {
           )}
         </CardContent>
       </Card>
+
+      <ImageEditorModal
+        open={imageEditorOpen}
+        onClose={closeImageEditor}
+        source={imageEditorSource}
+        onSave={handleImageEditorSave}
+        filename={
+          imageEditorType === "logo"
+            ? "logo.png"
+            : imageEditorType === "about"
+              ? "about.png"
+              : imageEditorType === "hero"
+                ? "hero.png"
+                : "welcome-popup.png"
+        }
+      />
     </div>
   );
 }

@@ -63,16 +63,17 @@ model PlanPermission {
 }
 
 model User {
-  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  roleId      Int      @map("role_id") @db.UnsignedTinyInt
-  franchiseId BigInt?  @map("franchise_id") @db.UnsignedBigInt
-  fullName    String   @map("full_name") @db.VarChar(150)
-  email       String   @unique @db.VarChar(150)
-  phone       String?  @unique @db.VarChar(20)
-  password    String   @db.VarChar(255)
-  status      UserStatus @default(ACTIVE)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp
+  id                 BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  roleId             Int      @map("role_id") @db.UnsignedTinyInt
+  franchiseId        BigInt?  @map("franchise_id") @db.UnsignedBigInt
+  fullName           String   @map("full_name") @db.VarChar(150)
+  email              String   @unique @db.VarChar(150)
+  phone              String?  @unique @db.VarChar(20)
+  password           String   @db.VarChar(255)
+  mustChangePassword Boolean  @default(false) @map("must_change_password") @db.TinyInt
+  status             UserStatus @default(ACTIVE)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamp
 
   role      Role      @relation(fields: [roleId], references: [id])
   franchise Franchise? @relation(fields: [franchiseId], references: [id])
@@ -82,6 +83,7 @@ model User {
   staff           Staff?
   student         Student?
   issuedCertificates Certificate[] @relation("CertificateIssuer")
+  announcements   Announcement[] @relation("AnnouncementCreator")
 
   @@index([roleId], map: "idx_role")
   @@index([franchiseId], map: "idx_franchise")
@@ -142,6 +144,7 @@ model Franchise {
   students        Student[]
   staff           Staff[]
   courses         FranchiseCourseFee[]
+  ownedCourses    Course[]      @relation("FranchiseCourses")
   attendance      Attendance[]
   certificates    Certificate[]
   feedback        Feedback[]
@@ -160,19 +163,22 @@ enum FranchiseStatus {
 }
 
 model Course {
-  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  name          String      @db.VarChar(150)
-  description   String?     @db.Text
-  type          CourseType
-  baseFee       Decimal     @map("base_fee") @db.Decimal(10, 2)
-  durationMonths Int       @map("duration_months")
-  status        CourseStatus @default(ACTIVE)
-  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp
-  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamp
+  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  franchiseId    BigInt?      @map("franchise_id") @db.UnsignedBigInt
+  name           String       @db.VarChar(150)
+  description    String?      @db.Text
+  type           CourseType
+  baseFee        Decimal     @map("base_fee") @db.Decimal(10, 2)
+  durationMonths Int         @map("duration_months")
+  status         CourseStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamp
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamp
 
-  students      Student[]
-  franchiseFees FranchiseCourseFee[]
+  franchise      Franchise?  @relation("FranchiseCourses", fields: [franchiseId], references: [id], onDelete: Cascade)
+  students       Student[]
+  franchiseFees  FranchiseCourseFee[]
 
+  @@index([franchiseId], map: "idx_course_franchise")
   @@map("courses")
 }
 
@@ -211,6 +217,11 @@ model Student {
   totalFee    Decimal       @map("total_fee") @db.Decimal(10, 2)
   paidFee     Decimal       @default(0.00) @map("paid_fee") @db.Decimal(10, 2)
   admissionDate DateTime     @map("admission_date") @db.Date
+  address     String?       @db.VarChar(500)
+  area        String?       @db.VarChar(150)
+  pincode     String?       @db.VarChar(20)
+  city        String?       @db.VarChar(100)
+  state       String?       @db.VarChar(100)
   status      StudentStatus  @default(ACTIVE)
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp
   updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamp
@@ -367,6 +378,20 @@ enum FeedbackStatus {
   RESOLVED
 }
 
+model OtpVerification {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  email     String   @db.VarChar(150)
+  otp       String   @db.VarChar(10)
+  purpose   String   @db.VarChar(50)
+  expiresAt DateTime @map("expires_at") @db.DateTime
+  used      Boolean  @default(false) @db.TinyInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  @@index([email, purpose], map: "idx_otp_email_purpose")
+  @@index([expiresAt], map: "idx_otp_expires")
+  @@map("otp_verifications")
+}
+
 model UserPanelSetting {
   id        Int      @id @default(1)
   config    Json     @db.Json
@@ -401,6 +426,20 @@ model CourseEnrollmentRequest {
   @@map("course_enrollment_requests")
 }
 
+model OfferApplication {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  fullName    String   @map("full_name") @db.VarChar(150)
+  email       String   @db.VarChar(150)
+  phone       String   @db.VarChar(20)
+  offerId     String   @map("offer_id") @db.VarChar(100)
+  offerTitle  String   @map("offer_title") @db.VarChar(200)
+  message     String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  @@index([createdAt], map: "idx_offer_app_created")
+  @@map("offer_applications")
+}
+
 model FranchiseInquiry {
   id              BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   fullName        String   @map("full_name") @db.VarChar(150)
@@ -410,9 +449,37 @@ model FranchiseInquiry {
   state           String?  @db.VarChar(100)
   investmentRange String?  @map("investment_range") @db.VarChar(80)
   message         String?  @db.Text
+  franchiseId     String?  @map("franchise_id") @db.VarChar(50)
+  franchiseName   String?  @map("franchise_name") @db.VarChar(200)
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp
 
   @@index([createdAt], map: "idx_franchise_inquiry_created")
+  @@index([franchiseId], map: "idx_franchise_inquiry_franchise")
   @@map("franchise_inquiries")
+}
+
+model SupportRequest {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  fullName  String   @map("full_name") @db.VarChar(150)
+  email     String   @db.VarChar(150)
+  message   String   @db.Text
+  source    String?  @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  @@index([createdAt], map: "idx_support_created")
+  @@map("support_requests")
+}
+
+model Announcement {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  title     String   @db.VarChar(200)
+  message   String   @db.Text
+  createdBy BigInt   @map("created_by") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  creator   User     @relation("AnnouncementCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([createdAt], map: "idx_announcement_created")
+  @@map("announcements")
 }
 

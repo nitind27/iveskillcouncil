@@ -54,6 +54,12 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
       return null;
     }
 
+    // First-time setup: must use OTP flow, not password
+    if ((user as { mustChangePassword?: boolean }).mustChangePassword) {
+      console.error('User must set password via OTP first:', credentials.email);
+      return null;
+    }
+
     // Verify password
     const isValidPassword = await verifyPassword(credentials.password, user.password);
     if (!isValidPassword) {
@@ -133,6 +139,7 @@ export async function getUserFromToken(token: string) {
       id: user.id.toString(),
       email: user.email,
       fullName: user.fullName,
+      phone: user.phone,
       roleId: user.roleId,
       roleName: user.role.name,
       franchiseId: user.franchiseId?.toString(),

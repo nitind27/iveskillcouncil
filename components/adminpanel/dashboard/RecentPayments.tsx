@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/common/Card";
-import { DollarSign, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { IndianRupee, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Payment {
@@ -62,7 +62,7 @@ export default function RecentPayments({ payments }: RecentPaymentsProps) {
       <CardContent>
         {payments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <IndianRupee className="w-12 h-12 mx-auto mb-2 opacity-50" />
             <p>No recent payments</p>
           </div>
         ) : (
@@ -74,7 +74,7 @@ export default function RecentPayments({ payments }: RecentPaymentsProps) {
               >
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-primary" />
+                    <IndianRupee className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{payment.studentName}</p>

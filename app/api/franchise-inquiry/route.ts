@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import { getClientIdentifier } from "@/lib/rate-limit";
 import { rateLimiter, rateLimitConfig } from "@/lib/rate-limit";
 
@@ -20,16 +21,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fullName, email, phone, city, state, investmentRange, message } = body;
+    const { fullName, email, phone, city, state, investmentRange, message, franchiseId, franchiseName } = body;
 
     if (!fullName?.trim() || !email?.trim() || !phone?.trim()) {
       return errorResponse("Name, email and phone are required.", 400);
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(String(email).trim())) {
-      return errorResponse("Please enter a valid email address.", 400);
-    }
+    const nameR = validateName(String(fullName).trim());
+    const emailR = validateEmail(String(email).trim());
+    const phoneR = validatePhone(String(phone).trim());
+    if (!nameR.valid) return errorResponse(nameR.error!, 400);
+    if (!emailR.valid) return errorResponse(emailR.error!, 400);
+    if (!phoneR.valid) return errorResponse(phoneR.error!, 400);
 
     await prisma.franchiseInquiry.create({
       data: {
@@ -40,6 +42,8 @@ export async function POST(request: NextRequest) {
         state: state ? String(state).trim() : null,
         investmentRange: investmentRange ? String(investmentRange).trim() : null,
         message: message ? String(message).trim() : null,
+        franchiseId: franchiseId ? String(franchiseId).trim() : null,
+        franchiseName: franchiseName ? String(franchiseName).trim() : null,
       },
     });
 

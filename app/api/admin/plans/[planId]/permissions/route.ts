@@ -5,7 +5,7 @@ import {
   errorResponse,
   forbiddenResponse,
 } from "@/lib/api-response";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +19,8 @@ export async function GET(
     const { hasPermission, ROLES } = await import("@/lib/permissions");
     const user = await getCurrentUser();
     if (!user) return (await import("@/lib/api-response")).unauthorizedResponse();
-    const isSuperAdmin = Number(user.roleId) === ROLES.SUPER_ADMIN;
-    const canView = isSuperAdmin || (user.permissions && hasPermission(user.permissions, "subscription.plans.view"));
+    const isSuperAdminOrAdmin = Number(user.roleId) === ROLES.SUPER_ADMIN || Number(user.roleId) === ROLES.ADMIN;
+    const canView = isSuperAdminOrAdmin || (user.permissions && hasPermission(user.permissions, "subscription.plans.view"));
     if (!canView) return forbiddenResponse();
 
     const { planId } = await params;
@@ -44,7 +44,7 @@ export async function PUT(
   { params }: { params: Promise<{ planId: string }> }
 ) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return forbiddenResponse();
 
     const { planId } = await params;

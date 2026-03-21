@@ -69,9 +69,13 @@ export default function UserPanelNavbar({
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    className="relative w-11 h-11 rounded-xl bg-[var(--up-accent)] flex items-center justify-center shadow-lg border border-[var(--up-border-strong)]"
+                    className="relative w-11 h-11 rounded-xl bg-[var(--up-accent)] flex items-center justify-center shadow-lg border border-[var(--up-border-strong)] overflow-hidden"
                   >
-                    <span className="text-white font-black text-xl">{site.logoLetter}</span>
+                    {site.logoUrl ? (
+                      <img src={site.logoUrl} alt={site.name} className="w-full h-full object-contain p-1" />
+                    ) : (
+                      <span className="text-white font-black text-xl">{site.logoLetter}</span>
+                    )}
                   </motion.div>
                 </div>
                 <div className="flex flex-col">

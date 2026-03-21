@@ -24,6 +24,8 @@ export interface GlassModalProps {
   contentClassName?: string;
   /** Extra class for the overlay wrapper. */
   overlayClassName?: string;
+  /** Extra class for the backdrop (blur layer behind modal). */
+  backdropClassName?: string;
   children: React.ReactNode;
 }
 
@@ -44,6 +46,7 @@ export function GlassModal({
   closeOnEscape = true,
   contentClassName,
   overlayClassName,
+  backdropClassName,
   children,
 }: GlassModalProps) {
   useEffect(() => {
@@ -86,7 +89,7 @@ export function GlassModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 backdrop-blur-md bg-black/70"
+            className={cn("absolute inset-0 backdrop-blur-md bg-black/70", backdropClassName)}
             aria-hidden="true"
             onClick={closeOnOverlayClick ? onClose : undefined}
           />
@@ -96,7 +99,7 @@ export function GlassModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
-              "relative w-full max-h-[90vh] overflow-y-auto rounded-3xl panel-glass border border-white/10 shadow-2xl",
+              "relative w-full max-h-[90vh] overflow-y-auto scrollbar-hide rounded-3xl bg-white border border-gray-200 shadow-2xl",
               sizeClasses[size],
               contentClassName
             )}
@@ -106,7 +109,7 @@ export function GlassModal({
               {(title || showCloseButton) && (
                 <div className="flex items-center justify-between mb-6">
                   {title && (
-                    <h2 id="glass-modal-title" className="text-xl font-bold text-white">
+                    <h2 id="glass-modal-title" className="text-xl font-bold text-gray-900">
                       {title}
                     </h2>
                   )}
@@ -114,7 +117,7 @@ export function GlassModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors ml-auto"
+                      className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors ml-auto"
                       aria-label="Close"
                     >
                       <FiX className="w-5 h-5" />

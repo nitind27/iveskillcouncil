@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { getClientIdentifier } from "@/lib/rate-limit";
 import { rateLimiter, rateLimitConfig } from "@/lib/rate-limit";
 import { sendEnrollmentNotification } from "@/lib/email";
+import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -27,11 +28,12 @@ export async function POST(request: NextRequest) {
     if (!fullName?.trim() || !email?.trim() || !phone?.trim() || !courseName?.trim()) {
       return errorResponse("Name, email, phone and course are required.", 400);
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(String(email).trim())) {
-      return errorResponse("Please enter a valid email address.", 400);
-    }
+    const nameR = validateName(String(fullName).trim());
+    const emailR = validateEmail(String(email).trim());
+    const phoneR = validatePhone(String(phone).trim());
+    if (!nameR.valid) return errorResponse(nameR.error!, 400);
+    if (!emailR.valid) return errorResponse(emailR.error!, 400);
+    if (!phoneR.valid) return errorResponse(phoneR.error!, 400);
 
     await prisma.courseEnrollmentRequest.create({
       data: {

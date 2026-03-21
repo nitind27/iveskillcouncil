@@ -27,7 +27,7 @@ import {
   ClipboardCheck,
   Award,
   UserCheck,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   Shield,
   FileCheck,
@@ -121,7 +121,7 @@ const menuSections: SidebarSection[] = [
       {
         id: "fees",
         label: "Fee Management",
-        icon: DollarSign,
+        icon: IndianRupee,
         href: "/fees",
         children: [
           {
@@ -133,7 +133,7 @@ const menuSections: SidebarSection[] = [
           {
             id: "payments",
             label: "Payments",
-            icon: DollarSign,
+            icon: IndianRupee,
             href: "/fees/payments",
           },
           {
@@ -201,7 +201,7 @@ const menuSections: SidebarSection[] = [
       {
         id: "staff-salary",
         label: "Salary Management",
-        icon: DollarSign,
+        icon: IndianRupee,
         href: "/staff/salary",
       },
     ],

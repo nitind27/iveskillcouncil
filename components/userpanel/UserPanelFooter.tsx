@@ -41,9 +41,13 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
             className="space-y-4"
           >
             <div className="flex items-center gap-3">
-              <span className="w-12 h-12 rounded-xl bg-[var(--up-accent)] flex items-center justify-center font-bold text-xl text-white shadow-lg border border-[var(--up-border)]">
-                {site.logoLetter}
-              </span>
+              {site.logoUrl ? (
+                <img src={site.logoUrl} alt={site.name} className="w-12 h-12 rounded-xl object-contain bg-white/10 p-1 shadow-lg border border-[var(--up-border)]" />
+              ) : (
+                <span className="w-12 h-12 rounded-xl bg-[var(--up-accent)] flex items-center justify-center font-bold text-xl text-white shadow-lg border border-[var(--up-border)]">
+                  {site.logoLetter}
+                </span>
+              )}
               <span className="font-bold text-lg text-[var(--up-text)]">{site.name}</span>
             </div>
             <p className="text-[var(--up-text-muted)] text-sm leading-relaxed">{footer.tagline}</p>

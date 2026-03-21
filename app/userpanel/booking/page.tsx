@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { usePincodeLookup } from "@/hooks/usePincodeLookup";
 import {
   FiArrowLeft,
   FiUser,
@@ -19,6 +20,7 @@ import {
 } from "react-icons/fi";
 import { useCourseCart } from "@/contexts/CourseCartContext";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
+import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import type { CourseItem } from "@/config/userpanel.config";
 
 function getSlug(c: CourseItem): string {
@@ -30,6 +32,13 @@ function BookingContent() {
   const openEnquire = searchParams?.get("enquire") === "1";
   const config = useUserPanelConfig();
   const { items, remove, clear } = useCourseCart();
+
+  // Direct enrolment from franchise course page (URL params)
+  const directFranchiseId = searchParams?.get("franchiseId") || "";
+  const directCourseId = searchParams?.get("courseId") || "";
+  const directCourseName = searchParams?.get("courseName") || "";
+  const directFee = searchParams?.get("fee") || "";
+  const directEnrolment = !!(directFranchiseId && directCourseId && directCourseName);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -41,44 +50,32 @@ function BookingContent() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [pincodeLoading, setPincodeLoading] = useState(false);
-  const [pincodeError, setPincodeError] = useState("");
+
+  const { fetchByPincode, loading: pincodeLoading, error: pincodeError, clearError: clearPincodeError } = usePincodeLookup((data) => {
+    setArea(data.area);
+    setCity(data.city);
+    setState(data.state);
+  });
 
   useEffect(() => {
     if (openEnquire) return;
   }, [openEnquire]);
 
-  const fetchPincode = useCallback(async () => {
-    const pin = String(pincode).trim().replace(/\D/g, "").slice(0, 6);
-    if (pin.length !== 6) {
-      setPincodeError("Enter a valid 6-digit pincode");
-      return;
-    }
-    setPincodeError("");
-    setPincodeLoading(true);
-    try {
-      const res = await fetch(`/api/pincode/${pin}`);
-      const json = await res.json();
-      const data = json?.data;
-      if (data?.found) {
-        setArea(data.area || "");
-        setCity(data.city || "");
-        setState(data.state || "");
-      } else {
-        setPincodeError("No details found for this pincode");
-      }
-    } catch {
-      setPincodeError("Could not fetch location. Try again.");
-    } finally {
-      setPincodeLoading(false);
-    }
-  }, [pincode]);
+  const fetchPincode = () => fetchByPincode(pincode);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nameR = validateName(fullName);
+    const emailR = validateEmail(email);
+    const phoneR = validatePhone(phone);
+    if (!nameR.valid) { setErrorMsg(nameR.error!); setStatus("idle"); return; }
+    if (!emailR.valid) { setErrorMsg(emailR.error!); setStatus("idle"); return; }
+    if (!phoneR.valid) { setErrorMsg(phoneR.error!); setStatus("idle"); return; }
     setErrorMsg("");
     setStatus("submitting");
-    const courseNames = items.map((i) => i.course.title).join(", ");
+    const courseNames = directEnrolment
+      ? decodeURIComponent(directCourseName)
+      : items.map((i) => i.course.title).join(", ");
     try {
       const res = await fetch("/api/enrollment", {
         method: "POST",
@@ -103,7 +100,7 @@ function BookingContent() {
         return;
       }
       setStatus("success");
-      clear();
+      if (!directEnrolment) clear();
     } catch {
       setStatus("error");
       setErrorMsg("Network error. Please try again.");
@@ -114,7 +111,9 @@ function BookingContent() {
   const cartIds = new Set(items.map((i) => i.course.id));
   const suggestedCourses = allCourses.filter((c) => !cartIds.has(c.id)).slice(0, 4);
 
-  if (items.length === 0 && status !== "success") {
+  const hasCourses = directEnrolment || items.length > 0;
+
+  if (!hasCourses && status !== "success") {
     return (
       <div className="min-h-screen py-24 px-4 text-center">
         <motion.div
@@ -127,10 +126,10 @@ function BookingContent() {
             Add courses from the courses page to book or enquire.
           </p>
           <Link
-            href="/userpanel/courses"
+            href={directEnrolment ? "/userpanel/franchises" : "/userpanel/courses"}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-accent)] text-white font-semibold"
           >
-            Browse courses <FiArrowLeft className="w-4 h-4 rotate-180" />
+            {directEnrolment ? "Browse franchises" : "Browse courses"} <FiArrowLeft className="w-4 h-4 rotate-180" />
           </Link>
         </motion.div>
       </div>
@@ -153,10 +152,10 @@ function BookingContent() {
             We have received your enquiry. Our team will contact you shortly.
           </p>
           <Link
-            href="/userpanel/courses"
+            href={directEnrolment ? "/userpanel/franchises" : "/userpanel/courses"}
             className="inline-flex items-center gap-2 text-[var(--up-accent)] font-semibold"
           >
-            Back to courses <FiArrowLeft className="w-4 h-4 rotate-180" />
+            Back to {directEnrolment ? "franchises" : "courses"} <FiArrowLeft className="w-4 h-4 rotate-180" />
           </Link>
         </motion.div>
       </div>
@@ -172,10 +171,10 @@ function BookingContent() {
           className="mb-6 sm:mb-8"
         >
           <Link
-            href="/userpanel/courses"
+            href={directEnrolment ? `/userpanel/franchise/${directFranchiseId}/courses` : "/userpanel/courses"}
             className="inline-flex items-center gap-2 text-[var(--up-text-muted)] hover:text-[var(--up-accent)] transition-colors text-sm font-medium"
           >
-            <FiArrowLeft className="w-4 h-4" /> Back to courses
+            <FiArrowLeft className="w-4 h-4" /> Back to {directEnrolment ? "courses" : "courses"}
           </Link>
         </motion.div>
 
@@ -189,40 +188,60 @@ function BookingContent() {
           >
             <h2 className="text-lg font-bold text-[var(--up-text)] mb-4">Selected courses</h2>
             <div className="space-y-3">
-              {items.map(({ course }) => (
-                <div
-                  key={course.id}
-                  className="flex gap-3 p-4 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)]"
-                >
-                  <img
-                    src={course.image}
-                    alt=""
-                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                  />
+              {directEnrolment ? (
+                <div className="flex gap-3 p-4 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)]">
+                  <div className="w-16 h-16 rounded-lg bg-[var(--up-bg-muted)] flex items-center justify-center flex-shrink-0">
+                    <FiBook className="w-8 h-8 text-[var(--up-accent)]" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[var(--up-text)] text-sm line-clamp-2">
-                      {course.title}
+                      {decodeURIComponent(directCourseName)}
                     </p>
-                    <p className="text-xs text-[var(--up-text-muted)]">{course.duration}</p>
+                    {directFee && (
+                      <p className="text-xs text-[var(--up-text-muted)]">
+                        ₹{Number(directFee).toLocaleString("en-IN")}
+                      </p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => remove(course.id)}
-                    className="p-2 rounded-lg text-[var(--up-text-muted)] hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
-                    aria-label="Remove"
-                  >
-                    <FiTrash2 className="w-4 h-4" />
-                  </button>
                 </div>
-              ))}
+              ) : (
+                items.map(({ course }) => (
+                  <div
+                    key={course.id}
+                    className="flex gap-3 p-4 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)]"
+                  >
+                    <img
+                      src={course.image}
+                      alt=""
+                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[var(--up-text)] text-sm line-clamp-2">
+                        {course.title}
+                      </p>
+                      <p className="text-xs text-[var(--up-text-muted)]">{course.duration}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(course.id)}
+                      className="p-2 rounded-lg text-[var(--up-text-muted)] hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                      aria-label="Remove"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => clear()}
-              className="mt-3 text-sm text-[var(--up-text-muted)] hover:text-[var(--up-accent)]"
-            >
-              Clear all
-            </button>
+            {!directEnrolment && (
+              <button
+                type="button"
+                onClick={() => clear()}
+                className="mt-3 text-sm text-[var(--up-text-muted)] hover:text-[var(--up-accent)]"
+              >
+                Clear all
+              </button>
+            )}
           </motion.div>
 
           {/* Enquire form - full details */}
@@ -320,7 +339,7 @@ function BookingContent() {
                         onChange={(e) => {
                           const v = e.target.value.replace(/\D/g, "").slice(0, 6);
                           setPincode(v);
-                          setPincodeError("");
+                          clearPincodeError();
                         }}
                         onBlur={fetchPincode}
                         placeholder="e.g. 110001"
@@ -414,8 +433,8 @@ function BookingContent() {
               </form>
             </div>
 
-            {/* More courses you might like */}
-            {suggestedCourses.length > 0 && (
+            {/* More courses you might like - only when using cart, not direct enrolment */}
+            {!directEnrolment && suggestedCourses.length > 0 && (
               <motion.section
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}

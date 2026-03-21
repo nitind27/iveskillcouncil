@@ -48,6 +48,7 @@ export default function FranchisesPage() {
         description="Create a new franchise and owner account. Credentials will be sent to the owner email."
       >
         <AddFranchiseForm
+          key={addModalOpen ? "open" : "closed"}
           onSuccess={handleAddSuccess}
           onCancel={() => setAddModalOpen(false)}
         />

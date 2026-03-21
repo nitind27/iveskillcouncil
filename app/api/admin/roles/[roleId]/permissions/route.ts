@@ -6,7 +6,7 @@ import {
   errorResponse,
   forbiddenResponse,
 } from "@/lib/api-response";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +43,7 @@ export async function PUT(
   { params }: { params: Promise<{ roleId: string }> }
 ) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) return forbiddenResponse();
 
     const { roleId } = await params;

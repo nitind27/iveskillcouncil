@@ -35,9 +35,9 @@ export default function AdminLayout({
 
   const roleId = Number(user?.roleId) || 0;
   const pathNormalized = pn.replace(/\/$/, "").trim() || "/";
-  const isSuperAdmin = roleId === ROLES.SUPER_ADMIN;
+  const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
   const hasAccess =
-    isSuperAdmin ||
+    isSuperAdminOrAdmin ||
     pathNormalized === "/dashboard" ||
     canRoleAccessPath(roleId, pn);
   useEffect(() => {

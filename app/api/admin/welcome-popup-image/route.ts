@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
-import { requireSuperAdmin } from "@/lib/api-auth";
+import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 import { errorResponse, forbiddenResponse, unauthorizedResponse, successResponse } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ async function safeUnlink(filePath: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireSuperAdmin();
+    const user = await requireSuperAdminOrAdmin();
     if (!user) {
       // If authenticated but not super admin, requireSuperAdmin returns null.
       // We keep response strict for security.

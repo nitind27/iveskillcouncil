@@ -104,7 +104,7 @@ export default function WelcomePopupModal({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 p-2 rounded-xl bg-black/40 hover:bg-white/15 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 p-2 rounded-xl bg-black/40 hover:bg-red-500 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
               aria-label="Close"
             >
               <FiX className="w-5 h-5 sm:w-6 sm:h-6" />

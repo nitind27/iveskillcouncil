@@ -11,17 +11,8 @@ export const ROLES = {
 export function filterMenuByRole(menuSections: any[], roleId: number, franchiseId?: string) {
   return menuSections.map((section) => {
     const filteredItems = section.items.filter((item: any) => {
-      // Super Admin - Full access
-      if (roleId === ROLES.SUPER_ADMIN) {
-        return true;
-      }
-
-      // Admin - Most access except subscription management
-      if (roleId === ROLES.ADMIN) {
-        // Hide subscription plans management
-        if (item.id === 'plans') {
-          return false;
-        }
+      // Super Admin & Admin (Institute Admin) - Full access, same functionality
+      if (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN) {
         return true;
       }
 

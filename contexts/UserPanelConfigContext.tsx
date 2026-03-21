@@ -18,6 +18,7 @@ function mergeConfig(data: unknown): UserPanelConfig {
     franchise: (c.franchise as UserPanelConfig["franchise"]) ?? defaultConfig.franchise,
     offers: (c.offers as UserPanelConfig["offers"]) ?? defaultConfig.offers,
     gallery: (c.gallery as UserPanelConfig["gallery"]) ?? defaultConfig.gallery,
+    testimonials: (c.testimonials as UserPanelConfig["testimonials"]) ?? defaultConfig.testimonials,
     footer: (c.footer as UserPanelConfig["footer"]) ?? defaultConfig.footer,
   };
 }

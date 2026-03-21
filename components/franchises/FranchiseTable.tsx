@@ -5,7 +5,8 @@ import useSWR from "swr";
 import { Table, type TableColumn } from "@/components/common/Table";
 import { Card } from "@/components/common/Card";
 import { Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from "@/components/common/Modal";
-import { Edit, Trash2, Eye, Building2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Edit, Trash2, Eye, Building2, CheckCircle2, XCircle, Clock, BookOpen, Mail, Loader2, Copy } from "lucide-react";
+import FranchiseCourseManager from "./FranchiseCourseManager";
 import { cn } from "@/lib/utils";
 import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
 import { fetcherWithPagination } from "@/lib/fetcher";
@@ -41,6 +42,9 @@ export default function FranchiseTable() {
   const [page, setPage] = useState(1);
   const [selectedFranchise, setSelectedFranchise] = useState<Franchise | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [courseManagerOpen, setCourseManagerOpen] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCredentials, setResendCredentials] = useState<{ email: string; password: string; loginUrl: string } | null>(null);
 
   const { data, error, isLoading, mutate } = useSWR(
     `/api/franchises?page=${page}&limit=10`,
@@ -273,6 +277,113 @@ export default function FranchiseTable() {
                   </p>
                 </div>
               )}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewModalOpen(false);
+                    setCourseManagerOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Manage Courses
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!selectedFranchise) return;
+                    setResendLoading(true);
+                    try {
+                      const res = await fetch(`/api/franchises/${selectedFranchise.id}/resend-credentials`, {
+                        method: "POST",
+                        credentials: "include",
+                      });
+                      const data = await res.json();
+                      if (res.ok && data?.data?.credentials) {
+                        setResendCredentials(data.data.credentials);
+                        if (data.data.emailSent) {
+                          showSuccess("Sent", "New credentials sent to owner email.");
+                        } else {
+                          showSuccess("Generated", "New password generated. Copy and share manually.");
+                        }
+                      } else {
+                        showError("Error", data?.error || "Failed to resend credentials.");
+                      }
+                    } catch {
+                      showError("Error", "Network error.");
+                    } finally {
+                      setResendLoading(false);
+                    }
+                  }}
+                  disabled={resendLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-input hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  {resendLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  Resend Credentials
+                </button>
+              </div>
+            </div>
+          </ModalBody>
+        )}
+      </Modal>
+
+      <FranchiseCourseManager
+        open={courseManagerOpen}
+        onClose={() => setCourseManagerOpen(false)}
+        franchiseId={selectedFranchise?.id ?? ""}
+        franchiseName={selectedFranchise?.name ?? ""}
+        onUpdated={refreshList}
+      />
+
+      {/* Resend credentials modal */}
+      <Modal
+        open={!!resendCredentials}
+        onClose={() => setResendCredentials(null)}
+        size="md"
+        title="Login Credentials"
+      >
+        {resendCredentials && (
+          <ModalBody>
+            <p className="text-sm text-muted-foreground mb-4">
+              Share these with the franchise owner. New password has been set.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <p className="font-mono text-sm mt-1">{resendCredentials.email}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Password</label>
+                <div className="flex gap-2 mt-1">
+                  <p className="font-mono text-sm flex-1 bg-muted/50 px-3 py-2 rounded-lg">{resendCredentials.password}</p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(resendCredentials.password);
+                        showSuccess("Copied", "Password copied to clipboard");
+                      } catch {}
+                    }}
+                    className="px-3 py-2 rounded-lg border hover:bg-muted"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Login URL</label>
+                <p className="text-sm mt-1 break-all">{resendCredentials.loginUrl}</p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setResendCredentials(null)}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground"
+              >
+                Done
+              </button>
             </div>
           </ModalBody>
         )}

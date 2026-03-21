@@ -48,6 +48,11 @@ const pathTitleMap: Record<string, string> = {
   "my-fees": "My Fees",
   certificate: "Certificate",
   "assigned-students": "Assigned Students",
+  enquiries: "Course Enquiries",
+  "franchise-inquiries": "Franchise Inquiries",
+  "offer-applications": "Offer Applications",
+  profile: "Profile",
+  account: "Account Settings",
 };
 
 export default function Breadcrumb({

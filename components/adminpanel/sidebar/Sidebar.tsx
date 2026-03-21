@@ -11,6 +11,7 @@ import {
   PanelLeftOpen,
   Building2,
 } from "lucide-react";
+import { useLogoConfig } from "@/hooks/useLogoConfig";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMenuForRole, type RoleMenuItem } from "@/lib/role-menu-config";
@@ -40,6 +41,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const pn = pathname || "";
+  const { logoUrl, siteName } = useLogoConfig();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const roleId = user?.roleId ?? 0;
   const menuSectionsFiltered = getMenuForRole(roleId);
@@ -182,14 +184,24 @@ export default function Sidebar({
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
           {!isCollapsed && (
-            <h2 className="text-lg font-semibold text-sidebar-foreground">
-              Franchise Institute
-            </h2>
+            <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt={siteName} className="h-8 w-auto max-w-[140px] object-contain" />
+              ) : (
+                <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
+                  {siteName || "Franchise Institute"}
+                </h2>
+              )}
+            </Link>
           )}
           {isCollapsed && (
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <Link href="/dashboard" className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center overflow-hidden flex-shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt={siteName} className="w-full h-full object-contain p-1" />
+              ) : (
+                <Building2 className="w-5 h-5 text-primary-foreground" />
+              )}
+            </Link>
           )}
           <button
             onClick={() => {
@@ -235,8 +247,8 @@ export default function Sidebar({
         <div className="p-4 border-t border-sidebar-border">
           {!isCollapsed && (
             <div className="px-3 py-2 text-xs text-sidebar-foreground/70">
-              <p className="font-medium">Franchise Institute</p>
-              <p className="text-xs">Management System v1.0.0</p>
+              <p className="font-medium truncate">{siteName || "Franchise Institute"}</p>
+              <p className="text-xs">Management System</p>
             </div>
           )}
         </div>
