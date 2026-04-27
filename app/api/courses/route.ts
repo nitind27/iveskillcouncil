@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, type, baseFee, durationMonths } = body;
+    const { name, description, type, category, baseFee, durationMonths } = body;
 
     if (!name?.trim() || !type || baseFee == null || durationMonths == null) {
       return NextResponse.json(
@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
         name: String(name).trim(),
         description: description ? String(description).trim() : null,
         type,
+        category: category ? String(category).trim() : null,
         baseFee: Number(baseFee),
         durationMonths: Number(durationMonths),
         status: "ACTIVE",

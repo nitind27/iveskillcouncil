@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowRight, FiClock, FiBook, FiArrowLeft, FiMapPin } from "react-icons/fi";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
+import { SectionLoader } from "@/components/common/PageLoader";
 
 interface FranchiseCourse {
   id: string;
@@ -53,15 +54,8 @@ export default function FranchiseCoursesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen py-24 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="w-14 h-14 rounded-2xl bg-[var(--up-accent)]/20 border-2 border-[var(--up-accent)]/40 animate-pulse" />
-          <p className="text-[var(--up-text-muted)] font-medium">Loading courses...</p>
-        </motion.div>
+      <div className="min-h-screen py-24">
+        <SectionLoader text="Loading courses..." />
       </div>
     );
   }

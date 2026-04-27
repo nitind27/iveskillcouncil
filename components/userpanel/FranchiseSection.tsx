@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase, FiExternalLink } from "react-icons/fi";
+import { motion } from "framer-motion";
+import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase, FiExternalLink, FiCheckCircle } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import FranchiseInquiryModal from "./FranchiseInquiryModal";
 
 interface FranchiseSectionProps {
   config: UserPanelConfig;
 }
+
+const perks = [
+  "Full training & onboarding support",
+  "Marketing & branding materials",
+  "Dedicated franchise manager",
+  "Revenue sharing model",
+];
 
 export default function FranchiseSection({ config }: FranchiseSectionProps) {
   const [inquiryOpen, setInquiryOpen] = useState(false);
@@ -24,121 +31,147 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
 
   return (
     <>
-      <section id="franchise" className="relative py-24 px-4 sm:px-6 lg:px-8 panel-perspective overflow-hidden bg-[var(--up-bg-muted)]">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--up-accent)]/[0.05] blur-[100px] rounded-full -z-10" />
-        <div className="max-w-5xl mx-auto space-y-12">
+      <section id="franchise" className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[var(--up-bg)]">
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#2D5DA8]/[0.04] blur-[140px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#A8C63A]/[0.05] blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative space-y-16">
+
+          {/* heading */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative"
+            className="text-center"
           >
-            <div className="absolute -inset-1 bg-[var(--up-accent)]/10 rounded-3xl blur-xl opacity-0 hover:opacity-60 transition duration-500" />
-            <div className="relative rounded-3xl bg-[var(--up-bg-card)] border border-[var(--up-border)] p-8 md:p-10 text-center md:text-left shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-[var(--up-accent)]/15 flex items-center justify-center border border-[var(--up-accent)]/20 flex-shrink-0">
-                    <FiBriefcase className="w-7 h-7 text-[var(--up-accent)]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-bold text-[var(--up-text)] mb-1">
-                      Want to take a franchise?
-                    </h3>
-                    <p className="text-[var(--up-text-muted)] text-sm md:text-base">
-                      Partner with us. Share your details and our team will contact you with options and support.
-                    </p>
-                  </div>
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#A8C63A]/15 border border-[#A8C63A]/30 text-[#8FA92F] text-sm font-semibold uppercase tracking-wider mb-4">
+              <FiBriefcase className="w-4 h-4" /> Franchise
+            </span>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1A1A1A] tracking-tight">
+              {franchise?.sectionTitle || "Grow With Us"}
+            </h2>
+            <p className="text-[#6B7280] mt-3 text-lg max-w-xl mx-auto">
+              Join our franchise network and build a successful education business.
+            </p>
+          </motion.div>
+
+          {/* CTA banner — Blue brand gradient */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative rounded-3xl overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#2D5DA8] via-[#1E4A85] to-[#1a3d70]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(168,198,58,0.15),transparent)]" />
+            <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
+                  Ready to open your own branch?
+                </h3>
+                <p className="text-white/75 text-base max-w-lg">
+                  Partner with us and get full support — from setup to operations. Our team is with you every step.
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-2 max-w-sm">
+                  {perks.map((p) => (
+                    <div key={p} className="flex items-center gap-2 text-white/80 text-sm">
+                      <FiCheckCircle className="w-4 h-4 text-[#A8C63A] flex-shrink-0" />
+                      {p}
+                    </div>
+                  ))}
                 </div>
+              </div>
+              <div className="flex flex-col gap-3 flex-shrink-0">
+                <Link href="/userpanel/franchise-plans">
+                  <motion.span
+                    whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)" }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-[#F39C12] text-white font-extrabold text-base shadow-xl hover:bg-[#D68910] transition-all cursor-pointer"
+                  >
+                    View Plans &amp; Buy
+                    <FiArrowRight className="w-5 h-5" />
+                  </motion.span>
+                </Link>
                 <motion.button
                   type="button"
                   onClick={() => openInquiry(null)}
                   whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-shrink-0 px-8 py-4 rounded-xl bg-[var(--up-accent)] font-bold text-white shadow-lg border border-[var(--up-border)] hover:bg-[var(--up-accent-hover)] transition-all"
+                  whileTap={{ scale: 0.97 }}
+                  className="px-8 py-3 rounded-2xl bg-white/10 border border-white/25 text-white font-semibold text-sm hover:bg-white/20 transition-all"
                 >
-                  Apply for Franchise
+                  Just Enquire
                 </motion.button>
               </div>
             </div>
           </motion.div>
 
+          {/* featured branch */}
           {highlight && (
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ type: "spring", stiffness: 80, damping: 20 }}
-              whileHover={{ y: -4 }}
-              className="relative group"
+              className="rounded-3xl overflow-hidden border border-[var(--up-border)] shadow-xl bg-white"
             >
-              <div className="absolute -inset-1 bg-[var(--up-accent)]/10 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-50 transition duration-700" />
-              <div className="relative rounded-3xl overflow-hidden bg-[var(--up-bg-card)] border border-[var(--up-border)] group-hover:border-[var(--up-accent)]/30 shadow-xl transition-all duration-500">
-                <div className="grid md:grid-cols-2">
-                  <div className="relative min-h-[280px] md:min-h-[360px] overflow-hidden">
-                    <motion.img
-                      src={highlight.image}
-                      alt={highlight.name}
-                      className="w-full h-full object-cover"
-                      whileHover={{ scale: 1.08 }}
-                      transition={{ duration: 0.7 }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent md:from-transparent md:via-transparent md:to-black/50" />
-                  </div>
-                  <div className="p-8 md:p-10 flex flex-col justify-center">
-                    <span className="text-[var(--up-accent)] text-xs font-bold uppercase tracking-wider mb-2">
-                      {franchise.sectionTitle || "Featured Branch"}
+              <div className="grid md:grid-cols-2">
+                {/* image */}
+                <div className="relative min-h-[280px] md:min-h-[380px] overflow-hidden">
+                  <img src={highlight.image} alt={highlight.name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/50 via-black/10 to-transparent" />
+                  <div className="absolute bottom-4 left-4">
+                    <span className="px-3 py-1.5 rounded-xl bg-[#A8C63A] text-[#1A1A1A] text-xs font-bold uppercase tracking-wider shadow-lg">
+                      Featured Branch
                     </span>
-                    <h2 className="text-2xl md:text-4xl font-bold text-[var(--up-text)] mb-6 tracking-tight">
+                  </div>
+                </div>
+
+                {/* info */}
+                <div className="p-8 md:p-10 flex flex-col justify-center gap-6">
+                  <div>
+                    <p className="text-[#2D5DA8] text-xs font-bold uppercase tracking-wider mb-1">
+                      {franchise.sectionTitle || "Spotlight"}
+                    </p>
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#1A1A1A]">
                       {highlight.name}
-                    </h2>
-                    <ul className="space-y-4 text-[var(--up-text-muted)]">
-                      <li className="flex items-center gap-3">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--up-accent)]/15 flex items-center justify-center border border-[var(--up-accent)]/20">
-                          <FiMapPin className="w-5 h-5 text-[var(--up-accent)]" />
+                    </h3>
+                  </div>
+
+                  <ul className="space-y-3">
+                    {[
+                      { icon: FiMapPin, value: highlight.location },
+                      { icon: FiUser, value: `Head: ${highlight.head}` },
+                      { icon: FiPhone, value: highlight.contact },
+                      { icon: FiMail, value: highlight.email },
+                    ].map(({ icon: Icon, value }) => (
+                      <li key={value} className="flex items-center gap-3 text-[#6B7280] text-sm">
+                        <span className="w-8 h-8 rounded-lg bg-[#2D5DA8]/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-[#2D5DA8]" />
                         </span>
-                        {highlight.location}
+                        {value}
                       </li>
-                      <li className="flex items-center gap-3">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--up-accent)]/15 flex items-center justify-center border border-[var(--up-accent)]/20">
-                          <FiUser className="w-5 h-5 text-[var(--up-accent)]" />
-                        </span>
-                        Head: {highlight.head}
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--up-accent)]/15 flex items-center justify-center border border-[var(--up-accent)]/20">
-                          <FiPhone className="w-5 h-5 text-[var(--up-accent)]" />
-                        </span>
-                        {highlight.contact}
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--up-accent)]/15 flex items-center justify-center border border-[var(--up-accent)]/20">
-                          <FiMail className="w-5 h-5 text-[var(--up-accent)]" />
-                        </span>
-                        {highlight.email}
-                      </li>
-                    </ul>
-                    <div className="mt-8 flex flex-wrap gap-3">
-                      <motion.button
-                        type="button"
-                        onClick={() => openInquiry({ name: highlight.name })}
-                        whileHover={{ scale: 1.03, boxShadow: "0 8px 25px -5px rgb(0 0 0 / 0.1)" }}
-                        whileTap={{ scale: 0.98 }}
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-accent)] text-white font-semibold shadow-lg hover:bg-[var(--up-accent-hover)] transition-all"
+                    ))}
+                  </ul>
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <motion.button
+                      type="button"
+                      onClick={() => openInquiry({ name: highlight.name })}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold shadow-lg hover:bg-[#1E4A85] transition-all text-sm"
+                    >
+                      Visit & Enquire <FiExternalLink className="w-4 h-4" />
+                    </motion.button>
+                    <Link href={highlight.detailsUrl || "/userpanel/franchises"}>
+                      <motion.span
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--up-border)] text-[#374151] font-semibold hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] transition-all text-sm cursor-pointer"
                       >
-                        Visit & Enquire
-                        <FiExternalLink className="w-4 h-4" />
-                      </motion.button>
-                      <Link href={highlight.detailsUrl || "/userpanel/franchises"}>
-                        <motion.span
-                          whileHover={{ x: 6 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-bg-muted)] border border-[var(--up-border)] hover:bg-[var(--up-accent)]/15 hover:border-[var(--up-accent)]/30 font-semibold w-fit transition-all text-[var(--up-text)] cursor-pointer"
-                        >
-                          View All Franchises
-                          <FiArrowRight className="w-4 h-4" />
-                        </motion.span>
-                      </Link>
-                    </div>
+                        All Franchises <FiArrowRight className="w-4 h-4" />
+                      </motion.span>
+                    </Link>
                   </div>
                 </div>
               </div>

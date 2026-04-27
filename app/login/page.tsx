@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { showSuccess, showError } from "@/lib/toast";
 import { validateName, validateEmail } from "@/lib/validation";
 import { useLogoConfig } from "@/hooks/useLogoConfig";
+import PageLoader from "@/components/common/PageLoader";
 
 type LoginMethod = "password" | "otp";
 type OverlayFlow = "forgot" | "firstTime" | null;
@@ -697,7 +698,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}>
+    <Suspense fallback={<PageLoader text="Loading..." />}>
       <LoginForm />
     </Suspense>
   );

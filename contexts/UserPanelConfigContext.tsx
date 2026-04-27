@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { defaultConfig } from "@/config/userpanel.config";
 import type { UserPanelConfig } from "@/config/userpanel.config";
+import PageLoader from "@/components/common/PageLoader";
 
 function mergeConfig(data: unknown): UserPanelConfig {
   if (!data || typeof data !== "object") return defaultConfig;
@@ -45,11 +46,8 @@ export function UserPanelConfigProvider({
 
   if (loading) {
     return (
-      <div className="userpanel min-h-screen bg-[var(--up-bg)] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[var(--up-accent)] animate-pulse" />
-          <p className="text-[var(--up-text-muted)] text-sm">Loading...</p>
-        </div>
+      <div className="userpanel">
+        <PageLoader text="Setting up your portal..." />
       </div>
     );
   }

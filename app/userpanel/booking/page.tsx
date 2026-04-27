@@ -22,6 +22,7 @@ import { useCourseCart } from "@/contexts/CourseCartContext";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import type { CourseItem } from "@/config/userpanel.config";
+import { SectionLoader } from "@/components/common/PageLoader";
 
 function getSlug(c: CourseItem): string {
   return c.slug || c.id;

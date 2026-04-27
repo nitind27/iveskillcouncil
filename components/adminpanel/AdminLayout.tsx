@@ -6,7 +6,7 @@ import Sidebar from "@/components/adminpanel/sidebar/Sidebar";
 import Navbar from "@/components/adminpanel/navbar/Navbar";
 import Footer from "@/components/adminpanel/footer/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import PageLoader from "@/components/common/PageLoader";
 import { canRoleAccessPath } from "@/lib/role-menu-config";
 import { ROLES } from "@/lib/permissions";
 
@@ -47,14 +47,7 @@ export default function AdminLayout({
   }, [loading, user, hasAccess, pn, router]);
 
   if (loading && !isLoginPage && !isUserPanelPage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader variant="admin" text="Loading dashboard..." />;
   }
 
   if (isLoginPage || isUserPanelPage) {

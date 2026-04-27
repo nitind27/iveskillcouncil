@@ -42,9 +42,14 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
           >
             <div className="flex items-center gap-3">
               {site.logoUrl ? (
-                <img src={site.logoUrl} alt={site.name} className="w-12 h-12 rounded-xl object-contain bg-white/10 p-1 shadow-lg border border-[var(--up-border)]" />
+                <img
+                  src={site.logoUrl}
+                  alt={site.name}
+                  className="h-12 w-auto max-w-[160px] object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
               ) : (
-                <span className="w-12 h-12 rounded-xl bg-[var(--up-accent)] flex items-center justify-center font-bold text-xl text-white shadow-lg border border-[var(--up-border)]">
+                <span className="w-12 h-12 rounded-xl bg-[var(--up-accent)] flex items-center justify-center font-bold text-xl text-white shadow-lg">
                   {site.logoLetter}
                 </span>
               )}

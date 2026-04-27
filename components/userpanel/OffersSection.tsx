@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiTag, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import { FiTag, FiChevronRight, FiChevronLeft, FiArrowRight } from "react-icons/fi";
 import OfferModal from "./OfferModal";
 import OfferApplyFormModal from "./OfferApplyFormModal";
 import type { OfferItem, UserPanelConfig } from "@/config/userpanel.config";
@@ -23,105 +23,127 @@ export default function OffersSection({ config }: OffersSectionProps) {
   const currentOffer = items[slideIndex];
   const hasMultiple = items.length > 1;
 
-  const goPrev = () => {
-    setSlideIndex((i) => (i === 0 ? items.length - 1 : i - 1));
-  };
-  const goNext = () => {
-    setSlideIndex((i) => (i === items.length - 1 ? 0 : i + 1));
-  };
+  const goPrev = () => setSlideIndex((i) => (i === 0 ? items.length - 1 : i - 1));
+  const goNext = () => setSlideIndex((i) => (i === items.length - 1 ? 0 : i + 1));
 
   return (
     <>
-      <section id="offers" className="relative py-24 px-4 sm:px-6 lg:px-8 panel-perspective overflow-hidden bg-[var(--up-bg)]">
-        <div className="absolute top-1/2 left-0 w-96 h-96 bg-amber-500/10 blur-[120px] rounded-full -z-10 -translate-y-1/2" />
-        <div className="max-w-7xl mx-auto relative">
+      <section id="offers" className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[var(--up-bg-muted)]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(243,156,18,0.07),transparent)] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#F39C12]/[0.06] blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto relative">
+          {/* heading */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-14"
+            className="text-center mb-16"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-700 text-sm font-semibold uppercase tracking-wider mb-3">
-              <FiTag className="w-4 h-4" /> Deals
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F39C12]/15 border border-[#F39C12]/30 text-[#D68910] text-sm font-semibold uppercase tracking-wider mb-4">
+              <FiTag className="w-4 h-4" /> Hot Deals
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-[var(--up-text)] mt-2 tracking-tight">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1A1A1A] tracking-tight">
               {offers.sectionTitle}
             </h2>
+            <p className="text-[#6B7280] mt-3 text-lg max-w-lg mx-auto">
+              Limited-time offers — grab them before they&apos;re gone.
+            </p>
           </motion.div>
 
-          {/* Single offer slider - one card visible */}
-          <div className="flex items-center justify-center gap-4">
+          {/* slider */}
+          <div className="flex items-center gap-4">
             {hasMultiple && (
-              <button
+              <motion.button
                 type="button"
                 onClick={goPrev}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 aria-label="Previous offer"
-                className="p-3 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)] hover:border-amber-500/40 text-[var(--up-text)] hover:text-amber-600 transition-all shrink-0"
+                className="w-12 h-12 rounded-2xl bg-white border border-[var(--up-border)] flex items-center justify-center text-[#374151] hover:border-[#F39C12]/50 hover:text-[#F39C12] transition-all shrink-0 shadow-sm"
               >
-                <FiChevronLeft className="w-6 h-6" />
-              </button>
+                <FiChevronLeft className="w-5 h-5" />
+              </motion.button>
             )}
 
-            <div className="flex-1 max-w-xl mx-auto overflow-hidden">
+            <div className="flex-1 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={slideIndex}
-                  initial={{ opacity: 0, x: 50 }}
+                  initial={{ opacity: 0, x: 60 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  exit={{ opacity: 0, x: -60 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                  className="relative rounded-3xl overflow-hidden cursor-pointer group"
                   onClick={() => setSelectedOffer(currentOffer)}
-                  className="group relative panel-3d cursor-pointer"
                 >
-                  <div className="absolute -inset-0.5 bg-amber-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-70 transition duration-500" />
-                  <div className="relative h-full rounded-2xl bg-[var(--up-bg-card)] border border-[var(--up-border)] group-hover:border-amber-500/40 p-8 text-center transition-all duration-500 overflow-hidden shadow-sm">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full transform translate-x-8 -translate-y-8 group-hover:scale-150 transition-transform duration-700" />
-                    <motion.span
-                      initial={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="inline-block px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-sm font-bold text-white shadow-lg mb-4 relative z-10"
-                    >
-                      {currentOffer.discount}% OFF
-                    </motion.span>
-                    <h3 className="text-xl font-bold text-[var(--up-text)] mb-2 pr-4 relative z-10 group-hover:text-amber-800 transition-colors">
-                      {currentOffer.title}
-                    </h3>
-                    <p className="text-[var(--up-text-muted)] text-sm mb-6 relative z-10 line-clamp-2">
-                      {currentOffer.description}
-                    </p>
-                    <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/25 font-medium text-sm text-amber-700 group-hover:bg-amber-500/25 transition-colors relative z-10">
-                      View Offer <FiChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
+                  {/* outer gradient border */}
+                  <div className="relative bg-gradient-to-br from-[#F39C12] via-[#D68910] to-[#2D5DA8] p-px rounded-3xl shadow-2xl">
+                    <div className="relative bg-white rounded-[calc(1.5rem-1px)] p-8 md:p-12 overflow-hidden">
+                      {/* decorative circles */}
+                      <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#F39C12]/10 group-hover:bg-[#F39C12]/20 transition-colors duration-500" />
+                      <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-[#2D5DA8]/08 group-hover:bg-[#2D5DA8]/15 transition-colors duration-500" />
+
+                      <div className="relative flex flex-col md:flex-row items-center md:items-start gap-8">
+                        {/* discount badge */}
+                        <div className="flex-shrink-0">
+                          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[#F39C12] to-[#D68910] flex flex-col items-center justify-center shadow-xl">
+                            <span className="text-4xl font-black text-white leading-none">{currentOffer.discount}%</span>
+                            <span className="text-white/80 text-xs font-bold uppercase tracking-wider mt-1">OFF</span>
+                          </div>
+                        </div>
+
+                        {/* text */}
+                        <div className="flex-1 text-center md:text-left">
+                          <span className="inline-block px-3 py-1 rounded-full bg-[#F39C12]/15 border border-[#F39C12]/30 text-[#D68910] text-xs font-bold uppercase tracking-wider mb-3">
+                            Limited Time
+                          </span>
+                          <h3 className="text-2xl md:text-3xl font-extrabold text-[#1A1A1A] mb-3 leading-tight">
+                            {currentOffer.title}
+                          </h3>
+                          <p className="text-[#6B7280] mb-6 line-clamp-2 text-base">
+                            {currentOffer.description}
+                          </p>
+                          <motion.span
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.97 }}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#F39C12] text-white font-bold shadow-lg text-sm hover:bg-[#D68910] transition-colors"
+                          >
+                            Claim Offer <FiArrowRight className="w-4 h-4" />
+                          </motion.span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </AnimatePresence>
             </div>
 
             {hasMultiple && (
-              <button
+              <motion.button
                 type="button"
                 onClick={goNext}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 aria-label="Next offer"
-                className="p-3 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)] hover:border-amber-500/40 text-[var(--up-text)] hover:text-amber-600 transition-all shrink-0"
+                className="w-12 h-12 rounded-2xl bg-white border border-[var(--up-border)] flex items-center justify-center text-[#374151] hover:border-[#F39C12]/50 hover:text-[#F39C12] transition-all shrink-0 shadow-sm"
               >
-                <FiChevronRight className="w-6 h-6" />
-              </button>
+                <FiChevronRight className="w-5 h-5" />
+              </motion.button>
             )}
           </div>
 
-          {/* Slide indicators */}
+          {/* dots */}
           {hasMultiple && (
-            <div className="flex justify-center gap-2 mt-6">
+            <div className="flex justify-center gap-2 mt-8">
               {items.map((_, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => setSlideIndex(i)}
-                  aria-label={`Go to offer ${i + 1}`}
+                  aria-label={`Offer ${i + 1}`}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    i === slideIndex
-                      ? "w-8 bg-amber-500"
-                      : "w-2 bg-[var(--up-border)] hover:bg-amber-500/50"
+                    i === slideIndex ? "w-8 bg-[#F39C12]" : "w-2 bg-[var(--up-border)] hover:bg-[#F39C12]/50"
                   }`}
                 />
               ))}
@@ -133,12 +155,8 @@ export default function OffersSection({ config }: OffersSectionProps) {
       <OfferModal
         offer={selectedOffer}
         onClose={() => setSelectedOffer(null)}
-        onApplyNow={(offer) => {
-          setSelectedOffer(null);
-          setApplyFormOffer(offer);
-        }}
+        onApplyNow={(offer) => { setSelectedOffer(null); setApplyFormOffer(offer); }}
       />
-
       <OfferApplyFormModal
         open={!!applyFormOffer}
         onClose={() => setApplyFormOffer(null)}

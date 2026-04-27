@@ -10,7 +10,7 @@ import SWRProvider from "@/components/SWRProvider";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Franchise Institute Management System",
+  title: "IVESDC",
   description: "Comprehensive franchise management system with multi-role support, subscription plans, and advanced features",
 };
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FiArrowRight, FiCheckCircle, FiAward, FiUsers } from "react-icons/fi";
+import { FiArrowRight, FiAward, FiUsers, FiZap, FiShield } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 
 function aboutButtonHref(href: string): string {
@@ -14,125 +14,139 @@ interface AboutSectionProps {
   config: UserPanelConfig;
 }
 
+const features = [
+  { icon: FiZap, label: "Fast-Track Learning", desc: "Structured curriculum for quick skill gains", color: "text-[#F39C12] bg-[#F39C12]/10" },
+  { icon: FiShield, label: "Certified Programs", desc: "Industry-recognized certifications", color: "text-[#2D5DA8] bg-[#2D5DA8]/10" },
+  { icon: FiUsers, label: "Expert Mentors", desc: "Learn from experienced professionals", color: "text-[#A8C63A] bg-[#A8C63A]/15" },
+  { icon: FiAward, label: "Award Winning", desc: "15+ national & global recognitions", color: "text-[#F39C12] bg-[#F39C12]/10" },
+];
+
 export default function AboutSection({ config }: AboutSectionProps) {
   const { about } = config;
 
-  // Animation variants for staggered children
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2, delayChildren: 0.1 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
-  };
-
   return (
-    <section id="about" className="relative py-24 px-4 overflow-hidden bg-[var(--up-bg-muted)] panel-perspective">
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--up-accent)]/[0.06] blur-[120px] rounded-full -z-10 animate-float-slow" />
-      <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-[var(--up-accent)]/[0.05] blur-[100px] rounded-full -z-10" />
+    <section id="about" className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[var(--up-bg-muted)]">
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#2D5DA8]/[0.05] blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#A8C63A]/[0.06] blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto">
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid lg:grid-cols-12 gap-12 items-start"
-        >
-          <div className="lg:col-span-5 space-y-6 panel-3d">
+      <div className="max-w-7xl mx-auto relative">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+          {/* LEFT — image + floating badges */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="relative"
+          >
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[var(--up-border)]">
+              <img src={about.image} alt={about.title} className="w-full aspect-[4/3] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/40 via-transparent to-transparent" />
+            </div>
+
+            {/* badge top-left */}
             <motion.div
-              variants={itemVariants}
-              className="relative group"
-              whileHover="visible"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="absolute -top-5 -left-5 bg-white border border-[var(--up-border)] rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3"
             >
-              <div className="absolute -inset-1 bg-[var(--up-accent)]/20 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition duration-700" />
-              <motion.div
-                whileHover={{ rotateY: -8, rotateX: 5 }}
-                transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                className="relative aspect-square rounded-2xl overflow-hidden border border-[var(--up-border)] shadow-xl panel-3d"
-              >
-                <img
-                  src={about.image}
-                  alt={about.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-              </motion.div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2D5DA8] to-[#1E4A85] flex items-center justify-center">
+                <FiUsers className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-[#1A1A1A]">10k+</div>
+                <div className="text-xs text-[#6B7280] font-medium">Happy Students</div>
+              </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
-              <motion.div whileHover={{ y: -4 }} className="p-5 rounded-2xl bg-[var(--up-bg-card)] border border-[var(--up-border)]">
-                <FiUsers className="text-[var(--up-accent)] mb-2 text-xl" />
-                <div className="text-2xl font-bold text-[var(--up-text)]">10k+</div>
-                <div className="text-xs text-[var(--up-text-muted)] uppercase tracking-widest">Happy Users</div>
-              </motion.div>
-              <motion.div whileHover={{ y: -4 }} className="p-5 rounded-2xl bg-[var(--up-bg-card)] border border-[var(--up-border)]">
-                <FiAward className="text-purple-600 mb-2 text-xl" />
-                <div className="text-2xl font-bold text-[var(--up-text)]">15+</div>
-                <div className="text-xs text-[var(--up-text-muted)] uppercase tracking-widest">Global Awards</div>
-              </motion.div>
+            {/* badge bottom-right */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.45 }}
+              className="absolute -bottom-5 -right-5 bg-white border border-[var(--up-border)] rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F39C12] to-[#D68910] flex items-center justify-center">
+                <FiAward className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-[#1A1A1A]">15+</div>
+                <div className="text-xs text-[#6B7280] font-medium">Awards Won</div>
+              </div>
             </motion.div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-7 lg:pl-8">
-            <motion.div variants={itemVariants}>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--up-accent)]/10 border border-[var(--up-accent)]/20 text-[var(--up-accent)] text-xs font-bold uppercase tracking-widest mb-6">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--up-accent)] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--up-accent)]"></span>
-                </span>
+          {/* RIGHT — content */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-8"
+          >
+            <div>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2D5DA8]/10 border border-[#2D5DA8]/20 text-[#2D5DA8] text-xs font-bold uppercase tracking-widest mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A8C63A] animate-pulse" />
                 Our Story
               </span>
-              
-              <h2 className="text-4xl md:text-5xl font-extrabold text-[var(--up-text)] mb-6 leading-tight">
+              <h2 className="text-4xl md:text-5xl font-extrabold text-[#1A1A1A] leading-tight mb-4">
                 {about.title}
               </h2>
-              
-              <p className="text-[var(--up-text-muted)] leading-relaxed mb-8 text-lg">
+              <p className="text-[#6B7280] text-lg leading-relaxed">
                 {about.description}
               </p>
+            </div>
 
-              <div className="grid sm:grid-cols-2 gap-4 mb-10">
-                {[
-                  "Innovative Solutions",
-                  "24/7 Expert Support",
-                  "Security First Mindset",
-                  "Scalable Infrastructure"
-                ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3 text-[var(--up-text-muted)]">
-                    <FiCheckCircle className="text-[var(--up-accent)] flex-shrink-0" />
-                    <span className="font-medium">{feature}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                <Link href={aboutButtonHref(about.buttonHref)}>
-                  <motion.span
-                    whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -12px rgba(29, 78, 216, 0.3)" }}
-                    whileTap={{ scale: 0.98 }}
-                    className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[var(--up-accent)] font-bold text-white shadow-lg border border-[var(--up-border-strong)] transition-all"
-                  >
-                    {about.buttonLabel}
-                    <FiArrowRight className="w-5 h-5" />
-                  </motion.span>
-                </Link>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="px-8 py-4 rounded-full bg-[var(--up-bg-card)] border border-[var(--up-border)] text-[var(--up-text)] font-medium hover:border-[var(--up-border-strong)] transition-all"
+            {/* feature grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {features.map((f, i) => (
+                <motion.div
+                  key={f.label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 + i * 0.08 }}
+                  className="group flex items-start gap-3 p-4 rounded-2xl bg-white border border-[var(--up-border)] hover:border-[#2D5DA8]/30 hover:shadow-md transition-all duration-300"
                 >
-                  View Roadmap
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${f.color}`}>
+                    <f.icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm text-[#1A1A1A]">{f.label}</div>
+                    <div className="text-xs text-[#6B7280] mt-0.5">{f.desc}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-        </motion.div>
+            {/* CTA */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link href={aboutButtonHref(about.buttonHref)}>
+                <motion.span
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#2D5DA8] font-bold text-white shadow-lg hover:bg-[#1E4A85] transition-all cursor-pointer"
+                >
+                  {about.buttonLabel}
+                  <FiArrowRight className="w-4 h-4" />
+                </motion.span>
+              </Link>
+              <motion.span
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#A8C63A] font-bold text-[#1A1A1A] shadow-md hover:bg-[#8FA92F] transition-all cursor-pointer"
+              >
+                View Courses
+                <FiArrowRight className="w-4 h-4" />
+              </motion.span>
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );

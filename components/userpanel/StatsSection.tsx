@@ -14,61 +14,58 @@ const ICON_MAP = {
   offers: FiTag,
 } as const;
 
+// IVESDC brand colors per card
+const CARD_COLORS = [
+  { gradient: "from-[#2D5DA8] to-[#1E4A85]", glow: "rgba(45,93,168,0.25)", bar: "bg-[#2D5DA8]" },
+  { gradient: "from-[#A8C63A] to-[#8FA92F]", glow: "rgba(168,198,58,0.25)", bar: "bg-[#A8C63A]" },
+  { gradient: "from-[#F39C12] to-[#D68910]", glow: "rgba(243,156,18,0.25)", bar: "bg-[#F39C12]" },
+  { gradient: "from-[#2D5DA8] to-[#A8C63A]", glow: "rgba(45,93,168,0.20)", bar: "bg-[#2D5DA8]" },
+  { gradient: "from-[#F39C12] to-[#2D5DA8]", glow: "rgba(243,156,18,0.20)", bar: "bg-[#F39C12]" },
+];
+
 interface StatsSectionProps {
   config: UserPanelConfig;
 }
 
 export default function StatsSection({ config }: StatsSectionProps) {
   const stats = config.stats || [];
-
   if (stats.length === 0) return null;
 
   return (
-    <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-visible panel-perspective bg-[var(--up-bg)]">
-      <div className="max-w-7xl mx-auto -mt-40 relative z-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+    <section className="relative px-4 sm:px-6 lg:px-8 bg-[var(--up-bg)]">
+      <div className="max-w-7xl mx-auto -mt-20 relative z-20 pb-16">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {stats.map((stat: StatItem, i: number) => {
             const Icon = ICON_MAP[stat.iconKey] || FiBook;
+            const color = CARD_COLORS[i % CARD_COLORS.length];
             return (
               <motion.div
                 key={stat.id}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{
-                  type: "spring",
-                  stiffness: 80,
-                  damping: 18,
-                  delay: i * 0.08,
-                }}
-                className="group relative panel-3d"
+                viewport={{ once: true }}
+                transition={{ type: "spring", stiffness: 90, damping: 16, delay: i * 0.07 }}
+                whileHover={{ y: -8, scale: 1.04 }}
+                className="group relative"
               >
-                <div className={`absolute -inset-1 bg-gradient-to-br ${stat.colorClass} rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition duration-500`} />
-                <motion.div
-                  whileHover={{ y: -12, scale: 1.03, rotateX: 5 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="relative h-full flex flex-col items-center justify-center p-8 bg-[var(--up-bg-card)] rounded-[2rem] shadow-lg border border-[var(--up-border)] group-hover:border-[var(--up-border-strong)] transition-all duration-500"
-                >
-                  <div className="relative mb-6">
-                    <div className={`absolute inset-0 blur-2xl opacity-40 rounded-2xl bg-gradient-to-br ${stat.colorClass} scale-150 group-hover:opacity-60 transition duration-500`} />
-                    <motion.div
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 12 }}
-                      className={`relative inline-flex p-4 rounded-2xl bg-gradient-to-br ${stat.colorClass} shadow-lg ring-1 ring-black/5`}
-                    >
-                      <Icon className="w-7 h-7 text-white" />
-                    </motion.div>
+                <div
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+                  style={{ background: `radial-gradient(circle, ${color.glow}, transparent 70%)` }}
+                />
+                <div className="relative flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-[var(--up-bg-card)] border border-[var(--up-border)] group-hover:border-transparent shadow-sm group-hover:shadow-xl transition-all duration-400 overflow-hidden">
+                  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${color.gradient} rounded-t-2xl`} />
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center shadow-md`}>
+                    <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="space-y-1 text-center">
-                    <h3 className="text-3xl md:text-4xl font-black text-[var(--up-text)] tracking-tight">
+                  <div className="text-center">
+                    <div className="text-3xl font-black text-[var(--up-text)] tabular-nums">
                       <AnimatedCounter value={stat.value} duration={2} />
-                    </h3>
-                    <p className="text-xs font-bold text-[var(--up-text-muted)] uppercase tracking-[0.15em] py-1">
+                    </div>
+                    <div className="text-xs font-semibold text-[var(--up-text-muted)] uppercase tracking-widest mt-1">
                       {stat.label}
-                    </p>
+                    </div>
                   </div>
-                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-[var(--up-border)] rounded-full group-hover:w-20 group-hover:bg-[var(--up-accent)]/50 transition-all duration-500" />
-                </motion.div>
+                </div>
               </motion.div>
             );
           })}

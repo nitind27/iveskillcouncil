@@ -25,8 +25,8 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
   const displayName = userName?.trim() || "Guest";
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 500], [0, 120]);
-  const heroScale = useTransform(scrollY, [0, 400], [1, 0.96]);
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.4]);
+  const heroScale = useTransform(scrollY, [0, 400], [1, 0.97]);
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.75]);
 
   const images = hero.backgroundImages?.length
     ? hero.backgroundImages
@@ -174,12 +174,12 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
       <motion.div
         animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.15, 1] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[var(--up-accent)]/[0.08] blur-[100px] pointer-events-none"
+        className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#2D5DA8]/[0.20] blur-[100px] pointer-events-none"
       />
       <motion.div
         animate={{ x: [0, -25, 0], y: [0, 15, 0], scale: [1, 1.1, 1] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-[var(--up-accent)]/[0.06] blur-[90px] pointer-events-none"
+        className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-[#A8C63A]/[0.15] blur-[90px] pointer-events-none"
       />
 
       <motion.div
@@ -191,7 +191,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--up-bg-card)]/90 border border-[var(--up-border)] text-[var(--up-accent)] text-sm font-semibold uppercase tracking-[0.2em] mb-6 shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-semibold uppercase tracking-[0.2em] mb-6 shadow-sm"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--up-accent)] opacity-75" />
@@ -206,8 +206,8 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
           transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 tracking-tight leading-[1.05]"
         >
-          <span className="text-[var(--up-text)] drop-shadow-sm">{displayName}</span>
-          <span className="text-[var(--up-text-subtle)]">.</span>
+          <span className="text-white drop-shadow-lg">{displayName}</span>
+          <span className="text-white/60">.</span>
         </motion.h1>
 
         <motion.p
@@ -215,7 +215,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="text-lg sm:text-xl md:text-2xl text-[var(--up-text-muted)] max-w-2xl mx-auto mb-12 leading-relaxed font-medium"
+          className="text-lg sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto mb-12 leading-relaxed font-medium drop-shadow"
         >
           {slide.subtitle || hero.subtitle}
         </motion.p>
@@ -231,7 +231,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
               whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -12px rgba(29, 78, 216, 0.35)" }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[var(--up-accent)] text-white font-bold shadow-xl border border-[var(--up-border-strong)] hover:bg-[var(--up-accent-hover)] transition-all duration-300"
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#F39C12] text-white font-bold shadow-2xl hover:bg-[#D68910] transition-all duration-300"
             >
               {hero.ctaPrimary.label}
               <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -242,9 +242,9 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
               whileHover={{ scale: 1.05, backgroundColor: "var(--up-bg-muted)" }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 border-[var(--up-border-strong)] bg-[var(--up-bg-card)] text-[var(--up-text)] font-bold hover:border-[var(--up-accent)]/40 transition-all duration-300"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white font-bold hover:bg-white/20 hover:border-white/50 transition-all duration-300"
             >
-              <FiPlay className="w-5 h-5 text-[var(--up-accent)]" />
+              <FiPlay className="w-5 h-5 text-white" />
               {hero.ctaSecondary.label}
             </motion.span>
           </Link>
@@ -255,7 +255,7 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="mt-16 flex flex-wrap justify-center gap-8 text-[var(--up-text-muted)] text-sm font-medium"
+          className="mt-16 flex flex-wrap justify-center gap-8 text-white/70 text-sm font-medium"
         >
           {slide.stats.map((s) => (
             <span key={s.text} className="flex items-center gap-2">
@@ -268,14 +268,14 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
 
       {/* Slide indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 flex gap-2 z-10">
             {images.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 aria-label={`Slide ${i + 1}`}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === currentIndex ? "w-8 bg-[var(--up-accent)]" : "w-1.5 bg-[var(--up-text-subtle)]/50 hover:bg-[var(--up-text-muted)]"
+                  i === currentIndex ? "w-8 bg-[#F39C12]" : "w-1.5 bg-white/40 hover:bg-white/70"
                 }`}
                 onClick={() => {
                   setCurrentIndex(i);
@@ -290,16 +290,63 @@ export default function HeroSection({ config, userName }: HeroSectionProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10"
       >
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          className="w-10 h-16 rounded-full border-2 border-[var(--up-border-strong)] flex items-start justify-center pt-3 bg-[var(--up-bg-card)]/90"
+          className="w-10 h-16 rounded-full border-2 border-white/30 flex items-start justify-center pt-3 bg-white/10 backdrop-blur-sm"
         >
-          <motion.span className="w-1.5 h-3 rounded-full bg-[var(--up-accent)]" />
+          <motion.span className="w-1.5 h-3 rounded-full bg-[#F39C12]" />
         </motion.div>
       </motion.div>
+
+      {/* ── Bottom transition — animated wave + shimmer border ── */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none overflow-hidden">
+        {/* animated shimmer line just above the wave */}
+        <motion.div
+          animate={{ x: ["-100%", "100%"] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(168,198,58,0.0) 20%, #A8C63A 40%, #F39C12 50%, #2D5DA8 60%, rgba(45,93,168,0.0) 80%, transparent 100%)",
+          }}
+        />
+
+        {/* wave SVG — fills the bottom, blends into #F8FAFC (page bg) */}
+        <svg
+          viewBox="0 0 1440 90"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full block"
+          style={{ height: "90px" }}
+        >
+          {/* back wave — slightly offset, lighter */}
+          <motion.path
+            d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,90 L0,90 Z"
+            fill="#F8FAFC"
+            fillOpacity="0.35"
+            animate={{ d: [
+              "M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,90 L0,90 Z",
+              "M0,55 C240,15 480,75 720,35 C960,5 1200,65 1440,30 L1440,90 L0,90 Z",
+              "M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,90 L0,90 Z",
+            ]}}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          {/* front wave — solid page bg color */}
+          <motion.path
+            d="M0,55 C240,15 480,75 720,45 C960,15 1200,65 1440,35 L1440,90 L0,90 Z"
+            fill="#F8FAFC"
+            animate={{ d: [
+              "M0,55 C240,15 480,75 720,45 C960,15 1200,65 1440,35 L1440,90 L0,90 Z",
+              "M0,35 C240,70 480,20 720,55 C960,80 1200,20 1440,55 L1440,90 L0,90 Z",
+              "M0,55 C240,15 480,75 720,45 C960,15 1200,65 1440,35 L1440,90 L0,90 Z",
+            ]}}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          />
+        </svg>
+      </div>
     </section>
   );
 }
