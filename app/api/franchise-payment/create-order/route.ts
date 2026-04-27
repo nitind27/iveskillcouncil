@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!cfResult.success) {
+      console.error("Cashfree order creation failed:", cfResult.error);
       return errorResponse(`Payment gateway error: ${cfResult.error}`, 502);
     }
 

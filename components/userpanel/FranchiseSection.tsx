@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase, FiExternalLink, FiCheckCircle } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import FranchiseInquiryModal from "./FranchiseInquiryModal";
+import FranchisePlansModal from "./FranchisePlansModal";
 
 interface FranchiseSectionProps {
   config: UserPanelConfig;
@@ -21,6 +22,7 @@ const perks = [
 export default function FranchiseSection({ config }: FranchiseSectionProps) {
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquiryFranchise, setInquiryFranchise] = useState<{ id?: string; name: string } | null>(null);
+  const [plansOpen, setPlansOpen] = useState(false);
   const { franchise } = config;
   const highlight = franchise?.highlight;
 
@@ -82,16 +84,16 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                 </div>
               </div>
               <div className="flex flex-col gap-3 flex-shrink-0">
-                <Link href="/userpanel/franchise-plans">
-                  <motion.span
-                    whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)" }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-[#F39C12] text-white font-extrabold text-base shadow-xl hover:bg-[#D68910] transition-all cursor-pointer"
-                  >
-                    View Plans &amp; Buy
-                    <FiArrowRight className="w-5 h-5" />
-                  </motion.span>
-                </Link>
+                <motion.button
+                  type="button"
+                  onClick={() => setPlansOpen(true)}
+                  whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)" }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-[#F39C12] text-white font-extrabold text-base shadow-xl hover:bg-[#D68910] transition-all"
+                >
+                  View Plans &amp; Buy
+                  <FiArrowRight className="w-5 h-5" />
+                </motion.button>
                 <Link href="/userpanel/apply-franchise">
                   <motion.span
                     whileHover={{ scale: 1.03 }}
@@ -193,6 +195,11 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
         open={inquiryOpen}
         onClose={() => { setInquiryOpen(false); setInquiryFranchise(null); }}
         franchise={inquiryFranchise}
+      />
+
+      <FranchisePlansModal
+        open={plansOpen}
+        onClose={() => setPlansOpen(false)}
       />
     </>
   );

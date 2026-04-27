@@ -1,6 +1,7 @@
 /**
  * Cashfree Payment Gateway — server-side utility
- * Docs: https://docs.cashfree.com/docs/payment-gateway
+ * API version: 2025-01-01 (v5 — latest)
+ * Docs: https://www.cashfree.com/docs/api-reference/payments/latest/overview
  */
 
 const CF_APP_ID     = process.env.CASHFREE_APP_ID     || "";
@@ -12,7 +13,8 @@ const BASE_URL =
     ? "https://api.cashfree.com/pg"
     : "https://sandbox.cashfree.com/pg";
 
-const CF_VERSION = "2023-08-01";
+// Always use the latest API version
+const CF_VERSION = "2025-01-01";
 
 function cfHeaders() {
   return {
@@ -60,7 +62,8 @@ export async function createCashfreeOrder(
         customer_id: req.customerEmail.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50),
         customer_name: req.customerName,
         customer_email: req.customerEmail,
-        customer_phone: req.customerPhone,
+        // Cashfree v5 requires 10-digit phone (strip +91 or country code)
+        customer_phone: req.customerPhone.replace(/^\+91/, "").replace(/\D/g, "").slice(-10),
       },
       order_meta: {
         return_url: req.returnUrl,
@@ -77,9 +80,11 @@ export async function createCashfreeOrder(
     const json = await res.json();
 
     if (!res.ok) {
+      const errMsg = json?.message || json?.error_msg || json?.error || `Cashfree error ${res.status}`;
+      console.error("Cashfree API error:", res.status, JSON.stringify(json));
       return {
         success: false,
-        error: json?.message || json?.error || `Cashfree error ${res.status}`,
+        error: errMsg,
       };
     }
 
@@ -120,7 +125,7 @@ export async function verifyCashfreeOrder(
     if (!res.ok) {
       return {
         success: false,
-        error: json?.message || `Cashfree verify error ${res.status}`,
+        error: json?.message || json?.error_msg || `Cashfree verify error ${res.status}`,
       };
     }
 
