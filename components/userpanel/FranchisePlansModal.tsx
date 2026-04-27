@@ -10,6 +10,7 @@ import {
   FiEye,
 } from "react-icons/fi";
 import { validateName, validateEmail, validatePhone } from "@/lib/validation";
+import CashfreeCheckout from "./CashfreeCheckout";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Plan { id: number; name: "SILVER"|"GOLD"|"DIAMOND"; price: number; durationInDays: number; status: string; }
@@ -56,6 +57,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
   const [error,        setError]        = useState("");
   const [submitting,   setSubmitting]   = useState(false);
   const [previewDoc,   setPreviewDoc]   = useState<UploadedDoc | null>(null);
+  const [paymentSessionId, setPaymentSessionId] = useState<string | null>(null);
 
   // Personal
   const [fullName,       setFullName]       = useState("");
@@ -102,7 +104,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
         setFullName(""); setEmail(""); setPhone(""); setAlternatePhone("");
         setInstituteName(""); setBusinessType("INDIVIDUAL"); setAddress("");
         setCity(""); setStateName(""); setPincode(""); setMessage("");
-        setDocs([]); setPreviewDoc(null);
+        setDocs([]); setPreviewDoc(null); setPaymentSessionId(null);
       }, 300);
       return () => clearTimeout(t);
     }
@@ -200,12 +202,10 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
         setStep("review"); setSubmitting(false); return;
       }
 
-      // 3. Redirect to Cashfree
+      // 3. Trigger Cashfree SDK checkout
       const { paymentSessionId } = payData.data;
-      const cfEnv = process.env.NEXT_PUBLIC_CASHFREE_ENV || "TEST";
-      window.location.href = cfEnv === "PROD"
-        ? `https://payments.cashfree.com/pay/${paymentSessionId}`
-        : `https://sandbox.cashfree.com/pay/${paymentSessionId}`;
+      setPaymentSessionId(paymentSessionId);
+      // CashfreeCheckout component will handle the SDK redirect
     } catch {
       setError("Network error. Please try again.");
       setStep("review"); setSubmitting(false);
@@ -493,6 +493,18 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                         <p className="font-bold text-[#1A1A1A] text-lg">Redirecting to payment...</p>
                         <p className="text-[#6B7280] text-sm mt-1">Please wait, do not close this window.</p>
                       </div>
+                      {/* SDK checkout trigger */}
+                      {paymentSessionId && (
+                        <CashfreeCheckout
+                          paymentSessionId={paymentSessionId}
+                          onError={(msg) => {
+                            setError(msg);
+                            setStep("review");
+                            setSubmitting(false);
+                            setPaymentSessionId(null);
+                          }}
+                        />
+                      )}
                     </motion.div>
                   )}
 
