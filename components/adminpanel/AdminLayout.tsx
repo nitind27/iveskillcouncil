@@ -79,7 +79,7 @@ export default function AdminLayout({
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar onSidebarToggle={() => setIsMobileOpen(!isMobileOpen)} user={user} />
           <main className="flex-1 overflow-y-auto scrollbar-thin">
-            <div className="container mx-auto px-4 lg:px-6 py-6 bg-blue-50 dark:bg-[#1F2937]">
+            <div className="container mx-auto px-4 lg:px-6 py-6 bg-background dark:bg-background">
               {children}
             </div>
           </main>
