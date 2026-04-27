@@ -92,6 +92,15 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                     <FiArrowRight className="w-5 h-5" />
                   </motion.span>
                 </Link>
+                <Link href="/userpanel/apply-franchise">
+                  <motion.span
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center justify-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-white/25 text-white font-semibold text-sm hover:bg-white/20 transition-all cursor-pointer"
+                  >
+                    Apply with Documents
+                  </motion.span>
+                </Link>
                 <motion.button
                   type="button"
                   onClick={() => openInquiry(null)}

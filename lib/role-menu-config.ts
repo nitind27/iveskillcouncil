@@ -57,6 +57,7 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
       { id: "manage-plans", label: "Manage Plans", icon: Package, href: "/subscription/plans" },
       { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
       { id: "manage-franchises", label: "Manage Franchises", icon: Building2, href: "/franchises" },
+      { id: "franchise-applications", label: "Franchise Applications", icon: FileCheck, href: "/dashboard/franchise-applications" },
       { id: "all-students", label: "All Students", icon: GraduationCap, href: "/students" },
       { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
       { id: "approvals", label: "Approvals", icon: FileCheck, href: "/franchises/pending" },
@@ -166,11 +167,13 @@ export function getMenuForRole(roleId: number): RoleMenuSection[] {
 export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
   [ROLES.SUPER_ADMIN]: [
     "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications",
+    "/dashboard/franchise-applications", "/dashboard/courses",
     "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
     "/profile", "/account",
   ],
   [ROLES.ADMIN]: [
     "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications", "/dashboard/support",
+    "/dashboard/franchise-applications", "/dashboard/courses",
     "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
     "/profile", "/account",
   ],
