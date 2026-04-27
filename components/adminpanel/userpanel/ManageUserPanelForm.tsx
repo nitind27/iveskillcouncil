@@ -148,10 +148,23 @@ export default function ManageUserPanelForm() {
         setWelcomeUploadError(data?.error || "Upload failed");
         return;
       }
+      const newUrl = data.data.url as string;
       setConfig((c) => ({
         ...c,
-        welcomePopup: { ...c.welcomePopup, imageUrl: data.data.url as string },
+        welcomePopup: { ...c.welcomePopup, imageUrl: newUrl },
       }));
+      // Auto-save so URL persists immediately
+      const saveRes = await fetch("/api/admin/userpanel-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...config,
+          welcomePopup: { ...config.welcomePopup, imageUrl: newUrl },
+        }),
+      });
+      if (!saveRes.ok) {
+        setWelcomeUploadError("Uploaded but failed to save. Click 'Save changes'.");
+      }
     } catch {
       setWelcomeUploadError("Network error. Please try again.");
     } finally {
@@ -530,7 +543,7 @@ export default function ManageUserPanelForm() {
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];
-                          if (f) openImageEditor(f, "welcome");
+                          if (f) uploadWelcomeImage(f);
                           e.currentTarget.value = "";
                         }}
                       />
@@ -563,10 +576,17 @@ export default function ManageUserPanelForm() {
                 {config.welcomePopup.imageUrl && (
                   <div className="mt-3 relative h-48 w-full max-w-xl rounded-lg overflow-hidden bg-muted border border-border">
                     <img
-                      src={config.welcomePopup.imageUrl}
+                      src={getFullImageUrl(config.welcomePopup.imageUrl)}
                       alt="Popup preview"
                       className="object-contain w-full h-full"
-                      onError={(e) => (e.currentTarget.style.display = "none")}
+                      onError={(e) => {
+                        const t = e.currentTarget;
+                        t.style.display = "none";
+                        const p = t.parentElement;
+                        if (p) {
+                          p.innerHTML = `<div class="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground text-sm"><span>⚠️ Image not found</span><span class="text-xs break-all px-4 text-center">${config.welcomePopup.imageUrl}</span></div>`;
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -646,7 +666,7 @@ export default function ManageUserPanelForm() {
                           className="hidden"
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) openImageEditor(f, "logo");
+                            if (f) uploadLogo(f);
                             e.currentTarget.value = "";
                           }}
                         />
@@ -774,14 +794,7 @@ export default function ManageUserPanelForm() {
                           className="hidden"
                           onChange={(e) => {
                             const files = Array.from(e.target.files ?? []);
-                            if (files.length) {
-                              if (files.length === 1) {
-                                openImageEditor(files[0], "hero");
-                              } else {
-                                setHeroFilesQueue(files);
-                                openImageEditor(files[0], "hero");
-                              }
-                            }
+                            if (files.length) uploadHeroImages(files);
                             e.target.value = "";
                           }}
                           disabled={heroUploading}
@@ -1126,7 +1139,7 @@ export default function ManageUserPanelForm() {
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];
-                          if (f) openImageEditor(f, "about");
+                          if (f) uploadAboutImage(f);
                           e.currentTarget.value = "";
                         }}
                       />
