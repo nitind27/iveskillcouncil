@@ -5,17 +5,23 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     remotePatterns: [
-      // Unsplash (default config images)
       { protocol: "https", hostname: "images.unsplash.com" },
-      // Any external http/https image (covers uploaded CDN or external URLs)
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "**" },
     ],
-    // Allow unoptimized local uploads served from /public
     unoptimized: true,
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
+  },
+  // Serve dynamically uploaded files via API route in production
+  async rewrites() {
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: "/api/uploads/:path*",
+      },
+    ];
   },
 };
 
