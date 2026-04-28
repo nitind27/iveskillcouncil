@@ -70,6 +70,13 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
   },
   { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
   {
+    id: "communication",
+    label: "Communication",
+    items: [
+      { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
+    ],
+  },
+  {
     id: "settings",
     label: "Settings",
     items: [
@@ -100,6 +107,13 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
     ],
   },
   { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
+  {
+    id: "communication",
+    label: "Communication",
+    items: [
+      { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
+    ],
+  },
   {
     id: "settings",
     label: "Settings",
@@ -169,17 +183,17 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
     "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications",
     "/dashboard/franchise-applications", "/dashboard/courses",
     "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
-    "/profile", "/account",
+    "/profile", "/account", "/chat",
   ],
   [ROLES.ADMIN]: [
     "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications", "/dashboard/support",
     "/dashboard/franchise-applications", "/dashboard/courses",
     "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
-    "/profile", "/account",
+    "/profile", "/account", "/chat",
   ],
   [ROLES.SUB_ADMIN]: [
     "/dashboard", "/dashboard/franchise-courses", "/students", "/fees", "/attendance", "/staff", "/certificates", "/reports",
-    "/announcements", "/profile", "/account",
+    "/announcements", "/profile", "/account", "/chat",
   ],
   [ROLES.STUDENT]: [
     "/dashboard", "/my-course", "/my-fees", "/attendance", "/feedback", "/certificate",

@@ -7,6 +7,7 @@ import Navbar from "@/components/adminpanel/navbar/Navbar";
 import Footer from "@/components/adminpanel/footer/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import PageLoader from "@/components/common/PageLoader";
+import ChatWidget from "@/components/chat/ChatWidget";
 import { canRoleAccessPath } from "@/lib/role-menu-config";
 import { ROLES } from "@/lib/permissions";
 
@@ -86,6 +87,7 @@ export default function AdminLayout({
           <Footer />
         </div>
       </div>
+      <ChatWidget />
     </div>
   );
 }

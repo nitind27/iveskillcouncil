@@ -585,3 +585,57 @@ model Announcement {
   @@map("announcements")
 }
 
+
+// ── Chat System ──────────────────────────────────────────────────────────────
+
+model ChatRoom {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  /// "direct" = 1-on-1 between superadmin and a franchise admin
+  /// "group"  = group discussion room
+  type        String    @default("direct") @db.VarChar(20)
+  name        String?   @db.VarChar(150)
+  /// For direct rooms: comma-separated sorted user IDs (e.g. "1_42")
+  slug        String?   @unique @db.VarChar(100)
+  createdBy   BigInt    @map("created_by") @db.UnsignedBigInt
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  messages    ChatMessage[]
+  members     ChatRoomMember[]
+
+  @@index([type], map: "idx_room_type")
+  @@index([slug], map: "idx_room_slug")
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  roomId    BigInt   @map("room_id") @db.UnsignedBigInt
+  userId    BigInt   @map("user_id") @db.UnsignedBigInt
+  /// last time this user read messages in this room
+  lastReadAt DateTime? @map("last_read_at") @db.DateTime
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamp
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId], map: "unique_room_member")
+  @@index([userId], map: "idx_member_user")
+  @@map("chat_room_members")
+}
+
+model ChatMessage {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  roomId    BigInt   @map("room_id") @db.UnsignedBigInt
+  senderId  BigInt   @map("sender_id") @db.UnsignedBigInt
+  body      String   @db.Text
+  /// optional: "text" | "image" | "file"
+  msgType   String   @default("text") @map("msg_type") @db.VarChar(20)
+  fileUrl   String?  @map("file_url") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt], map: "idx_msg_room_time")
+  @@index([senderId], map: "idx_msg_sender")
+  @@map("chat_messages")
+}
