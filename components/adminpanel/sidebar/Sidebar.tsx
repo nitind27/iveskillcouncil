@@ -186,7 +186,7 @@ export default function Sidebar({
           {!isCollapsed && (
             <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
               {logoUrl ? (
-                <img src={logoUrl} alt={siteName} className="h-8 w-auto max-w-[140px] object-contain" />
+                <img src={logoUrl} alt={siteName} className="h-16 w-auto max-w-[140px] object-contain" />
               ) : (
                 <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
                   {siteName || "Franchise Institute"}
