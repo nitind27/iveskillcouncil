@@ -624,18 +624,39 @@ model ChatRoomMember {
 }
 
 model ChatMessage {
-  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  roomId    BigInt   @map("room_id") @db.UnsignedBigInt
-  senderId  BigInt   @map("sender_id") @db.UnsignedBigInt
-  body      String   @db.Text
-  /// optional: "text" | "image" | "file"
-  msgType   String   @default("text") @map("msg_type") @db.VarChar(20)
-  fileUrl   String?  @map("file_url") @db.VarChar(500)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  roomId      BigInt   @map("room_id") @db.UnsignedBigInt
+  senderId    BigInt   @map("sender_id") @db.UnsignedBigInt
+  body        String   @db.Text
+  msgType     String   @default("text") @map("msg_type") @db.VarChar(20)
+  fileUrl     String?  @map("file_url") @db.VarChar(500)
+  fileName    String?  @map("file_name") @db.VarChar(255)
+  /// Reply to another message
+  replyToId   BigInt?  @map("reply_to_id") @db.UnsignedBigInt
+  replyToBody String?  @map("reply_to_body") @db.VarChar(500)
+  replyToSender String? @map("reply_to_sender") @db.VarChar(150)
+  /// Edit support
+  isEdited    Boolean  @default(false) @map("is_edited") @db.TinyInt
+  editedAt    DateTime? @map("edited_at") @db.DateTime
+  /// Soft delete
+  isDeleted   Boolean  @default(false) @map("is_deleted") @db.TinyInt
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room        ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, createdAt], map: "idx_msg_room_time")
   @@index([senderId], map: "idx_msg_sender")
   @@map("chat_messages")
+}
+
+model ChatTyping {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  roomId    BigInt   @map("room_id") @db.UnsignedBigInt
+  userId    BigInt   @map("user_id") @db.UnsignedBigInt
+  userName  String   @map("user_name") @db.VarChar(150)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  @@unique([roomId, userId], map: "unique_typing")
+  @@index([roomId], map: "idx_typing_room")
+  @@map("chat_typing")
 }
