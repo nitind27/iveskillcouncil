@@ -38,10 +38,13 @@ export default function AdminLayout({
   const pathNormalized = pn.replace(/\/$/, "").trim() || "/";
   const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
   const hasAccess =
-    isSuperAdminOrAdmin ||
-    pathNormalized === "/dashboard" ||
-    canRoleAccessPath(roleId, pn);
+    !user // not yet loaded — don't block
+    || isSuperAdminOrAdmin
+    || pathNormalized === "/dashboard"
+    || canRoleAccessPath(roleId, pn);
+
   useEffect(() => {
+    // Wait until auth is fully resolved AND user is present before checking access
     if (loading || !user || hasAccess) return;
     if (pn === "/403") return;
     router.replace("/403");
@@ -63,7 +66,8 @@ export default function AdminLayout({
     return null;
   }
 
-  if (!hasAccess) {
+  // Only block render if user is loaded AND confirmed no access
+  if (user && !hasAccess) {
     return null;
   }
 

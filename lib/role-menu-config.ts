@@ -209,13 +209,23 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
 export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   const numRoleId = Number(roleId) || 0;
   const normalizedPath = (pathname || "").replace(/\/$/, "").trim() || "/";
-  // SUPER_ADMIN and ADMIN (Institute Admin) have access to all protected routes
+
+  // SUPER_ADMIN and ADMIN have access to everything
   if (numRoleId === ROLES.SUPER_ADMIN || numRoleId === ROLES.ADMIN) return true;
-  // Dashboard root is allowed for every authenticated user (all roles, including unknown)
+
+  // Dashboard root is allowed for every authenticated user
   if (normalizedPath === "/dashboard") return true;
+
+  // Public/special paths — always allow
+  if (normalizedPath.startsWith("/f/")) return true;
+  if (normalizedPath.startsWith("/api/")) return true;
+  if (normalizedPath === "/403" || normalizedPath === "/404") return true;
 
   const allowed = ROLE_ALLOWED_PATHS[numRoleId];
   if (!allowed || allowed.length === 0) return false;
+
   const pathForCheck = (pathname || "").replace(/\/$/, "") || "/";
-  return allowed.some((prefix) => pathForCheck === prefix || pathForCheck.startsWith(prefix + "/"));
+  return allowed.some(
+    (prefix) => pathForCheck === prefix || pathForCheck.startsWith(prefix + "/")
+  );
 }
