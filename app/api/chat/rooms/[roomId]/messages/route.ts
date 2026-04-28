@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/api-auth";
-import { successResponse, errorResponse, unauthorizedResponse, forbiddenResponse } from "@/lib/api-response";
+import {
+  successResponse, errorResponse,
+  unauthorizedResponse, forbiddenResponse,
+} from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ roomId: string }> };
@@ -9,30 +12,42 @@ type Params = { params: Promise<{ roomId: string }> };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
 
+// Collect unique BigInt sender IDs from a raw message array
+function uniqueSenderIds(msgs: { senderId: bigint }[]): bigint[] {
+  const seen = new Set<string>();
+  const ids: bigint[] = [];
+  for (const m of msgs) {
+    const k = m.senderId.toString();
+    if (!seen.has(k)) { seen.add(k); ids.push(m.senderId); }
+  }
+  return ids;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function serializeMsg(m: any, userId: string, senderMap: Record<string, any>) {
   const sender = senderMap[m.senderId.toString()];
   return {
-    id:             m.id.toString(),
-    roomId:         m.roomId.toString(),
-    senderId:       m.senderId.toString(),
-    senderName:     sender?.fullName ?? "Unknown",
-    senderRole:     sender?.roleId ?? 0,
-    body:           m.isDeleted ? "This message was deleted" : m.body,
-    msgType:        m.isDeleted ? "deleted" : m.msgType,
-    fileUrl:        m.isDeleted ? null : m.fileUrl,
-    fileName:       m.isDeleted ? null : m.fileName,
-    replyToId:      m.replyToId?.toString() ?? null,
-    replyToBody:    m.replyToBody,
-    replyToSender:  m.replyToSender,
-    isEdited:       m.isEdited,
-    editedAt:       m.editedAt?.toISOString() ?? null,
-    isDeleted:      m.isDeleted,
-    createdAt:      m.createdAt.toISOString(),
-    isOwn:          m.senderId.toString() === userId,
+    id:            m.id.toString(),
+    roomId:        m.roomId.toString(),
+    senderId:      m.senderId.toString(),
+    senderName:    sender?.fullName ?? "Unknown",
+    senderRole:    sender?.roleId   ?? 0,
+    body:          m.isDeleted ? "This message was deleted" : m.body,
+    msgType:       m.isDeleted ? "deleted" : m.msgType,
+    fileUrl:       m.isDeleted ? null : (m.fileUrl  ?? null),
+    fileName:      m.isDeleted ? null : (m.fileName ?? null),
+    replyToId:     m.replyToId?.toString()  ?? null,
+    replyToBody:   m.replyToBody   ?? null,
+    replyToSender: m.replyToSender ?? null,
+    isEdited:      Boolean(m.isEdited),
+    editedAt:      m.editedAt?.toISOString() ?? null,
+    isDeleted:     Boolean(m.isDeleted),
+    createdAt:     m.createdAt.toISOString(),
+    isOwn:         m.senderId.toString() === userId,
   };
 }
 
-/** GET — fetch messages */
+/** GET — fetch messages (newest first, then reversed) */
 export async function GET(request: NextRequest, { params }: Params) {
   const user = await getCurrentUser();
   if (!user) return unauthorizedResponse();
@@ -45,9 +60,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (!member) return forbiddenResponse();
 
   const before = request.nextUrl.searchParams.get("before");
-  const limit  = Math.min(60, parseInt(request.nextUrl.searchParams.get("limit") || "60"));
+  const limit  = Math.min(60, parseInt(request.nextUrl.searchParams.get("limit") || "60", 10));
 
-  const messages = await db.chatMessage.findMany({
+  const messages: { senderId: bigint; [k: string]: unknown }[] = await db.chatMessage.findMany({
     where: {
       roomId: BigInt(roomId),
       ...(before ? { createdAt: { lt: new Date(before) } } : {}),
@@ -56,22 +71,27 @@ export async function GET(request: NextRequest, { params }: Params) {
     take: limit,
   });
 
-  const senderIds = [...new Set(messages.map((m: any) => m.senderId.toString()))].map(BigInt);
+  const senderIds = uniqueSenderIds(messages as { senderId: bigint }[]);
   const senders   = senderIds.length
-    ? await prisma.user.findMany({ where: { id: { in: senderIds } }, select: { id: true, fullName: true, roleId: true } })
+    ? await prisma.user.findMany({
+        where:  { id: { in: senderIds } },
+        select: { id: true, fullName: true, roleId: true },
+      })
     : [];
   const senderMap = Object.fromEntries(senders.map((s) => [s.id.toString(), s]));
 
   // Mark as read
   await db.chatRoomMember.update({
     where: { roomId_userId: { roomId: BigInt(roomId), userId: uid } },
-    data: { lastReadAt: new Date() },
+    data:  { lastReadAt: new Date() },
   });
 
-  return successResponse(messages.reverse().map((m: any) => serializeMsg(m, user.id, senderMap)));
+  return successResponse(
+    messages.reverse().map((m) => serializeMsg(m, user.id, senderMap))
+  );
 }
 
-/** POST — send a message (text / image / file / multiple files) */
+/** POST — send a message */
 export async function POST(request: NextRequest, { params }: Params) {
   const user = await getCurrentUser();
   if (!user) return unauthorizedResponse();
@@ -89,13 +109,16 @@ export async function POST(request: NextRequest, { params }: Params) {
   if (!text?.trim() && msgType === "text") return errorResponse("Message cannot be empty", 400);
 
   // Resolve reply info
-  let replyToBody: string | null = null;
+  let replyToBody:   string | null = null;
   let replyToSender: string | null = null;
   if (replyToId) {
     const orig = await db.chatMessage.findUnique({ where: { id: BigInt(replyToId) } });
     if (orig) {
-      replyToBody   = orig.isDeleted ? "Deleted message" : orig.body.slice(0, 200);
-      const origSender = await prisma.user.findUnique({ where: { id: orig.senderId }, select: { fullName: true } });
+      replyToBody   = orig.isDeleted ? "Deleted message" : String(orig.body).slice(0, 200);
+      const origSender = await prisma.user.findUnique({
+        where:  { id: orig.senderId as bigint },
+        select: { fullName: true },
+      });
       replyToSender = origSender?.fullName ?? "Unknown";
     }
   }
@@ -106,7 +129,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       senderId:     uid,
       body:         String(text || "").trim(),
       msgType,
-      fileUrl:      fileUrl || null,
+      fileUrl:      fileUrl  || null,
       fileName:     fileName || null,
       replyToId:    replyToId ? BigInt(replyToId) : null,
       replyToBody,
@@ -114,10 +137,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     },
   });
 
-  await db.chatRoom.update({ where: { id: BigInt(roomId) }, data: { updatedAt: new Date() } });
+  await db.chatRoom.update({
+    where: { id: BigInt(roomId) },
+    data:  { updatedAt: new Date() },
+  });
 
-  const sender = await prisma.user.findUnique({ where: { id: uid }, select: { fullName: true, roleId: true } });
-  const senderMap = { [uid.toString()]: { fullName: sender?.fullName ?? "Unknown", roleId: sender?.roleId ?? 0 } };
+  const sender = await prisma.user.findUnique({
+    where:  { id: uid },
+    select: { fullName: true, roleId: true },
+  });
+  const senderMap = {
+    [uid.toString()]: { fullName: sender?.fullName ?? "Unknown", roleId: sender?.roleId ?? 0 },
+  };
 
   return successResponse(serializeMsg(msg, user.id, senderMap), "Message sent");
 }
@@ -140,11 +171,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const updated = await db.chatMessage.update({
     where: { id: BigInt(messageId) },
-    data: { body: String(newText).trim(), isEdited: true, editedAt: new Date() },
+    data:  { body: String(newText).trim(), isEdited: true, editedAt: new Date() },
   });
 
-  const sender = await prisma.user.findUnique({ where: { id: uid }, select: { fullName: true, roleId: true } });
-  const senderMap = { [uid.toString()]: { fullName: sender?.fullName ?? "Unknown", roleId: sender?.roleId ?? 0 } };
+  const sender = await prisma.user.findUnique({
+    where:  { id: uid },
+    select: { fullName: true, roleId: true },
+  });
+  const senderMap = {
+    [uid.toString()]: { fullName: sender?.fullName ?? "Unknown", roleId: sender?.roleId ?? 0 },
+  };
 
   return successResponse(serializeMsg(updated, user.id, senderMap), "Message edited");
 }
@@ -165,7 +201,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   await db.chatMessage.update({
     where: { id: BigInt(messageId) },
-    data: { isDeleted: true },
+    data:  { isDeleted: true },
   });
 
   return successResponse({ id: messageId, isDeleted: true }, "Message deleted");
