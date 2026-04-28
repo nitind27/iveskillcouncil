@@ -29,7 +29,9 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!loading && !user && !isLoginPage && !isUserPanelPage) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pn)}`;
+      // Don't redirect to /403 as the return URL
+      const safeRedirect = (pn === "/403" || pn === "/401") ? "/dashboard" : pn;
+      const redirectUrl = `/login?redirect=${encodeURIComponent(safeRedirect)}`;
       window.location.href = redirectUrl;
     }
   }, [loading, user, pn, isLoginPage, isUserPanelPage]);
@@ -42,6 +44,13 @@ export default function AdminLayout({
     || isSuperAdminOrAdmin
     || pathNormalized === "/dashboard"
     || canRoleAccessPath(roleId, pn);
+
+  // If user is logged in but landed on /403, send them to dashboard
+  useEffect(() => {
+    if (!loading && user && pn === "/403") {
+      router.replace("/dashboard");
+    }
+  }, [loading, user, pn, router]);
 
   useEffect(() => {
     // Wait until auth is fully resolved AND user is present before checking access

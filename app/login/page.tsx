@@ -68,7 +68,12 @@ function LoginForm() {
         if (newDecoded === decoded) break;
         decoded = newDecoded;
       }
-      return decoded.startsWith("/") && !decoded.startsWith("/login") ? decoded : "/dashboard";
+      // Never redirect back to error pages or login
+      const blocked = ["/403", "/401", "/400", "/500", "/503", "/login"];
+      if (!decoded.startsWith("/") || blocked.some(b => decoded === b || decoded.startsWith(b + "?"))) {
+        return "/dashboard";
+      }
+      return decoded;
     } catch {
       return "/dashboard";
     }
