@@ -7,9 +7,9 @@
 import type { SWRConfiguration } from "swr";
 
 export const swrConfig: SWRConfiguration = {
-  revalidateOnFocus: true,
+  revalidateOnFocus: false,
   revalidateIfStale: true,
-  dedupingInterval: 2000,
+  dedupingInterval: 10000,
   errorRetryCount: 2,
   keepPreviousData: true,
 };

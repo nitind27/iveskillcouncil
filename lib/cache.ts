@@ -57,6 +57,12 @@ if (typeof setInterval !== 'undefined') {
 }
 
 // Cache key generators
+export const USERPANEL_CONFIG_CACHE_KEY = "userpanel-public-config";
+
+export function invalidateUserPanelConfigCache() {
+  cache.delete(USERPANEL_CONFIG_CACHE_KEY);
+}
+
 export const cacheKeys = {
   dashboard: (franchiseId?: number) => `dashboard:${franchiseId || 'all'}`,
   franchises: (page: number, limit: number) => `franchises:${page}:${limit}`,

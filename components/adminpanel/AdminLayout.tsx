@@ -6,8 +6,12 @@ import Sidebar from "@/components/adminpanel/sidebar/Sidebar";
 import Navbar from "@/components/adminpanel/navbar/Navbar";
 import Footer from "@/components/adminpanel/footer/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import dynamic from "next/dynamic";
 import PageLoader from "@/components/common/PageLoader";
-import ChatWidget from "@/components/chat/ChatWidget";
+
+const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
+  ssr: false,
+});
 import { canRoleAccessPath } from "@/lib/role-menu-config";
 import { ROLES } from "@/lib/permissions";
 

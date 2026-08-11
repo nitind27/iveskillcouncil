@@ -12,7 +12,11 @@ export default function AnimatedCounter({ value, duration = 1.8, className = "" 
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let start = 0;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setCount(value);
+      return;
+    }
+
     const end = value;
     const startTime = Date.now();
     const endTime = startTime + duration * 1000;

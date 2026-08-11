@@ -10,6 +10,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api-response";
 import type { UserPanelConfig } from "@/config/userpanel.config";
+import { invalidateUserPanelConfigCache } from "@/lib/cache";
 import path from "path";
 import { promises as fs } from "fs";
 
@@ -110,6 +111,8 @@ export async function PUT(request: NextRequest) {
       create: { id: 1, config: config as object },
       update: { config: config as object },
     });
+
+    invalidateUserPanelConfigCache();
 
     return successResponse(config, "User panel config saved");
   } catch (err) {

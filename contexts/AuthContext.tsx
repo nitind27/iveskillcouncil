@@ -30,13 +30,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function isPublicPath(path: string) {
+  return path === "/" || path === "/login" || path.startsWith("/userpanel");
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Check authentication on mount
+  // Check authentication on mount. Public pages wait until idle so first paint is not blocked.
   useEffect(() => {
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const isPublic = isPublicPath(path);
+
+    if (isPublic && "requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => checkAuth(), { timeout: 1200 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
     checkAuth();
   }, []);
 

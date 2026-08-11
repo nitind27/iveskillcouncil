@@ -44,7 +44,10 @@ export async function GET() {
       durationMonths: c.durationMonths,
     }));
 
-    return NextResponse.json({ success: true, data, categories });
+    return NextResponse.json(
+      { success: true, data, categories },
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+    );
   } catch (e) {
     console.error("GET /api/courses/public", e);
     return NextResponse.json({ success: false, error: "Failed to fetch courses" }, { status: 500 });

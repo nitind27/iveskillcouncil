@@ -240,6 +240,45 @@ async function main() {
 
     console.log('✅ Test Student created:', studentUser.email);
 
+    // 7. Create a Test Staff
+    console.log('📝 Creating test staff...');
+    const staffPassword = await bcrypt.hash('staff123', 10);
+
+    const staffUser = await prisma.user.upsert({
+      where: { email: 'staff@example.com' },
+      update: {
+        password: staffPassword,
+        status: 'ACTIVE',
+        franchiseId: franchise.id,
+        roleId: 5,
+      },
+      create: {
+        roleId: 5, // STAFF
+        fullName: 'Test Staff',
+        email: 'staff@example.com',
+        password: staffPassword,
+        franchiseId: franchise.id,
+        status: 'ACTIVE',
+      },
+    });
+
+    await prisma.staff.upsert({
+      where: { userId: staffUser.id },
+      update: {
+        salary: 25000.00,
+        status: 'ACTIVE',
+      },
+      create: {
+        userId: staffUser.id,
+        franchiseId: franchise.id,
+        salary: 25000.00,
+        joiningDate: new Date(),
+        status: 'ACTIVE',
+      },
+    });
+
+    console.log('✅ Test Staff created:', staffUser.email);
+
     console.log('\n🎉 Database seeding completed successfully!\n');
     console.log('📋 Login Credentials:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -255,6 +294,9 @@ async function main() {
     console.log('\nStudent:');
     console.log('  Email: student@example.com');
     console.log('  Password: student123');
+    console.log('\nStaff:');
+    console.log('  Email: staff@example.com');
+    console.log('  Password: staff123');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {

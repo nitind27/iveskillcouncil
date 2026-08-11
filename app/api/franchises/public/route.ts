@@ -39,7 +39,10 @@ export async function GET() {
       plan: f.plan.name,
     }));
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(
+      { success: true, data },
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+    );
   } catch (error) {
     console.error("Public franchises API error:", error);
     return NextResponse.json(

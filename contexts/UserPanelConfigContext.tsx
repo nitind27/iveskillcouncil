@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { defaultConfig } from "@/config/userpanel.config";
 import type { UserPanelConfig } from "@/config/userpanel.config";
-import PageLoader from "@/components/common/PageLoader";
+
+const SESSION_CACHE_KEY = "up_config_v1";
 
 function mergeConfig(data: unknown): UserPanelConfig {
   if (!data || typeof data !== "object") return defaultConfig;
@@ -24,6 +25,16 @@ function mergeConfig(data: unknown): UserPanelConfig {
   };
 }
 
+function readSessionCache(): UserPanelConfig | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    return mergeConfig(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
 const UserPanelConfigContext = createContext<UserPanelConfig>(defaultConfig);
 
 export function UserPanelConfigProvider({
@@ -32,25 +43,34 @@ export function UserPanelConfigProvider({
   children: React.ReactNode;
 }) {
   const [config, setConfig] = useState<UserPanelConfig>(defaultConfig);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/userpanel-config")
+    const cached = readSessionCache();
+    if (cached) setConfig(cached);
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+
+    fetch("/api/userpanel-config", { signal: controller.signal })
       .then((r) => r.json())
       .then((res) => {
-        if (res?.data) setConfig(mergeConfig(res.data));
+        if (!res?.data) return;
+        const next = mergeConfig(res.data);
+        setConfig(next);
+        try {
+          sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(res.data));
+        } catch {
+          // ignore quota / private mode
+        }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => window.clearTimeout(timeout));
 
-  if (loading) {
-    return (
-      <div className="userpanel">
-        <PageLoader text="Setting up your portal..." />
-      </div>
-    );
-  }
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, []);
 
   return (
     <UserPanelConfigContext.Provider value={config}>

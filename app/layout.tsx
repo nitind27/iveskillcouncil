@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import AdminLayout from "@/components/adminpanel/AdminLayout";
+import AppShell from "@/components/AppShell";
 import ToastProvider from "@/components/common/ToastProvider";
 import SWRProvider from "@/components/SWRProvider";
 
@@ -26,7 +26,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SWRProvider>
-              <AdminLayout>{children}</AdminLayout>
+              <AppShell>{children}</AppShell>
             </SWRProvider>
           </AuthProvider>
         </ThemeProvider>

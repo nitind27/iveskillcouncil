@@ -12,7 +12,7 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts'],
+    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'react-icons'],
   },
   // Serve dynamically uploaded files via API route in production
   async rewrites() {
