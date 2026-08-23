@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Regional language fonts (Google Fonts loaded via next/font variables in layout) */
+.font-sans {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+.font-devanagari {
+  font-family: var(--font-devanagari), var(--font-inter), system-ui, sans-serif;
+}
+.font-gujarati {
+  font-family: var(--font-gujarati), var(--font-inter), system-ui, sans-serif;
+}
+.font-kannada,
+.font-tamil,
+.font-telugu,
+.font-bengali,
+.font-malayalam,
+.font-gurmukhi,
+.font-oriya {
+  font-family: var(--font-devanagari), var(--font-inter), system-ui, sans-serif;
+}
+
+html.lang-en body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+html.lang-mr body,
+html.lang-hi body,
+html.lang-kn body,
+html.lang-ta body,
+html.lang-te body,
+html.lang-bn body,
+html.lang-ml body,
+html.lang-pa body,
+html.lang-or body {
+  font-family: var(--font-devanagari), var(--font-inter), system-ui, sans-serif;
+}
+html.lang-gu body {
+  font-family: var(--font-gujarati), var(--font-inter), system-ui, sans-serif;
+}
+
 @layer base {
   :root {
     /* IVESDC Brand Colors */

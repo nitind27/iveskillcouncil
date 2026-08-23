@@ -14,6 +14,7 @@ import {
 import { useLogoConfig } from "@/hooks/useLogoConfig";
 import { cn } from "@/lib/utils";
 import { getMenuForRole, type RoleMenuItem } from "@/lib/role-menu-config";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -41,6 +42,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const pn = pathname || "";
   const { logoUrl, siteName } = useLogoConfig();
+  const { t } = useLanguage();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const roleId = user?.roleId ?? 0;
   const menuSectionsFiltered = getMenuForRole(roleId);
@@ -93,7 +95,7 @@ export default function Sidebar({
               isCollapsed && "justify-center px-2",
               level > 0 && "pl-6"
             )}
-            title={isCollapsed ? item.label : undefined}
+            title={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
           >
             {active && (
               <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
@@ -111,7 +113,7 @@ export default function Sidebar({
             {!isCollapsed && (
               <>
                 <span className="flex-1 text-left text-[13px] font-semibold">
-                  {item.label}
+                  {t(`menu.${item.id}`, item.label)}
                 </span>
                 {item.badge && (
                   <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
@@ -166,7 +168,7 @@ export default function Sidebar({
         </span>
         {!isCollapsed && (
           <>
-            <span className="flex-1 text-[13px] font-semibold">{item.label}</span>
+            <span className="flex-1 text-[13px] font-semibold">{t(`menu.${item.id}`, item.label)}</span>
             {item.badge && (
               <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
                 {item.badge}
@@ -219,7 +221,7 @@ export default function Sidebar({
                     {siteName || "IVESDC"}
                   </p>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C4A35A]">
-                    Admin Panel
+                    {t("common.adminPanel", "Admin Panel")}
                   </p>
                 </div>
               )}
@@ -269,7 +271,7 @@ export default function Sidebar({
             <div key={section.id} className="space-y-1">
               {!isCollapsed && section.label && (
                 <h3 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]/80">
-                  {section.label}
+                  {t(`sections.${section.id}`, section.label)}
                 </h3>
               )}
               {isCollapsed && (

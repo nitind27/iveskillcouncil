@@ -29,6 +29,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { getMenuForRole } from "@/lib/role-menu-config";
 import { fetcher } from "@/lib/fetcher";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NavbarProps {
   onSidebarToggle: () => void;
@@ -88,6 +90,7 @@ type OpenPanel = null | "notifications" | "profile" | `menu:${string}`;
 export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const { logout } = useAuth();
+  const { t } = useLanguage();
   const pathname = usePathname() || "";
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [quickSearch, setQuickSearch] = useState("");
@@ -339,7 +342,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                         )}
                       >
                         {Icon && <Icon className="h-3.5 w-3.5" />}
-                        <span>{firstItem.label}</span>
+                        <span>{t(`menu.${firstItem.id}`, firstItem.label)}</span>
                       </Link>
                     )}
                   </div>
@@ -358,6 +361,8 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 className="h-10 w-40 rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-52 focus:border-[#C4A35A]/60 focus:ring-2 focus:ring-[#C4A35A]/20 lg:w-48 dark:border-slate-700 dark:bg-white/5 dark:text-white"
               />
             </div>
+
+            <LanguageSwitcher variant="admin" className="hidden sm:flex" />
 
             <button
               type="button"

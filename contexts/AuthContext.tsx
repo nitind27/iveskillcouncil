@@ -20,6 +20,7 @@ interface User {
     id: string;
     name: string;
     status: string;
+    state?: string | null;
   } | null;
   permissions?: string[];
 }

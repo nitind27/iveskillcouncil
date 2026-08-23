@@ -128,6 +128,7 @@ export async function getUserFromToken(token: string) {
               id: true,
               name: true,
               status: true,
+              state: true,
             },
           },
         },
@@ -155,6 +156,7 @@ export async function getUserFromToken(token: string) {
               id: user.franchise.id.toString(),
               name: user.franchise.name,
               status: user.franchise.status,
+              state: user.franchise.state ?? undefined,
             }
           : null,
         permissions,

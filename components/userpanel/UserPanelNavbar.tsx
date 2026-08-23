@@ -10,6 +10,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { defaultConfig, type UserPanelConfig } from "@/config/userpanel.config";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+const NAV_LABEL_KEYS: Record<string, string> = {
+  Home: "nav.home",
+  Courses: "nav.courses",
+  Offers: "nav.offers",
+  Franchise: "nav.franchise",
+  Gallery: "nav.gallery",
+  Contact: "nav.contact",
+};
 
 function navHref(href: string): string {
   if (href === "#home" || href === "/" || href === "") return "/userpanel";
@@ -34,6 +45,7 @@ interface UserPanelNavbarProps {
 }
 
 export default function UserPanelNavbar({ config, userName }: UserPanelNavbarProps) {
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const ticking = useRef(false);
@@ -129,7 +141,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                       <span className={isActive ? "text-[#2D5DA8]" : "text-[#9CA3AF]"}>
                         {NAV_ICONS[link.label]}
                       </span>
-                      {link.label}
+                      {t(NAV_LABEL_KEYS[link.label] ?? "nav.home", link.label)}
                     </Link>
                   );
                 })}
@@ -137,12 +149,14 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             </div>
 
             <div className="flex flex-shrink-0 items-center gap-2">
+              <LanguageSwitcher variant="userpanel" className="hidden md:flex" />
+
               <Link
                 href="/login?redirect=%2Fdashboard"
                 className="hidden items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#374151] shadow-sm transition-all hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] sm:inline-flex"
               >
                 <FiLogIn className="h-3.5 w-3.5" />
-                {userName ? "Dashboard" : "Login"}
+                {userName ? t("menu.dashboard", "Dashboard") : t("nav.login", "Login")}
               </Link>
 
               <Link href="/userpanel/courses" className="hidden sm:block">
@@ -254,7 +268,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                       <span className={isActive ? "text-white" : "text-[#2D5DA8]"}>
                         {NAV_ICONS[link.label] ?? <FiHome className="h-3.5 w-3.5" />}
                       </span>
-                      {link.label}
+                      {t(NAV_LABEL_KEYS[link.label] ?? "nav.home", link.label)}
                       {isActive && <FiArrowRight className="ml-auto h-4 w-4" />}
                     </Link>
                   );
