@@ -219,6 +219,11 @@ export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   // Dashboard root is allowed for every authenticated user
   if (normalizedPath === "/dashboard") return true;
 
+  // /admin is a legacy alias → same access as dashboard
+  if (normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")) {
+    return true;
+  }
+
   // Public/special paths — always allow
   if (normalizedPath.startsWith("/f/")) return true;
   if (normalizedPath.startsWith("/api/")) return true;

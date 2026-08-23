@@ -77,7 +77,16 @@ export default function AdminLayout({
     !user // not yet loaded — don't block
     || isSuperAdminOrAdmin
     || pathNormalized === "/dashboard"
+    || pathNormalized === "/admin"
+    || pathNormalized.startsWith("/admin/")
     || canRoleAccessPath(roleId, pn);
+
+  // /admin → dashboard (alias used by user panel login links)
+  useEffect(() => {
+    if (!loading && user && (pn === "/admin" || pn.startsWith("/admin/"))) {
+      router.replace("/dashboard");
+    }
+  }, [loading, user, pn, router]);
 
   // If user is logged in but landed on /403, send them to dashboard
   useEffect(() => {

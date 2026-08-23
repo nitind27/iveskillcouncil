@@ -138,7 +138,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
 
             <div className="flex flex-shrink-0 items-center gap-2">
               <Link
-                href={`/login?redirect=${encodeURIComponent("/admin")}`}
+                href="/login?redirect=%2Fdashboard"
                 className="hidden items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#374151] shadow-sm transition-all hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] sm:inline-flex"
               >
                 <FiLogIn className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               </div>
 
               <div className="space-y-2 border-t border-[#E5E7EB] px-3 pb-5 pt-3">
-                <Link href={`/login?redirect=${encodeURIComponent("/admin")}`} onClick={() => setMobileOpen(false)}>
+                <Link href="/login?redirect=%2Fdashboard" onClick={() => setMobileOpen(false)}>
                   <span className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#2D5DA8] py-2.5 text-sm font-bold text-[#2D5DA8]">
                     <FiLogIn className="h-4 w-4" /> Login
                   </span>

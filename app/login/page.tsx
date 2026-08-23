@@ -25,6 +25,10 @@ import { validateName, validateEmail } from "@/lib/validation";
 import { useLogoConfig } from "@/hooks/useLogoConfig";
 import PageLoader from "@/components/common/PageLoader";
 import LoginBrandPanel from "@/components/login/LoginBrandPanel";
+import {
+  parseLoginRedirectParam,
+  resolvePostLoginRedirect,
+} from "@/lib/post-login-redirect";
 
 type LoginMethod = "password" | "otp";
 type OverlayFlow = "forgot" | "firstTime" | null;
@@ -66,34 +70,23 @@ function LoginForm() {
 
   const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "codeatinfotech@gmail.com";
 
-  const getRedirectUrl = () => {
-    const redirectParam = searchParams?.get("redirect");
-    if (!redirectParam) return "/dashboard";
-    try {
-      let decoded = decodeURIComponent(redirectParam);
-      while (decoded.includes("%")) {
-        const newDecoded = decodeURIComponent(decoded);
-        if (newDecoded === decoded) break;
-        decoded = newDecoded;
-      }
-      // Never redirect back to error pages or login
-      const blocked = ["/403", "/401", "/400", "/500", "/503", "/login"];
-      if (!decoded.startsWith("/") || blocked.some(b => decoded === b || decoded.startsWith(b + "?"))) {
-        return "/dashboard";
-      }
-      return decoded;
-    } catch {
-      return "/dashboard";
-    }
-  };
+  const getRedirectUrl = () => parseLoginRedirectParam(searchParams?.get("redirect"));
 
+  const redirectParam = searchParams?.get("redirect") ?? "";
   const redirect = getRedirectUrl();
+
+  const goAfterLogin = (loggedInUser?: { roleId: number } | null) => {
+    const roleId = loggedInUser?.roleId ?? user?.roleId ?? 0;
+    const target = resolvePostLoginRedirect(redirectParam || "/dashboard", Number(roleId));
+    window.location.replace(target);
+  };
 
   useEffect(() => {
     if (user && !authLoading && !formLoading) {
-      window.location.replace(redirect);
+      goAfterLogin(user);
     }
-  }, [user, authLoading, formLoading, redirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, formLoading, redirectParam]);
 
   // --- Password Login ---
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -103,7 +96,7 @@ function LoginForm() {
       const result = await login(email, password);
       if (result.ok) {
         showSuccess("Login Successful", "Redirecting...");
-        setTimeout(() => { window.location.href = redirect; }, 1200);
+        setTimeout(() => goAfterLogin(), 1200);
       } else {
         const isDb = result.error?.toLowerCase().includes("database");
         showError(
@@ -161,7 +154,7 @@ function LoginForm() {
       const success = await loginWithOtp(email.trim().toLowerCase(), otp.trim());
       if (success) {
         showSuccess("Login Successful", "Redirecting...");
-        setTimeout(() => { window.location.href = redirect; }, 1200);
+        setTimeout(() => goAfterLogin(), 1200);
       } else {
         showError("Invalid OTP", "The OTP is invalid or expired. Request a new one.");
         setFormLoading(false);
@@ -228,7 +221,7 @@ function LoginForm() {
       if (res.ok && data?.success) {
         showSuccess("Password Reset", "Redirecting...");
         setForgotStep("done");
-        setTimeout(() => { window.location.href = redirect; }, 1200);
+        setTimeout(() => goAfterLogin(), 1200);
       } else {
         showError("Error", data?.error || "Invalid OTP or failed to reset");
         setFormLoading(false);
@@ -325,7 +318,7 @@ function LoginForm() {
       const data = await res.json();
       if (res.ok && data?.success) {
         showSuccess("Password Set", "Redirecting...");
-        setTimeout(() => { window.location.href = redirect; }, 1200);
+        setTimeout(() => goAfterLogin(), 1200);
       } else {
         showError("Error", data?.error || "Invalid OTP");
         setFormLoading(false);
