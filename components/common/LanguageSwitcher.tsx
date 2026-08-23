@@ -15,8 +15,17 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
-  const { locale, userState, regionalLabel, regionalLocale, setLocale, setUserState, t } =
-    useLanguage();
+  const {
+    locale,
+    userState,
+    stateDetecting,
+    stateSource,
+    regionalLabel,
+    regionalLocale,
+    setLocale,
+    setUserState,
+    t,
+  } = useLanguage();
   const stateOption = getStateLanguageOption(userState);
 
   const selectLocale = (next: UiLocale) => {
@@ -60,9 +69,19 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         <button
           type="button"
           className="inline-flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-slate-100"
-          title={t("lang.selectState")}
+          title={
+            stateDetecting
+              ? t("lang.detectingState", "Detecting your state…")
+              : stateSource === "franchise"
+                ? t("lang.stateFromFranchise", "State from your franchise")
+                : stateSource === "manual"
+                  ? t("lang.selectState")
+                  : t("lang.stateAutoDetected", "State auto-detected")
+          }
         >
-          <span className="max-w-[72px] truncate">{stateOption.state}</span>
+          <span className="max-w-[88px] truncate">
+            {stateDetecting ? "…" : stateOption.state}
+          </span>
           <ChevronDown className="h-3 w-3" />
         </button>
         <div className="invisible absolute right-0 top-full z-[200] mt-1 max-h-56 w-44 overflow-y-auto rounded-xl border border-border bg-popover py-1 text-popover-foreground opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">

@@ -21,6 +21,12 @@ export interface AuthResult {
     roleId: number;
     roleName: string;
     franchiseId?: string;
+    franchise?: {
+      id: string;
+      name: string;
+      status: string;
+      state?: string;
+    } | null;
     permissions: string[];
   };
   accessToken: string;
@@ -45,6 +51,14 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
         where: { email: credentials.email },
         include: {
           role: true,
+          franchise: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              state: true,
+            },
+          },
         },
       });
 
@@ -95,6 +109,14 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
           roleId: user.roleId,
           roleName: user.role.name,
           franchiseId: user.franchiseId?.toString(),
+          franchise: user.franchise
+            ? {
+                id: user.franchise.id.toString(),
+                name: user.franchise.name,
+                status: user.franchise.status,
+                state: user.franchise.state ?? undefined,
+              }
+            : null,
           permissions,
         },
         accessToken,

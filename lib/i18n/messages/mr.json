@@ -2,7 +2,10 @@
   "lang": {
     "english": "English",
     "selectState": "आपला राज्य निवडा",
-    "regionalFor": "प्रादेशिक भाषा"
+    "regionalFor": "प्रादेशिक भाषा",
+    "detectingState": "तुमचे राज्य शोधत आहे…",
+    "stateAutoDetected": "स्थानावरून राज्य स्वयंचलित निवडले",
+    "stateFromFranchise": "तुमच्या फ्रँचायझीचे राज्य"
   },
   "nav": {
     "controlCenter": "नियंत्रण केंद्र",

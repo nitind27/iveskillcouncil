@@ -99,11 +99,11 @@ export function getRegionalLocaleForState(state: string | null | undefined): Reg
   return "hi";
 }
 
+import { resolveIndianStateName } from "@/lib/i18n/resolve-state";
+
 export function getStateLanguageOption(state: string | null | undefined): StateLanguageOption {
-  const normalized = normalizeStateName(state) || "maharashtra";
-  const displayState =
-    INDIAN_STATES.find((s) => normalizeStateName(s) === normalized) ??
-    (state?.trim() || "Maharashtra");
+  const resolved = resolveIndianStateName(state);
+  const displayState = resolved ?? "Maharashtra";
   const locale = getRegionalLocaleForState(displayState);
   const meta = LOCALE_META[locale];
   return {

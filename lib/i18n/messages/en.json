@@ -2,7 +2,10 @@
   "lang": {
     "english": "English",
     "selectState": "Select your state",
-    "regionalFor": "Regional language for"
+    "regionalFor": "Regional language for",
+    "detectingState": "Detecting your state…",
+    "stateAutoDetected": "State auto-detected from your location",
+    "stateFromFranchise": "State from your franchise"
   },
   "nav": {
     "controlCenter": "Control Center",
