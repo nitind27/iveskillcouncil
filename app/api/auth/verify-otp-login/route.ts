@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-response";
-import { rateLimiter, rateLimitConfig, getClientIdentifier } from "@/lib/rate-limit";
+import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import { getEffectivePermissions } from "@/lib/get-effective-permissions";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** POST: Verify OTP and login (no password). Body: { email, otp } */
 export async function POST(request: NextRequest) {
   try {
-    const clientId = getClientIdentifier(request);
+    const clientId = rateLimitKey("auth", request);
     if (!rateLimiter.check(clientId, rateLimitConfig.auth.maxRequests, rateLimitConfig.auth.windowMs)) {
       return rateLimitResponse();
     }

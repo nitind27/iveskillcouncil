@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/jwt';
 import { successResponse, unauthorizedResponse, rateLimitResponse, errorResponse } from '@/lib/api-response';
-import { rateLimiter, rateLimitConfig, getClientIdentifier } from '@/lib/rate-limit';
+import { rateLimiter, rateLimitConfig, rateLimitKey } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
 import { ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, getAuthCookieOptions } from '@/lib/auth-cookies';
 import { randomUUID } from 'crypto';
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const clientId = getClientIdentifier(request);
+    const clientId = rateLimitKey("refresh", request);
     if (!rateLimiter.check(clientId, rateLimitConfig.authRefresh.maxRequests, rateLimitConfig.authRefresh.windowMs)) {
       return rateLimitResponse();
     }

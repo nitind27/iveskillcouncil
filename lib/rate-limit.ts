@@ -71,15 +71,20 @@ export const rateLimiter = new RateLimiter();
 
 // Rate limit configurations
 export const rateLimitConfig = {
-  // API routes
+  // General API routes
   api: {
     maxRequests: 100,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
-  // Auth routes (login / OTP) — strict
+  // Password login — per IP (generous for legitimate retries)
+  login: {
+    maxRequests: 25,
+    windowMs: 15 * 60 * 1000,
+  },
+  // OTP / forgot-password / reset — stricter but separate bucket
   auth: {
-    maxRequests: 5,
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 12,
+    windowMs: 15 * 60 * 1000,
   },
   // Session refresh — must stay generous so keep-alive never logs users out
   authRefresh: {
@@ -93,11 +98,23 @@ export const rateLimitConfig = {
   },
 };
 
-// Helper function to get client identifier
+/** Scoped key so login, OTP, forgot-password do not share one 5-request bucket */
+export function rateLimitKey(scope: string, request: Request): string {
+  return `${scope}:${getClientIdentifier(request)}`;
+}
+
+// Helper function to get client identifier (works behind Nginx / Cloudflare)
 export function getClientIdentifier(request: Request): string {
-  // In production, use IP address or user ID
-  const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
-  return ip;
+  const headers = request.headers;
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    const ip = forwarded.split(",")[0]?.trim();
+    if (ip) return ip;
+  }
+  const realIp = headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const cfIp = headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+  return "unknown";
 }
 

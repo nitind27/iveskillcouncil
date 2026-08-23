@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-response";
-import { rateLimiter, rateLimitConfig, getClientIdentifier } from "@/lib/rate-limit";
+import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
 import { sendOtpEmail } from "@/lib/email-otp";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** POST: Send OTP for login (alternative to password). Body: { email } */
 export async function POST(request: NextRequest) {
   try {
-    const clientId = getClientIdentifier(request);
+    const clientId = rateLimitKey("auth", request);
     if (!rateLimiter.check(clientId, rateLimitConfig.auth.maxRequests, rateLimitConfig.auth.windowMs)) {
       return rateLimitResponse();
     }

@@ -1,15 +1,15 @@
 import { NextRequest } from 'next/server';
 import { authenticateUser } from '@/lib/auth';
 import { successResponse, errorResponse, rateLimitResponse } from '@/lib/api-response';
-import { rateLimiter, rateLimitConfig, getClientIdentifier } from '@/lib/rate-limit';
+import { rateLimiter, rateLimitConfig, rateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting for auth endpoints
-    const clientId = getClientIdentifier(request);
-    if (!rateLimiter.check(clientId, rateLimitConfig.auth.maxRequests, rateLimitConfig.auth.windowMs)) {
+    const clientId = rateLimitKey("login", request);
+    if (!rateLimiter.check(clientId, rateLimitConfig.login.maxRequests, rateLimitConfig.login.windowMs)) {
       return rateLimitResponse();
     }
 
