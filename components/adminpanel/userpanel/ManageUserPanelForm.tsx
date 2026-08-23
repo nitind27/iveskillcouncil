@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/common/Card";
 import Link from "next/link";
 import {
   Monitor,
@@ -83,12 +82,12 @@ function ensureConfig(c: Partial<UserPanelConfig> | null): UserPanelConfig {
 }
 
 const inputClass =
-  "mt-1.5 w-full rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors";
+  "mt-1.5 w-full rounded-lg border border-border/70 bg-background px-3.5 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground transition-colors focus:border-[#1E4A85] focus:outline-none focus:ring-2 focus:ring-[#1E4A85]/15";
 const labelClass = "text-sm font-medium text-foreground";
 const btnAdd =
-  "inline-flex items-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/70 transition-colors";
+  "inline-flex items-center gap-2 rounded-lg border border-dashed border-[#1E4A85]/40 bg-[#1E4A85]/5 px-4 py-2.5 text-sm font-medium text-[#1E4A85] transition-colors hover:border-[#1E4A85]/60 hover:bg-[#1E4A85]/10";
 const btnRemove =
-  "inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors";
+  "inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive";
 
 function getFullImageUrl(url: string): string {
   if (typeof window === "undefined") return url;
@@ -368,111 +367,141 @@ export default function ManageUserPanelForm() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <div className="flex flex-col items-center justify-center gap-4 py-24">
         <div className="relative">
-          <div className="w-14 h-14 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <Loader2 className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin" />
+          <div className="h-14 w-14 animate-spin rounded-full border-2 border-[#1E4A85]/20 border-t-[#1E4A85]" />
+          <Loader2 className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 animate-spin text-[#1E4A85]" />
         </div>
         <p className="text-sm text-muted-foreground">Loading user panel settings…</p>
       </div>
     );
   }
 
+  const activeTabMeta = TABS.find((t) => t.id === activeTab);
+
   return (
-    <div className="space-y-0">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-gradient-to-br from-card via-card to-primary/5 p-6 mb-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                Content
+      <header className="overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] text-white shadow-md shadow-[#1E4A85]/15">
+        <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <nav className="mb-1.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+              <Link href="/dashboard" className="hover:text-white/90">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-white/80">User Panel</span>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">User Panel Settings</h1>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#F5E6C8]">
+                <Monitor className="h-3 w-3" />
+                Public site
               </span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Manage User Panel
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground max-w-xl">
-              Edit banner, hero, stats, courses, offers, and all content visitors see on the public homepage.
+            <p className="mt-1 max-w-xl text-xs text-white/60 sm:text-sm">
+              Configure hero, stats, courses, franchise section, offers, gallery, and footer on the public homepage.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm backdrop-blur-sm">
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Sections</p>
+                <p className="font-bold tabular-nums leading-tight">{TABS.length}</p>
+              </div>
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-[#F5E6C8]/80">Editing</p>
+                <p className="max-w-[88px] truncate text-xs font-bold leading-tight text-[#F5E6C8]">
+                  {activeTabMeta?.label ?? "—"}
+                </p>
+              </div>
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-200/80">Popup</p>
+                <p className="font-bold tabular-nums leading-tight text-emerald-100">
+                  {config.welcomePopup.enabled ? "On" : "Off"}
+                </p>
+              </div>
+            </div>
+
             <Link
               href="/userpanel"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >
-              <Monitor className="w-4 h-4" />
-              View User Panel
-              <ExternalLink className="w-4 h-4 opacity-60" />
+              <Monitor className="h-3.5 w-3.5" />
+              Preview
+              <ExternalLink className="h-3 w-3 opacity-70" />
             </Link>
+
             {isSuperAdminOrAdmin ? (
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all",
-                  "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none shadow-sm"
-                )}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-4 text-xs font-bold text-[#0B132B] transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-50"
               >
                 {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Save className="w-4 h-4" />
+                  <Save className="h-3.5 w-3.5" />
                 )}
                 {saving ? "Saving…" : "Save changes"}
               </button>
             ) : (
-              <span className="text-sm text-muted-foreground">
-                Only Super Admin can save changes.
+              <span className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white/70">
+                View only — admin can save
               </span>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Success message */}
       {saved && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/20 px-4 py-3 text-sm text-green-800 dark:text-green-200">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-200">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
           Config saved. Refresh the user panel tab to see changes.
         </div>
       )}
 
       {/* Tabs */}
-      <div className="border-b border-border mb-6">
-        <nav className="flex flex-wrap gap-1" aria-label="Sections">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-t-lg px-4 py-3 text-sm font-medium transition-colors",
-                  activeTab === tab.id
-                    ? "border border-b-0 border-border bg-card text-foreground -mb-px"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      <div className="overflow-hidden rounded-2xl border border-[#1E4A85]/12 bg-card shadow-sm">
+        <div className="border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.04] to-transparent px-2 pt-2 sm:px-3">
+          <nav className="flex flex-wrap gap-1 pb-px" aria-label="Sections">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-t-lg px-3 py-2.5 text-xs font-medium transition sm:px-4 sm:text-sm",
+                    activeTab === tab.id
+                      ? "border border-b-0 border-[#1E4A85]/15 bg-card text-[#1E4A85] shadow-sm -mb-px"
+                      : "text-muted-foreground hover:bg-[#1E4A85]/5 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
-      {/* Content card */}
-      <Card variant="default" className="overflow-hidden">
-        <CardContent className="p-6 md:p-8">
+        {/* Content */}
+        <div className="p-6 md:p-8">
           {/* Welcome Popup */}
           {activeTab === "welcomePopup" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
+                <Sparkles className="w-5 h-5 text-[#1E4A85]" />
                 Welcome Popup (User Panel)
               </h2>
               {config.welcomePopup.imageUrl && (
@@ -497,7 +526,7 @@ export default function ManageUserPanelForm() {
                       welcomePopup: { ...c.welcomePopup, enabled: e.target.checked },
                     }))
                   }
-                  className="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-4 w-4 rounded border-input text-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/20"
                 />
                 <label htmlFor="welcomePopupEnabled" className={labelClass}>
                   Enable welcome popup on user panel (show once per session)
@@ -622,7 +651,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "site" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Layout className="w-5 h-5 text-primary" />
+                <Layout className="w-5 h-5 text-[#1E4A85]" />
                 Site (Logo & Name)
               </h2>
               <div className="grid gap-6 sm:grid-cols-2">
@@ -739,7 +768,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "hero" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-primary" />
+                <ImageIcon className="w-5 h-5 text-[#1E4A85]" />
                 Hero & Banner
               </h2>
               <div>
@@ -781,7 +810,7 @@ export default function ManageUserPanelForm() {
                     <div className="mt-2 flex items-center gap-3 flex-wrap">
                       <label
                         className={cn(
-                          "inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/70 transition-colors cursor-pointer",
+                          "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#1E4A85]/50 bg-[#1E4A85]/5 px-4 py-2.5 text-sm font-medium text-[#1E4A85] transition-colors hover:border-[#1E4A85]/70 hover:bg-[#1E4A85]/10",
                           heroUploading && "opacity-60 pointer-events-none"
                         )}
                       >
@@ -953,7 +982,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "nav" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Menu className="w-5 h-5 text-primary" />
+                <Menu className="w-5 h-5 text-[#1E4A85]" />
                 Nav menu links
               </h2>
               <div className="space-y-4">
@@ -1011,7 +1040,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "stats" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
+                <BarChart3 className="w-5 h-5 text-[#1E4A85]" />
                 Stats (counts)
               </h2>
               <div className="space-y-4">
@@ -1103,7 +1132,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "about" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Info className="w-5 h-5 text-primary" />
+                <Info className="w-5 h-5 text-[#1E4A85]" />
                 About section
               </h2>
               <div>
@@ -1205,7 +1234,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "courses" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
+                <BookOpen className="w-5 h-5 text-[#1E4A85]" />
                 Courses
               </h2>
               <div>
@@ -1240,7 +1269,7 @@ export default function ManageUserPanelForm() {
                               },
                             }))
                           }
-                          className="h-4 w-4 accent-primary"
+                          className="h-4 w-4 accent-[#1E4A85]"
                         />
                         Visible on user panel
                       </label>
@@ -1407,7 +1436,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "franchise" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
+                <Building2 className="w-5 h-5 text-[#1E4A85]" />
                 Franchise highlight
               </h2>
               {!config.franchise.highlight ? (
@@ -1536,7 +1565,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "offers" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Tag className="w-5 h-5 text-primary" />
+                <Tag className="w-5 h-5 text-[#1E4A85]" />
                 Offers
               </h2>
               <div>
@@ -1623,7 +1652,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "testimonials" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-primary" />
+                <MessageSquare className="w-5 h-5 text-[#1E4A85]" />
                 What Our Students Say
               </h2>
               <div>
@@ -1743,7 +1772,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "gallery" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Images className="w-5 h-5 text-primary" />
+                <Images className="w-5 h-5 text-[#1E4A85]" />
                 Gallery
               </h2>
               <div>
@@ -1809,7 +1838,7 @@ export default function ManageUserPanelForm() {
           {activeTab === "footer" && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Footprints className="w-5 h-5 text-primary" />
+                <Footprints className="w-5 h-5 text-[#1E4A85]" />
                 Footer & Contact
               </h2>
               <div>
@@ -1862,8 +1891,8 @@ export default function ManageUserPanelForm() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <ImageEditorModal
         open={imageEditorOpen}

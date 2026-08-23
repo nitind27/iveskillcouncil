@@ -25,7 +25,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate user
-    const authResult = await authenticateUser({ email, password });
+    let authResult;
+    try {
+      authResult = await authenticateUser({ email, password });
+    } catch (authError: unknown) {
+      const msg = authError instanceof Error ? authError.message : String(authError);
+      const name = (authError as { name?: string })?.name;
+      if (
+        msg === 'DATABASE_UNAVAILABLE' ||
+        name === 'DatabaseUnavailableError' ||
+        msg.includes("Can't reach database server") ||
+        msg.includes('ECONNREFUSED')
+      ) {
+        console.error('❌ Database unreachable during login for:', email);
+        return errorResponse(
+          'Database unreachable. Run npm run dev (starts DB proxy on port 3307), wait ~5s, then retry.',
+          503
+        );
+      }
+      throw authError;
+    }
 
     if (!authResult) {
       console.error('❌ Authentication failed for:', email);
@@ -49,35 +68,19 @@ export async function POST(request: NextRequest) {
     );
 
     // Set HTTP-only cookies with proper settings
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
+    const { ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, getAuthCookieOptions } = await import('@/lib/auth-cookies');
+    const cookieOptions = getAuthCookieOptions();
 
-    // Set access token cookie
     response.cookies.set('accessToken', authResult.accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60, // 15 minutes
+      maxAge: ACCESS_TOKEN_MAX_AGE,
     });
 
-    // Set refresh token cookie
     response.cookies.set('refreshToken', authResult.refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
-    console.log('✅ Cookies set for user:', email);
-    console.log('📝 Cookie settings:', {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: '15m (access), 7d (refresh)'
-    });
-    
     return response;
   } catch (error: any) {
     console.error('❌ Login API error:', error);

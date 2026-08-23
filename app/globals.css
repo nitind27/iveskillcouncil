@@ -271,32 +271,78 @@
     /* Borders */
     --up-border: #E5E7EB;
     --up-border-strong: #D1D5DB;
-    /* Primary — Blue */
-    --up-accent: #2D5DA8;
-    --up-accent-hover: #1E4A85;
-    --up-accent-muted: #93B4E0;
-    /* Secondary — Green */
-    --up-green: #A8C63A;
-    --up-green-hover: #8FA92F;
-    --up-green-muted: #D4E88A;
-    /* Accent — Orange */
-    --up-orange: #F39C12;
-    --up-orange-hover: #D68910;
-    --up-orange-muted: #FAD08A;
+    /* Primary — Navy */
+    --up-accent: #1E4A85;
+    --up-accent-hover: #163A6B;
+    --up-accent-muted: #7FA0C9;
+    /* Secondary — muted gold */
+    --up-green: #C4A35A;
+    --up-green-hover: #A88B48;
+    --up-green-muted: #E8D9B0;
+    /* Accent — gold */
+    --up-orange: #C4A35A;
+    --up-orange-hover: #A88B48;
+    --up-orange-muted: #E8D9B0;
     /* Navbar glass */
     --up-nav-bg: rgba(255, 255, 255, 0.95);
     --up-nav-border: rgba(45, 93, 168, 0.10);
     --up-nav-shadow: 0 4px 24px rgba(45, 93, 168, 0.08);
     /* Fixed header + marquee heights */
-    --up-header-height: 6.5rem;
-    --up-marquee-height: 2.5rem;
-    --up-nav-height: 9rem;
+    --up-header-height: 3.75rem;
+    --up-marquee-height: 1.75rem;
+    --up-nav-height: calc(var(--up-header-height) + var(--up-marquee-height) + 2px);
+  }
+  .userpanel .up-hero {
+    height: calc(100vh - var(--up-nav-height));
+    height: calc(100dvh - var(--up-nav-height));
   }
   .userpanel .hero-overlay {
     background:
-      radial-gradient(1200px 500px at 10% 0%, rgba(45, 93, 168, 0.30), transparent 60%),
-      radial-gradient(800px 400px at 90% 10%, rgba(168, 198, 58, 0.18), transparent 60%),
-      linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.38) 55%, rgba(0,0,0,0.60) 100%);
+      linear-gradient(180deg, rgba(15, 23, 42, 0.58) 0%, rgba(15, 23, 42, 0.62) 45%, rgba(15, 23, 42, 0.78) 100%);
+  }
+  .userpanel .hero-govt-shade {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.78) 0%,
+        rgba(0, 0, 0, 0.52) 38%,
+        rgba(0, 0, 0, 0.28) 62%,
+        rgba(0, 0, 0, 0.38) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.22) 0%,
+        rgba(0, 0, 0, 0.12) 42%,
+        rgba(0, 0, 0, 0.72) 100%
+      );
+  }
+  @media (max-width: 640px) {
+    .userpanel .hero-govt-shade {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.45) 0%,
+          rgba(0, 0, 0, 0.38) 40%,
+          rgba(0, 0, 0, 0.82) 100%
+        );
+    }
+  }
+  .userpanel .hero-title-glow {
+    color: #ffffff;
+    text-shadow:
+      0 0 10px rgba(255, 255, 255, 0.45),
+      0 0 22px rgba(196, 163, 90, 0.28),
+      0 0 42px rgba(30, 74, 133, 0.18),
+      0 2px 10px rgba(0, 0, 0, 0.9);
+  }
+  .userpanel .hero-sub-glow {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow:
+      0 0 8px rgba(255, 255, 255, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.85);
+  }
+  .userpanel .hero-badge-glow {
+    text-shadow: 0 0 8px rgba(196, 163, 90, 0.45);
   }
 
   /* User Panel: header marquee */
@@ -311,6 +357,234 @@
   .marquee-track:hover {
     animation-play-state: paused;
   }
+
+  @keyframes hero-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  .hero-progress-bar {
+    transform-origin: left center;
+    animation: hero-progress 5.5s linear forwards;
+  }
+  .hero-progress-bar.is-paused {
+    animation-play-state: paused;
+  }
+  @keyframes hero-kenburns {
+    0% { transform: scale(1.04) translate3d(0, 0, 0); }
+    100% { transform: scale(1.12) translate3d(-1.5%, 0, 0); }
+  }
+  .hero-kenburns {
+    animation: hero-kenburns 7s ease-out forwards;
+    will-change: transform;
+  }
+  @keyframes offer-coin-spin {
+    0%, 100% { transform: translateY(0) rotateY(-12deg) rotateX(8deg); }
+    50% { transform: translateY(-10px) rotateY(18deg) rotateX(4deg); }
+  }
+  @keyframes offer-coin-glow {
+    0%, 100% {
+      box-shadow:
+        0 0 10px rgba(212, 176, 92, 0.45),
+        0 0 22px rgba(196, 163, 90, 0.32),
+        inset 0 3px 8px rgba(255, 255, 255, 0.45),
+        inset 0 -5px 10px rgba(120, 90, 30, 0.28);
+    }
+    50% {
+      box-shadow:
+        0 0 16px rgba(228, 196, 110, 0.6),
+        0 0 32px rgba(196, 163, 90, 0.42),
+        inset 0 3px 8px rgba(255, 255, 255, 0.55),
+        inset 0 -5px 10px rgba(120, 90, 30, 0.22);
+    }
+  }
+  @keyframes offer-halo {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(1.06); }
+  }
+  @keyframes offer-btn-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+        0 6px 0 #9A7A38,
+        0 12px 22px rgba(0, 0, 0, 0.32),
+        0 0 14px rgba(212, 176, 92, 0.45),
+        0 0 28px rgba(196, 163, 90, 0.22);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+        0 6px 0 #9A7A38,
+        0 12px 22px rgba(0, 0, 0, 0.35),
+        0 0 20px rgba(228, 196, 110, 0.55),
+        0 0 36px rgba(196, 163, 90, 0.3);
+    }
+  }
+  @keyframes offer-orb {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+    50% { transform: translate3d(18px, -22px, 0) scale(1.12); opacity: 0.9; }
+  }
+  .userpanel .offer-coin {
+    position: relative;
+    z-index: 1;
+    transform-style: preserve-3d;
+    animation: offer-coin-spin 4.6s ease-in-out infinite, offer-coin-glow 1.7s ease-in-out infinite;
+    background:
+      radial-gradient(circle at 30% 26%, #F3E4B8 0%, #E0C06A 38%, #C4A35A 72%, #B08F48 100%);
+    color: #1A1408;
+  }
+  .userpanel .offer-coin-halo {
+    animation: offer-halo 1.7s ease-in-out infinite;
+  }
+  .userpanel .offer-btn-glow {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(180deg, #E8D08A 0%, #D4B05C 48%, #C4A35A 100%);
+    color: #1A1408;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+    animation: offer-btn-pulse 2.2s ease-in-out infinite;
+    transform: translateZ(28px);
+  }
+  .userpanel .offer-btn-glow::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(212, 176, 92, 0.35) 0%, transparent 72%);
+    filter: blur(8px);
+    animation: offer-halo 2.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .userpanel .offer-btn-glow:hover {
+    filter: brightness(1.12);
+  }
+  .userpanel .offer-btn-glow:active {
+    transform: translateZ(28px) translateY(5px);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+      0 2px 0 #C4922A,
+      0 0 18px rgba(212, 176, 92, 0.55) !important;
+  }
+  .userpanel .offer-orb {
+    animation: offer-orb 7s ease-in-out infinite;
+  }
+  .userpanel .offer-orb-delay {
+    animation-delay: -3.4s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-kenburns {
+      animation: none;
+    }
+    .marquee-track {
+      animation: none;
+    }
+    .userpanel .offer-coin,
+    .userpanel .offer-coin-halo,
+    .userpanel .offer-btn-glow,
+    .userpanel .offer-btn-glow::before,
+    .userpanel .offer-orb,
+    .userpanel .offer-orb-delay {
+      animation: none;
+    }
+    .login-mesh-bg::before {
+      animation: none !important;
+    }
+    .login-brand-logo-box,
+    .login-feature-pill-3d {
+      animation: none !important;
+    }
+  }
+}
+
+/* Login page — dark glass + mesh */
+.login-page {
+  background: linear-gradient(135deg, #0b132b 0%, #1c2541 45%, #0f1a33 100%);
+}
+.login-mesh-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
+  pointer-events: none;
+}
+.login-mesh-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(30, 74, 133, 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(196, 163, 90, 0.12) 0%, transparent 40%);
+  pointer-events: none;
+}
+.login-glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.login-feature-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+.login-brand-panel {
+  background: linear-gradient(160deg, rgba(11, 19, 43, 0.6) 0%, rgba(28, 37, 65, 0.2) 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+.login-brand-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 92%);
+  pointer-events: none;
+}
+.login-brand-glow {
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 20%, rgba(30, 74, 133, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(196, 163, 90, 0.12) 0%, transparent 55%);
+}
+.login-brand-logo-scene {
+  perspective: 1200px;
+}
+.login-brand-logo-box {
+  transform-style: preserve-3d;
+}
+.login-brand-logo {
+  filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.45));
+}
+.login-brand-divider {
+  background: linear-gradient(90deg, #c4a35a 0%, rgba(196, 163, 90, 0.2) 100%);
+}
+.login-feature-pill-3d {
+  perspective: 800px;
+  transform-style: preserve-3d;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.login-feature-pill-3d:hover {
+  border-color: rgba(196, 163, 90, 0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+.login-btn-gold {
+  background: linear-gradient(135deg, #d4b86a 0%, #c4a35a 45%, #a88b48 100%);
+  box-shadow: 0 8px 28px rgba(196, 163, 90, 0.35);
+}
+.login-btn-gold:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 12px 32px rgba(196, 163, 90, 0.45);
 }
 
 /* React-toastify: always show toasts above everything */

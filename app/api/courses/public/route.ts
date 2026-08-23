@@ -17,11 +17,20 @@ export async function GET() {
         select: {
           id: true,
           name: true,
+          slug: true,
           description: true,
+          shortDescription: true,
+          imageUrl: true,
           type: true,
           category: true,
+          level: true,
+          mode: true,
           baseFee: true,
           durationMonths: true,
+          lectures: true,
+          videos: true,
+          notes: true,
+          highlights: true,
         },
       }),
       prisma.courseCategory.findMany({
@@ -36,12 +45,23 @@ export async function GET() {
     const data = courses.map((c) => ({
       id: c.id.toString(),
       name: c.name,
+      slug: c.slug,
       description: c.description,
+      shortDescription: c.shortDescription,
+      imageUrl: c.imageUrl,
       type: c.type,
       category: c.category || "other",
       categoryData: catMap[c.category || "other"] ?? null,
+      level: c.level,
+      mode: c.mode,
       baseFee: Number(c.baseFee),
       durationMonths: c.durationMonths,
+      lectures: c.lectures,
+      videos: c.videos,
+      notes: c.notes,
+      highlights: c.highlights
+        ? c.highlights.split("\n").map((l) => l.trim()).filter(Boolean)
+        : [],
     }));
 
     return NextResponse.json(

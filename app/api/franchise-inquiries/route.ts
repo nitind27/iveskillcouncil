@@ -46,3 +46,30 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+/** DELETE: Remove a franchise inquiry by id (Super admin / Admin). */
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await requireSuperAdminOrAdmin();
+    if (!user) return unauthorizedResponse();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("Missing id", 400);
+
+    await prisma.franchiseInquiry.delete({
+      where: { id: BigInt(id) },
+    });
+
+    return successResponse({ deleted: true }, "Inquiry deleted");
+  } catch (error: unknown) {
+    console.error("Franchise enquiries DELETE error:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return errorResponse("Database table `franchise_inquiries` is missing.", 503);
+    }
+    return errorResponse(
+      error instanceof Error ? error.message : "Failed to delete inquiry",
+      500
+    );
+  }
+}

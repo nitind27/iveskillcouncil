@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { defaultConfig } from "@/config/userpanel.config";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 
-const SESSION_CACHE_KEY = "up_config_v1";
+const SESSION_CACHE_KEY = "up_config_v4";
 
 function mergeConfig(data: unknown): UserPanelConfig {
   if (!data || typeof data !== "object") return defaultConfig;
@@ -12,7 +12,13 @@ function mergeConfig(data: unknown): UserPanelConfig {
   return {
     welcomePopup: (c.welcomePopup as UserPanelConfig["welcomePopup"]) ?? defaultConfig.welcomePopup,
     site: { ...defaultConfig.site, ...(c.site as UserPanelConfig["site"]) },
-    nav: (c.nav as UserPanelConfig["nav"]) ?? defaultConfig.nav,
+    nav: {
+      links:
+        Array.isArray((c.nav as UserPanelConfig["nav"])?.links) &&
+        (c.nav as UserPanelConfig["nav"]).links.length > 0
+          ? (c.nav as UserPanelConfig["nav"]).links
+          : defaultConfig.nav.links,
+    },
     hero: (c.hero as UserPanelConfig["hero"]) ?? defaultConfig.hero,
     stats: Array.isArray(c.stats) ? (c.stats as UserPanelConfig["stats"]) : defaultConfig.stats,
     about: (c.about as UserPanelConfig["about"]) ?? defaultConfig.about,

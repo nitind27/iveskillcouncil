@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
-import { ROLES } from "@/lib/permissions";
+import { canManageCertificateWorkflow } from "@/lib/certificate-access";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) return unauthorizedResponse();
 
     const roleId = Number(user.roleId);
-    if (roleId !== ROLES.SUPER_ADMIN && roleId !== ROLES.ADMIN && roleId !== ROLES.SUB_ADMIN) {
-      return errorResponse("Forbidden", 403);
+    if (!canManageCertificateWorkflow(roleId)) {
+      return errorResponse("Only institute admin can approve or issue certificates", 403);
     }
 
     const { id } = await params;
@@ -26,14 +26,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const cert = await prisma.certificate.findUnique({
       where: { id: BigInt(id) },
-      include: { franchise: true },
     });
 
     if (!cert) return errorResponse("Certificate not found", 404);
-
-    if (roleId === ROLES.SUB_ADMIN && user.franchiseId && BigInt(user.franchiseId) !== cert.franchiseId) {
-      return errorResponse("Forbidden", 403);
-    }
 
     await prisma.certificate.update({
       where: { id: BigInt(id) },

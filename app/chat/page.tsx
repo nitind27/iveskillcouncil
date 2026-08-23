@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare, Send, Plus, Users, Search, Hash, Loader2, X,
@@ -9,7 +10,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
-import Breadcrumb from "@/components/common/Breadcrumb";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -24,7 +24,13 @@ interface ChatMsg   {
 interface ChatRoom  { id: string; type: string; name: string; slug?: string | null; lastMessage?: { body: string; senderName: string; createdAt: string } | null; unreadCount: number; members: { id: string; fullName: string; roleId: number }[]; updatedAt: string; }
 
 const ROLE_LABEL: Record<number, string> = { 1:"Super Admin", 2:"Admin", 3:"Franchise Admin", 4:"Student", 5:"Staff" };
-const ROLE_COLOR: Record<number, string> = { 1:"bg-[#2D5DA8]", 2:"bg-[#A8C63A]", 3:"bg-[#F39C12]", 4:"bg-emerald-500", 5:"bg-violet-500" };
+const ROLE_COLOR: Record<number, string> = {
+  1: "bg-[#1E4A85]",
+  2: "bg-[#C4A35A] text-[#0B132B]",
+  3: "bg-[#163A6B]",
+  4: "bg-emerald-600",
+  5: "bg-violet-600",
+};
 
 function timeAgo(iso: string) {
   const d = new Date(iso), diff = Date.now() - d.getTime();
@@ -264,102 +270,271 @@ export default function ChatPage() {
   const totalUnread = rooms.reduce((s,r) => s+r.unreadCount, 0);
 
   return (
-    <div className="space-y-4">
-      <Breadcrumb items={[{ label:"Dashboard", href:"/dashboard" }, { label:"Chat" }]} />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-primary"/> Chat
-            {totalUnread>0 && <span className="ml-1 px-2 py-0.5 rounded-full bg-[#F39C12] text-white text-xs font-black">{totalUnread}</span>}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Direct messages and group discussions</p>
+    <div className="space-y-5 pb-6">
+      {/* Header */}
+      <header className="overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] text-white shadow-md shadow-[#1E4A85]/15">
+        <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="min-w-0">
+            <nav className="mb-1.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+              <Link href="/dashboard" className="hover:text-white/90">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-white/80">Chat</span>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Messages</h1>
+              {totalUnread > 0 && (
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#C4A35A] px-2 text-[11px] font-bold text-[#0B132B]">
+                  {totalUnread > 99 ? "99+" : totalUnread}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-white/60 sm:text-sm">
+              Direct messages & group discussions across your network
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 backdrop-blur-sm">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">
+                Conversations
+              </p>
+              <p className="font-bold tabular-nums">{rooms.length}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowNewChat(true);
+                setShowNewGroup(false);
+                setUserSearch("");
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B132B] transition hover:brightness-110"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New chat
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="flex h-[calc(100vh-200px)] min-h-[520px] rounded-2xl border border-border overflow-hidden bg-background shadow-sm">
+      <div className="flex h-[calc(100vh-220px)] min-h-[520px] overflow-hidden rounded-2xl border border-[#1E4A85]/12 bg-card shadow-sm">
 
         {/* ── Sidebar ── */}
-        <div className="w-72 flex-shrink-0 border-r border-border flex flex-col bg-muted/20">
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-            <span className="font-bold text-foreground text-sm">Conversations</span>
+        <div className="flex w-72 shrink-0 flex-col border-r border-[#1E4A85]/10 bg-gradient-to-b from-[#1E4A85]/[0.04] to-transparent">
+          <div className="flex items-center justify-between border-b border-[#1E4A85]/10 px-4 py-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+              Inbox
+            </span>
             <div className="flex gap-1">
-              <button onClick={() => { setShowNewChat(true); setShowNewGroup(false); setUserSearch(""); }} title="New chat" className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><Plus className="w-4 h-4"/></button>
-              {isAdmin && <button onClick={() => { setShowNewGroup(true); setShowNewChat(false); setUserSearch(""); setGroupName(""); setGroupMembers([]); }} title="New group" className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><Users className="w-4 h-4"/></button>}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewChat(true);
+                  setShowNewGroup(false);
+                  setUserSearch("");
+                }}
+                title="New chat"
+                className="rounded-lg p-1.5 text-[#1E4A85] transition hover:bg-[#1E4A85]/10"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewGroup(true);
+                    setShowNewChat(false);
+                    setUserSearch("");
+                    setGroupName("");
+                    setGroupMembers([]);
+                  }}
+                  title="New group"
+                  className="rounded-lg p-1.5 text-[#1E4A85] transition hover:bg-[#1E4A85]/10"
+                >
+                  <Users className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
-          <div className="px-3 py-2 border-b border-border">
+          <div className="border-b border-[#1E4A85]/10 px-3 py-2.5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground"/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search chats..." className="w-full pl-8 pr-3 py-2 rounded-xl bg-background border border-input text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search chats…"
+                className="w-full rounded-xl border border-border/70 bg-background py-2 pl-8 pr-3 text-xs outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
+              />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
             {loadingRooms ? (
-              <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 text-primary animate-spin"/></div>
-            ) : filteredRooms.length===0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground"><MessageSquare className="w-8 h-8"/><p className="text-xs">No conversations yet</p></div>
-            ) : filteredRooms.map(room => (
-              <button key={room.id} onClick={() => openRoom(room)}
-                className={cn("w-full flex items-center gap-3 px-4 py-3 transition-colors border-b border-border/50 last:border-0 text-left", activeRoom?.id===room.id ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted/50")}>
-                <div className="relative flex-shrink-0">
-                  {room.type==="group" ? <div className="w-9 h-9 rounded-full bg-[#A8C63A] flex items-center justify-center"><Hash className="w-4 h-4 text-white"/></div> : <Avatar name={room.name} roleId={room.members[0]?.roleId??3} size="sm"/>}
-                  {room.unreadCount>0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#F39C12] text-white text-[9px] font-black flex items-center justify-center">{room.unreadCount}</span>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className={cn("text-xs font-semibold truncate", room.unreadCount>0?"text-foreground":"text-foreground/80")}>{room.name}</p>
-                    {room.lastMessage && <span className="text-[9px] text-muted-foreground flex-shrink-0">{timeAgo(room.lastMessage.createdAt)}</span>}
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-[#1E4A85]" />
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-muted-foreground">
+                <MessageSquare className="h-8 w-8 text-[#1E4A85]/40" />
+                <p className="text-xs font-medium">No conversations yet</p>
+              </div>
+            ) : (
+              filteredRooms.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={() => openRoom(room)}
+                  className={cn(
+                    "relative flex w-full items-center gap-3 border-b border-[#1E4A85]/5 px-4 py-3 text-left transition",
+                    activeRoom?.id === room.id
+                      ? "bg-[#1E4A85]/10 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r-full before:bg-[#C4A35A]"
+                      : "hover:bg-[#1E4A85]/[0.05]"
+                  )}
+                >
+                  <div className="relative shrink-0">
+                    {room.type === "group" ? (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#C4A35A] to-[#A8893E] shadow-sm">
+                        <Hash className="h-4 w-4 text-[#0B132B]" />
+                      </div>
+                    ) : (
+                      <Avatar name={room.name} roleId={room.members[0]?.roleId ?? 3} size="sm" />
+                    )}
+                    {room.unreadCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C4A35A] px-0.5 text-[9px] font-bold text-[#0B132B]">
+                        {room.unreadCount}
+                      </span>
+                    )}
                   </div>
-                  {room.lastMessage ? <p className="text-[10px] text-muted-foreground truncate">{room.lastMessage.senderName}: {room.lastMessage.body}</p> : <p className="text-[10px] text-muted-foreground italic">No messages yet</p>}
-                </div>
-              </button>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p
+                        className={cn(
+                          "truncate text-xs font-semibold",
+                          room.unreadCount > 0 ? "text-foreground" : "text-foreground/80"
+                        )}
+                      >
+                        {room.name}
+                      </p>
+                      {room.lastMessage && (
+                        <span className="shrink-0 text-[9px] text-muted-foreground">
+                          {timeAgo(room.lastMessage.createdAt)}
+                        </span>
+                      )}
+                    </div>
+                    {room.lastMessage ? (
+                      <p className="truncate text-[10px] text-muted-foreground">
+                        {room.lastMessage.senderName}: {room.lastMessage.body}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] italic text-muted-foreground">No messages yet</p>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
         {/* ── Main area ── */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div className="relative flex flex-1 flex-col overflow-hidden">
 
           {/* New chat / group overlay */}
           <AnimatePresence>
-            {(showNewChat||showNewGroup) && (
-              <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} className="absolute inset-0 z-10 bg-background flex flex-col">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                  <h3 className="font-bold text-foreground">{showNewGroup?"Create Group Chat":"New Direct Message"}</h3>
-                  <button onClick={() => { setShowNewChat(false); setShowNewGroup(false); }} className="p-1.5 rounded-lg hover:bg-muted"><X className="w-4 h-4"/></button>
+            {(showNewChat || showNewGroup) && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute inset-0 z-10 flex flex-col bg-background"
+              >
+                <div className="flex items-center justify-between border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.06] to-transparent px-5 py-4">
+                  <h3 className="font-bold text-[#1E4A85]">
+                    {showNewGroup ? "Create group chat" : "New direct message"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewChat(false);
+                      setShowNewGroup(false);
+                    }}
+                    className="rounded-lg p-1.5 hover:bg-[#1E4A85]/10"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
                 {showNewGroup && (
-                  <div className="px-5 py-3 border-b border-border space-y-2">
-                    <input value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Group name..." className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
-                    {groupMembers.length>0 && <p className="text-xs text-muted-foreground">{groupMembers.length} member{groupMembers.length!==1?"s":""} selected</p>}
+                  <div className="space-y-2 border-b border-[#1E4A85]/10 px-5 py-3">
+                    <input
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      placeholder="Group name…"
+                      className="w-full rounded-xl border border-border/70 bg-background px-4 py-2.5 text-sm outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
+                    />
+                    {groupMembers.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {groupMembers.length} member{groupMembers.length !== 1 ? "s" : ""} selected
+                      </p>
+                    )}
                   </div>
                 )}
-                <div className="px-5 py-3 border-b border-border">
-                  <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                    <input autoFocus value={userSearch} onChange={e=>setUserSearch(e.target.value)} placeholder="Search people..." className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+                <div className="border-b border-[#1E4A85]/10 px-5 py-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search people…"
+                      className="w-full rounded-xl border border-border/70 bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
+                    />
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  {filteredUsers.map(u => {
+                  {filteredUsers.map((u) => {
                     const sel = groupMembers.includes(u.id);
                     return (
-                      <button key={u.id} onClick={() => showNewGroup ? setGroupMembers(prev=>sel?prev.filter(id=>id!==u.id):[...prev,u.id]) : startDirect(u)}
-                        className={cn("w-full flex items-center gap-4 px-5 py-3.5 transition-colors border-b border-border/50 last:border-0 text-left", sel?"bg-primary/10":"hover:bg-muted/50")}>
-                        <Avatar name={u.fullName} roleId={u.roleId} size="md"/>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground text-sm truncate">{u.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{ROLE_LABEL[u.roleId]}{u.franchiseName?` · ${u.franchiseName}`:""}</p>
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() =>
+                          showNewGroup
+                            ? setGroupMembers((prev) =>
+                                sel ? prev.filter((id) => id !== u.id) : [...prev, u.id]
+                              )
+                            : startDirect(u)
+                        }
+                        className={cn(
+                          "flex w-full items-center gap-4 border-b border-[#1E4A85]/5 px-5 py-3.5 text-left transition last:border-0",
+                          sel ? "bg-[#1E4A85]/10" : "hover:bg-[#1E4A85]/[0.05]"
+                        )}
+                      >
+                        <Avatar name={u.fullName} roleId={u.roleId} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{u.fullName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {ROLE_LABEL[u.roleId]}
+                            {u.franchiseName ? ` · ${u.franchiseName}` : ""}
+                          </p>
                         </div>
-                        {showNewGroup && sel && <Circle className="w-5 h-5 text-primary fill-primary flex-shrink-0"/>}
+                        {showNewGroup && sel && (
+                          <Circle className="h-5 w-5 shrink-0 fill-[#1E4A85] text-[#1E4A85]" />
+                        )}
                       </button>
                     );
                   })}
-                  {filteredUsers.length===0 && <p className="text-center text-sm text-muted-foreground py-10">No users found</p>}
+                  {filteredUsers.length === 0 && (
+                    <p className="py-10 text-center text-sm text-muted-foreground">No users found</p>
+                  )}
                 </div>
                 {showNewGroup && (
-                  <div className="px-5 py-4 border-t border-border">
-                    <button onClick={createGroup} disabled={!groupName.trim()||groupMembers.length===0} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 disabled:opacity-40 transition-all flex items-center justify-center gap-2">
-                      <Users className="w-4 h-4"/> Create Group ({groupMembers.length} members)
+                  <div className="border-t border-[#1E4A85]/10 px-5 py-4">
+                    <button
+                      type="button"
+                      onClick={createGroup}
+                      disabled={!groupName.trim() || groupMembers.length === 0}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E4A85] py-3 text-sm font-bold text-white transition hover:bg-[#163A6B] disabled:opacity-40"
+                    >
+                      <Users className="h-4 w-4" />
+                      Create group ({groupMembers.length} members)
                     </button>
                   </div>
                 )}
@@ -368,170 +543,403 @@ export default function ChatPage() {
           </AnimatePresence>
 
           {!activeRoom ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-              <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center"><MessageSquare className="w-10 h-10"/></div>
-              <div className="text-center"><p className="font-semibold text-foreground">Select a conversation</p><p className="text-sm mt-1">Choose from the list or start a new chat</p></div>
-              <button onClick={() => { setShowNewChat(true); setUserSearch(""); }} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all"><Plus className="w-4 h-4"/> New Chat</button>
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-[#1E4A85]/15 to-[#C4A35A]/15">
+                <MessageSquare className="h-10 w-10 text-[#1E4A85]" />
+              </div>
+              <div className="text-center">
+                <p className="font-semibold text-foreground">Select a conversation</p>
+                <p className="mt-1 text-sm">Choose from the list or start a new chat</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewChat(true);
+                  setUserSearch("");
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#163A6B]"
+              >
+                <Plus className="h-4 w-4" />
+                New chat
+              </button>
             </div>
           ) : (
             <>
               {/* Chat header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-background flex-shrink-0">
+              <div className="flex shrink-0 items-center justify-between border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.04] to-transparent px-5 py-3.5">
                 <div className="flex items-center gap-3">
-                  {activeRoom.type==="group" ? <div className="w-10 h-10 rounded-full bg-[#A8C63A] flex items-center justify-center"><Hash className="w-5 h-5 text-white"/></div> : <Avatar name={activeRoom.name} roleId={activeRoom.members[0]?.roleId??3} size="md"/>}
+                  {activeRoom.type === "group" ? (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#C4A35A] to-[#A8893E] shadow-sm">
+                      <Hash className="h-5 w-5 text-[#0B132B]" />
+                    </div>
+                  ) : (
+                    <Avatar
+                      name={activeRoom.name}
+                      roleId={activeRoom.members[0]?.roleId ?? 3}
+                      size="md"
+                    />
+                  )}
                   <div>
                     <p className="font-bold text-foreground">{activeRoom.name}</p>
-                    <p className="text-xs text-muted-foreground">{activeRoom.type==="group"?`Group · ${activeRoom.members.length+1} members`:ROLE_LABEL[activeRoom.members[0]?.roleId??3]??""}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {activeRoom.type === "group"
+                        ? `Group · ${activeRoom.members.length + 1} members`
+                        : ROLE_LABEL[activeRoom.members[0]?.roleId ?? 3] ?? ""}
+                    </p>
                   </div>
                 </div>
-                {activeRoom.type==="group" && isAdmin && (
-                  <button onClick={() => setShowMembers(s=>!s)} className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4"/></button>
+                {activeRoom.type === "group" && isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMembers((s) => !s)}
+                    className="rounded-xl p-2 text-muted-foreground transition hover:bg-[#1E4A85]/10 hover:text-[#1E4A85]"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </button>
                 )}
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+              <div className="flex-1 space-y-1 overflow-y-auto bg-gradient-to-b from-[#1E4A85]/[0.02] to-transparent px-4 py-4">
                 {loadingMsgs ? (
-                  <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 text-primary animate-spin"/></div>
-                ) : messages.length===0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground"><MessageSquare className="w-10 h-10"/><p className="text-sm">No messages yet. Start the conversation!</p></div>
-                ) : messages.map((msg, i) => {
-                  const showDate = i===0 || new Date(messages[i-1].createdAt).toDateString()!==new Date(msg.createdAt).toDateString();
-                  const isDeleted = msg.isDeleted || msg.msgType==="deleted";
-                  return (
-                    <div key={msg.id}>
-                      {showDate && (
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-border"/>
-                          <span className="text-[10px] text-muted-foreground font-medium px-2">{new Date(msg.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
-                          <div className="flex-1 h-px bg-border"/>
-                        </div>
-                      )}
-                      <div className={cn("group flex gap-2 items-end py-0.5", msg.isOwn?"flex-row-reverse":"flex-row")}
-                        onMouseEnter={() => setHoveredMsg(msg.id)} onMouseLeave={() => setHoveredMsg(null)}>
-                        {!msg.isOwn && <Avatar name={msg.senderName} roleId={msg.senderRole} size="sm"/>}
-                        <div className={cn("max-w-[65%] flex flex-col gap-0.5", msg.isOwn?"items-end":"items-start")}>
-                          {!msg.isOwn && <p className="text-[10px] text-muted-foreground px-1 font-medium">{msg.senderName}</p>}
-
-                          {/* Reply preview */}
-                          {msg.replyToId && !isDeleted && (
-                            <div className={cn("px-3 py-1.5 rounded-xl text-xs border-l-2 border-primary/50 bg-muted/60 mb-0.5 max-w-full", msg.isOwn?"text-right":"text-left")}>
-                              <p className="font-semibold text-primary text-[10px]">{msg.replyToSender}</p>
-                              <p className="text-muted-foreground truncate">{msg.replyToBody}</p>
-                            </div>
-                          )}
-
-                          {/* Message bubble */}
-                          <div className={cn("px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm relative",
-                            isDeleted ? "bg-muted text-muted-foreground italic text-xs" :
-                            msg.isOwn ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted text-foreground rounded-bl-sm")}>
-                            {/* Image */}
-                            {msg.msgType==="image" && msg.fileUrl && !isDeleted && (
-                              <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
-                                <img src={msg.fileUrl} alt={msg.fileName||"image"} className="max-w-[220px] max-h-[200px] rounded-xl object-cover mb-1 cursor-pointer hover:opacity-90 transition-opacity"/>
-                              </a>
-                            )}
-                            {/* File */}
-                            {msg.msgType==="file" && msg.fileUrl && !isDeleted && (
-                              <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                                <FileText className="w-5 h-5 flex-shrink-0"/>
-                                <span className="underline underline-offset-2 text-xs">{msg.fileName||msg.body}</span>
-                              </a>
-                            )}
-                            {/* Text */}
-                            {(msg.msgType==="text"||msg.msgType==="deleted") && <span>{msg.body}</span>}
-                          </div>
-
-                          {/* Meta */}
-                          <div className={cn("flex items-center gap-1.5 px-1", msg.isOwn?"flex-row-reverse":"flex-row")}>
-                            <p className="text-[9px] text-muted-foreground">{formatTime(msg.createdAt)}</p>
-                            {msg.isEdited && !isDeleted && <span className="text-[9px] text-muted-foreground italic">edited</span>}
-                          </div>
-                        </div>
-
-                        {/* Action buttons on hover */}
-                        {hoveredMsg===msg.id && !isDeleted && (
-                          <div className={cn("flex items-center gap-0.5 self-center", msg.isOwn?"mr-1":"ml-1")}>
-                            <button onClick={() => setReplyTo(msg)} title="Reply" className="p-1.5 rounded-lg bg-background border border-border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shadow-sm">
-                              <Reply className="w-3.5 h-3.5"/>
-                            </button>
-                            {msg.isOwn && msg.msgType==="text" && (
-                              <button onClick={() => startEdit(msg)} title="Edit" className="p-1.5 rounded-lg bg-background border border-border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shadow-sm">
-                                <Edit2 className="w-3.5 h-3.5"/>
-                              </button>
-                            )}
-                            {msg.isOwn && (
-                              <button onClick={() => deleteMessage(msg)} title="Delete" className="p-1.5 rounded-lg bg-background border border-border hover:bg-red-50 transition-colors text-muted-foreground hover:text-red-500 shadow-sm">
-                                <Trash2 className="w-3.5 h-3.5"/>
-                              </button>
-                            )}
+                  <div className="flex h-full items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#1E4A85]" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <MessageSquare className="h-10 w-10 text-[#1E4A85]/40" />
+                    <p className="text-sm">No messages yet. Start the conversation!</p>
+                  </div>
+                ) : (
+                  messages.map((msg, i) => {
+                    const showDate =
+                      i === 0 ||
+                      new Date(messages[i - 1].createdAt).toDateString() !==
+                        new Date(msg.createdAt).toDateString();
+                    const isDeleted = msg.isDeleted || msg.msgType === "deleted";
+                    return (
+                      <div key={msg.id}>
+                        {showDate && (
+                          <div className="my-4 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-[#1E4A85]/10" />
+                            <span className="px-2 text-[10px] font-medium text-muted-foreground">
+                              {new Date(msg.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <div className="h-px flex-1 bg-[#1E4A85]/10" />
                           </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })}
+                        <div
+                          className={cn(
+                            "group flex items-end gap-2 py-0.5",
+                            msg.isOwn ? "flex-row-reverse" : "flex-row"
+                          )}
+                          onMouseEnter={() => setHoveredMsg(msg.id)}
+                          onMouseLeave={() => setHoveredMsg(null)}
+                        >
+                          {!msg.isOwn && (
+                            <Avatar name={msg.senderName} roleId={msg.senderRole} size="sm" />
+                          )}
+                          <div
+                            className={cn(
+                              "flex max-w-[65%] flex-col gap-0.5",
+                              msg.isOwn ? "items-end" : "items-start"
+                            )}
+                          >
+                            {!msg.isOwn && (
+                              <p className="px-1 text-[10px] font-medium text-muted-foreground">
+                                {msg.senderName}
+                              </p>
+                            )}
 
-                {/* Typing indicator */}
-                {typingUsers.length>0 && (
-                  <motion.div initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} className="flex items-center gap-2 px-2 py-1">
-                    <div className="flex gap-1 items-center px-3 py-2 rounded-2xl bg-muted rounded-bl-sm">
-                      <span className="text-xs text-muted-foreground">{typingUsers.join(", ")} {typingUsers.length===1?"is":"are"} typing</span>
-                      <span className="flex gap-0.5 ml-1">
-                        {[0,1,2].map(i => <motion.span key={i} animate={{y:[0,-3,0]}} transition={{duration:0.6,repeat:Infinity,delay:i*0.15}} className="w-1 h-1 rounded-full bg-muted-foreground inline-block"/>)}
+                            {msg.replyToId && !isDeleted && (
+                              <div
+                                className={cn(
+                                  "mb-0.5 max-w-full rounded-xl border-l-2 border-[#C4A35A] bg-[#1E4A85]/5 px-3 py-1.5 text-xs",
+                                  msg.isOwn ? "text-right" : "text-left"
+                                )}
+                              >
+                                <p className="text-[10px] font-semibold text-[#1E4A85]">
+                                  {msg.replyToSender}
+                                </p>
+                                <p className="truncate text-muted-foreground">{msg.replyToBody}</p>
+                              </div>
+                            )}
+
+                            <div
+                              className={cn(
+                                "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
+                                isDeleted
+                                  ? "bg-muted text-xs italic text-muted-foreground"
+                                  : msg.isOwn
+                                    ? "rounded-br-sm bg-[#1E4A85] text-white"
+                                    : "rounded-bl-sm border border-[#1E4A85]/10 bg-white text-foreground dark:bg-muted"
+                              )}
+                            >
+                              {msg.msgType === "image" && msg.fileUrl && !isDeleted && (
+                                <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={msg.fileUrl}
+                                    alt={msg.fileName || "image"}
+                                    className="mb-1 max-h-[200px] max-w-[220px] cursor-pointer rounded-xl object-cover transition-opacity hover:opacity-90"
+                                  />
+                                </a>
+                              )}
+                              {msg.msgType === "file" && msg.fileUrl && !isDeleted && (
+                                <a
+                                  href={msg.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 transition-opacity hover:opacity-80"
+                                >
+                                  <FileText className="h-5 w-5 shrink-0" />
+                                  <span className="text-xs underline underline-offset-2">
+                                    {msg.fileName || msg.body}
+                                  </span>
+                                </a>
+                              )}
+                              {(msg.msgType === "text" || msg.msgType === "deleted") && (
+                                <span>{msg.body}</span>
+                              )}
+                            </div>
+
+                            <div
+                              className={cn(
+                                "flex items-center gap-1.5 px-1",
+                                msg.isOwn ? "flex-row-reverse" : "flex-row"
+                              )}
+                            >
+                              <p className="text-[9px] text-muted-foreground">
+                                {formatTime(msg.createdAt)}
+                              </p>
+                              {msg.isEdited && !isDeleted && (
+                                <span className="text-[9px] italic text-muted-foreground">
+                                  edited
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {hoveredMsg === msg.id && !isDeleted && (
+                            <div
+                              className={cn(
+                                "flex items-center gap-0.5 self-center",
+                                msg.isOwn ? "mr-1" : "ml-1"
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setReplyTo(msg)}
+                                title="Reply"
+                                className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground shadow-sm transition hover:bg-[#1E4A85]/5 hover:text-[#1E4A85]"
+                              >
+                                <Reply className="h-3.5 w-3.5" />
+                              </button>
+                              {msg.isOwn && msg.msgType === "text" && (
+                                <button
+                                  type="button"
+                                  onClick={() => startEdit(msg)}
+                                  title="Edit"
+                                  className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground shadow-sm transition hover:bg-[#1E4A85]/5 hover:text-[#1E4A85]"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              {msg.isOwn && (
+                                <button
+                                  type="button"
+                                  onClick={() => deleteMessage(msg)}
+                                  title="Delete"
+                                  className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground shadow-sm transition hover:bg-red-50 hover:text-red-500"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {typingUsers.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 px-2 py-1"
+                  >
+                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-[#1E4A85]/10 px-3 py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing
+                      </span>
+                      <span className="ml-1 flex gap-0.5">
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            animate={{ y: [0, -3, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                            className="inline-block h-1 w-1 rounded-full bg-[#1E4A85]/60"
+                          />
+                        ))}
                       </span>
                     </div>
                   </motion.div>
                 )}
-                <div ref={messagesEndRef}/>
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Reply / Edit banner */}
               <AnimatePresence>
-                {(replyTo||editingMsg) && (
-                  <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}
-                    className="px-4 py-2 border-t border-border bg-muted/30 flex items-center justify-between gap-3 flex-shrink-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {replyTo && <><CornerUpLeft className="w-4 h-4 text-primary flex-shrink-0"/>
-                        <div className="min-w-0"><p className="text-[10px] font-bold text-primary">{replyTo.senderName}</p><p className="text-xs text-muted-foreground truncate">{replyTo.body}</p></div></>}
-                      {editingMsg && <><Edit2 className="w-4 h-4 text-amber-500 flex-shrink-0"/>
-                        <div className="min-w-0"><p className="text-[10px] font-bold text-amber-500">Editing message</p><p className="text-xs text-muted-foreground truncate">{editingMsg.body}</p></div></>}
+                {(replyTo || editingMsg) && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="flex shrink-0 items-center justify-between gap-3 border-t border-[#1E4A85]/10 bg-[#1E4A85]/[0.04] px-4 py-2"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      {replyTo && (
+                        <>
+                          <CornerUpLeft className="h-4 w-4 shrink-0 text-[#1E4A85]" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-[#1E4A85]">
+                              {replyTo.senderName}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">{replyTo.body}</p>
+                          </div>
+                        </>
+                      )}
+                      {editingMsg && (
+                        <>
+                          <Edit2 className="h-4 w-4 shrink-0 text-[#C4A35A]" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-[#C4A35A]">Editing message</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {editingMsg.body}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <button onClick={() => { setReplyTo(null); cancelEdit(); }} className="p-1 rounded-lg hover:bg-muted flex-shrink-0"><X className="w-4 h-4 text-muted-foreground"/></button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo(null);
+                        cancelEdit();
+                      }}
+                      className="shrink-0 rounded-lg p-1 hover:bg-[#1E4A85]/10"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Input bar */}
-              <div className="px-3 py-3 border-t border-border bg-background flex items-center gap-2 flex-shrink-0">
-                {/* File upload */}
-                <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" className="hidden" onChange={e => uploadFiles(e.target.files)}/>
-                <button onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Attach files"
-                  className="p-2.5 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0 disabled:opacity-40">
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Paperclip className="w-4 h-4"/>}
+              <div className="flex shrink-0 items-center gap-2 border-t border-[#1E4A85]/10 bg-background px-3 py-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                  className="hidden"
+                  onChange={(e) => uploadFiles(e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  title="Attach files"
+                  className="shrink-0 rounded-xl p-2.5 text-muted-foreground transition hover:bg-[#1E4A85]/10 hover:text-[#1E4A85] disabled:opacity-40"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-4 w-4" />
+                  )}
                 </button>
-                <button onClick={() => { if(fileInputRef.current){ fileInputRef.current.accept="image/*"; fileInputRef.current.click(); fileInputRef.current.accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"; }}} title="Send image"
-                  className="p-2.5 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0">
-                  <ImageIcon className="w-4 h-4"/>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = "image/*";
+                      fileInputRef.current.click();
+                      fileInputRef.current.accept =
+                        "image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip";
+                    }
+                  }}
+                  title="Send image"
+                  className="shrink-0 rounded-xl p-2.5 text-muted-foreground transition hover:bg-[#1E4A85]/10 hover:text-[#1E4A85]"
+                >
+                  <ImageIcon className="h-4 w-4" />
                 </button>
 
-                <input ref={inputRef} value={msgText} onChange={e => handleInputChange(e.target.value)}
-                  onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); } if(e.key==="Escape"){ cancelEdit(); setReplyTo(null); }}}
-                  placeholder={editingMsg?"Edit message...":replyTo?`Reply to ${replyTo.senderName}...`:`Message ${activeRoom.name}...`}
-                  className="flex-1 px-4 py-2.5 rounded-2xl bg-muted border border-input text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"/>
+                <input
+                  ref={inputRef}
+                  value={msgText}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                    if (e.key === "Escape") {
+                      cancelEdit();
+                      setReplyTo(null);
+                    }
+                  }}
+                  placeholder={
+                    editingMsg
+                      ? "Edit message…"
+                      : replyTo
+                        ? `Reply to ${replyTo.senderName}…`
+                        : `Message ${activeRoom.name}…`
+                  }
+                  className="flex-1 rounded-2xl border border-border/70 bg-muted/50 px-4 py-2.5 text-sm outline-none transition focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
+                />
 
                 {editingMsg ? (
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <button onClick={cancelEdit} className="p-2.5 rounded-xl hover:bg-muted transition-colors text-muted-foreground"><X className="w-4 h-4"/></button>
-                    <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.95}} onClick={saveEdit} disabled={!msgText.trim()||sending}
-                      className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center disabled:opacity-40 shadow-md">
-                      {sending?<Loader2 className="w-4 h-4 animate-spin"/>:<Check className="w-4 h-4"/>}
+                  <div className="flex shrink-0 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="rounded-xl p-2.5 text-muted-foreground transition hover:bg-muted"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <motion.button
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="button"
+                      onClick={saveEdit}
+                      disabled={!msgText.trim() || sending}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C4A35A] text-[#0B132B] shadow-md disabled:opacity-40"
+                    >
+                      {sending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
                     </motion.button>
                   </div>
                 ) : (
-                  <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.95}} onClick={sendMessage} disabled={!msgText.trim()||sending}
-                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 shadow-md flex-shrink-0">
-                    {sending?<Loader2 className="w-4 h-4 animate-spin"/>:<Send className="w-4 h-4"/>}
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={sendMessage}
+                    disabled={!msgText.trim() || sending}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E4A85] text-white shadow-md disabled:opacity-40"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </motion.button>
                 )}
               </div>
@@ -541,28 +949,59 @@ export default function ChatPage() {
 
         {/* ── Group members panel ── */}
         <AnimatePresence>
-          {showMembers && activeRoom?.type==="group" && (
-            <motion.div initial={{width:0,opacity:0}} animate={{width:240,opacity:1}} exit={{width:0,opacity:0}} className="border-l border-border flex flex-col overflow-hidden bg-background">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <span className="font-bold text-foreground text-sm">Members</span>
-                <button onClick={() => setShowMembers(false)} className="p-1 rounded-lg hover:bg-muted"><X className="w-4 h-4"/></button>
+          {showMembers && activeRoom?.type === "group" && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 240, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              className="flex flex-col overflow-hidden border-l border-[#1E4A85]/10 bg-gradient-to-b from-[#1E4A85]/[0.04] to-transparent"
+            >
+              <div className="flex items-center justify-between border-b border-[#1E4A85]/10 px-4 py-3">
+                <span className="text-sm font-bold text-[#1E4A85]">Members</span>
+                <button
+                  type="button"
+                  onClick={() => setShowMembers(false)}
+                  className="rounded-lg p-1 hover:bg-[#1E4A85]/10"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50">
-                  <Avatar name={user?.fullName??"Me"} roleId={roleId} size="sm"/>
-                  <div className="min-w-0"><p className="text-xs font-semibold text-foreground truncate">{user?.fullName} (You)</p><p className="text-[10px] text-muted-foreground">{ROLE_LABEL[roleId]}</p></div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-3">
+                <div className="flex items-center gap-2 rounded-xl bg-[#1E4A85]/10 p-2">
+                  <Avatar name={user?.fullName ?? "Me"} roleId={roleId} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">
+                      {user?.fullName} (You)
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{ROLE_LABEL[roleId]}</p>
+                  </div>
                 </div>
-                {activeRoom.members.map(m => (
-                  <div key={m.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-muted/50 transition-colors">
-                    <Avatar name={m.fullName} roleId={m.roleId} size="sm"/>
-                    <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-foreground truncate">{m.fullName}</p><p className="text-[10px] text-muted-foreground">{ROLE_LABEL[m.roleId]}</p></div>
+                {activeRoom.members.map((m) => (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-2 rounded-xl p-2 transition hover:bg-[#1E4A85]/[0.05]"
+                  >
+                    <Avatar name={m.fullName} roleId={m.roleId} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-foreground">{m.fullName}</p>
+                      <p className="text-[10px] text-muted-foreground">{ROLE_LABEL[m.roleId]}</p>
+                    </div>
                   </div>
                 ))}
               </div>
               {isAdmin && (
-                <div className="p-3 border-t border-border">
-                  <button onClick={() => { setShowNewChat(true); setShowMembers(false); setUserSearch(""); }} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-dashed border-primary/40 text-primary text-xs font-semibold hover:bg-primary/05 transition-colors">
-                    <UserPlus className="w-3.5 h-3.5"/> Add Member
+                <div className="border-t border-[#1E4A85]/10 p-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewChat(true);
+                      setShowMembers(false);
+                      setUserSearch("");
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#1E4A85]/40 py-2 text-xs font-semibold text-[#1E4A85] transition hover:bg-[#1E4A85]/5"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Add member
                   </button>
                 </div>
               )}

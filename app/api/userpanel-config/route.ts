@@ -79,6 +79,11 @@ export async function GET(_request: NextRequest) {
 
     const config: UserPanelConfig = {
       ...rawConfig,
+      hero: {
+        ...rawConfig.hero,
+        backgroundImage: defaultConfig.hero.backgroundImage,
+        backgroundImages: defaultConfig.hero.backgroundImages,
+      },
       stats: statsWithDynamicValues,
       courses: {
         ...rawConfig.courses,

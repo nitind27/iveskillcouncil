@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
 
     const plans = await prisma.subscriptionPlan.findMany({
       orderBy: { id: "asc" },
+      include: {
+        planPermissions: { select: { permissionId: true } },
+      },
     });
     const serialized = plans.map((p) => ({
       id: p.id,
@@ -28,6 +31,7 @@ export async function GET(request: NextRequest) {
       price: Number(p.price),
       durationInDays: p.durationInDays,
       status: p.status,
+      permissionIds: p.planPermissions.map((pp) => pp.permissionId),
     }));
     return successResponse(serialized);
   } catch (e) {

@@ -1,39 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
-import dynamic from "next/dynamic";
+import React, { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import { Breadcrumb } from "@/components/common";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/common/Card";
-import Link from "next/link";
+import { Card, CardContent } from "@/components/common/Card";
 import {
-  Building2,
-  GraduationCap,
-  Award,
-  Activity,
   Loader2,
-  HelpCircle,
-  Mail,
+  Sparkles,
+  BarChart3,
+  Clock3,
+  Sun,
+  Sunset,
+  Moon,
 } from "lucide-react";
-import DashboardStats from "@/components/adminpanel/dashboard/DashboardStats";
+import type { StatCardData } from "@/components/adminpanel/dashboard/DashboardStats";
+import DashboardOverview from "@/components/adminpanel/dashboard/DashboardOverview";
+import DashboardAnalytics from "@/components/adminpanel/dashboard/DashboardAnalytics";
+import DashboardActivity from "@/components/adminpanel/dashboard/DashboardActivity";
+import StatDetailModal from "@/components/adminpanel/dashboard/StatDetailModal";
+import FranchiseFilterDropdown from "@/components/dashboard/FranchiseFilterDropdown";
 import StudentDashboard from "@/components/adminpanel/dashboard/StudentDashboard";
+import type { ReportFiltersState } from "@/components/adminpanel/dashboard/DashboardReportToolbar";
+import DashboardReportToolbar from "@/components/adminpanel/dashboard/DashboardReportToolbar";
 import { useAuth } from "@/contexts/AuthContext";
-
-const DashboardCharts = dynamic(
-  () => import("@/components/adminpanel/dashboard/DashboardCharts"),
-  {
-    ssr: false,
-    loading: () => (
-      <Card className="rounded-xl shadow-lg">
-        <CardContent className="py-16 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    ),
-  }
-);
+import { AnimatePresence, motion } from "framer-motion";
 import { ROLES } from "@/lib/permissions";
-import { canRoleAccessPath } from "@/lib/role-menu-config";
 import { fetcher } from "@/lib/fetcher";
 
 interface DashboardData {
@@ -57,10 +47,26 @@ interface DashboardData {
   recentSupportRequests?: { id: string; fullName: string; email: string; message: string; createdAt: string }[];
 }
 
+type DashboardTab = "overview" | "analytics" | "activity";
+
+const DASHBOARD_TABS: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
+  { id: "overview", label: "Overview", icon: Sparkles },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "activity", label: "Activity", icon: Clock3 },
+];
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const roleId = user?.roleId ?? 0;
   const [franchiseFilter, setFranchiseFilter] = useState("");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const [selectedCard, setSelectedCard] = useState<StatCardData | null>(null);
+  const [reportFilters, setReportFilters] = useState<ReportFiltersState>({
+    range: "all",
+    from: "",
+    to: "",
+    status: "ALL",
+  });
   const dashboardUrl = franchiseFilter ? `/api/dashboard?franchiseId=${franchiseFilter}` : "/api/dashboard";
   const { data: franchisesData } = useSWR(
     (roleId === 1 || roleId === 2) ? "/api/franchises?limit=100" : null,
@@ -71,13 +77,11 @@ export default function DashboardPage() {
     : ((franchisesData as { data?: unknown[]; franchises?: unknown[] } | null)?.data ??
        (franchisesData as { data?: unknown[]; franchises?: unknown[] } | null)?.franchises ??
        []);
-  const { data, error, isLoading, mutate } = useSWR<DashboardData>(dashboardUrl, fetcher, {
+  const { data, error, isLoading } = useSWR<DashboardData>(dashboardUrl, fetcher, {
     revalidateOnFocus: true,
     dedupingInterval: 3000,
     keepPreviousData: true,
   });
-
-  const showQuickActions = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
 
   const errorMsg = error
     ? (error as { status?: number }).status === 401
@@ -89,10 +93,12 @@ export default function DashboardPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="space-y-6">
-        <Breadcrumb />
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-center rounded-xl border border-[#1E4A85]/15 bg-[#0B132B] px-4 py-12 text-white">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-[#C4A35A]" />
+            <span className="text-sm font-medium">Loading dashboard...</span>
+          </div>
         </div>
       </div>
     );
@@ -100,10 +106,9 @@ export default function DashboardPage() {
 
   if (errorMsg && !data) {
     return (
-      <div className="space-y-6">
-        <Breadcrumb />
-        <Card className="rounded-xl shadow-lg">
-          <CardContent className="py-12 text-center text-muted-foreground">
+      <div className="space-y-4">
+        <Card className="rounded-xl">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
             {errorMsg}
           </CardContent>
         </Card>
@@ -116,8 +121,7 @@ export default function DashboardPage() {
   // STUDENT: show only their own personal dashboard
   if ((data as { studentDashboard?: boolean }).studentDashboard) {
     return (
-      <div className="space-y-6">
-        <Breadcrumb />
+      <div className="space-y-4">
         <StudentDashboard data={data as unknown as Parameters<typeof StudentDashboard>[0]["data"]} />
       </div>
     );
@@ -127,122 +131,214 @@ export default function DashboardPage() {
   const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
 
   return (
-    <div className="space-y-6">
-      <Breadcrumb />
+    <div className="space-y-3 pb-2">
+      {/* Compact top bar: greeting + clock + filter */}
+      <DashboardWelcomePanel
+        userName={user?.fullName}
+        roleName={user?.roleName}
+        franchiseFilter={
+          (roleId === 1 || roleId === 2) && franchises.length > 0 ? (
+            <FranchiseFilterDropdown
+              value={franchiseFilter}
+              onChange={setFranchiseFilter}
+              options={franchises.map((f: { id: string; name: string }) => ({
+                id: f.id,
+                name: f.name,
+              }))}
+              variant="dark"
+            />
+          ) : null
+        }
+      />
 
-      {(roleId === 1 || roleId === 2) && franchises.length > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter by Franchise:</span>
-          <select
-            value={franchiseFilter}
-            onChange={(e) => setFranchiseFilter(e.target.value)}
-            className="rounded-lg border border-input bg-background px-3 py-2 text-sm min-w-[180px]"
+      {/* Slim tabs */}
+      <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-lg border border-border/70 bg-card p-1 sm:w-auto">
+        {DASHBOARD_TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+                isActive
+                  ? "bg-[#1E4A85] text-white shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ].join(" ")}
+            >
+              <Icon className={isActive ? "h-3.5 w-3.5 text-[#C4A35A]" : "h-3.5 w-3.5"} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "overview" && (
+          <motion.div
+            key="overview-tab"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-3"
           >
-            <option value="">All Franchises (Full Analytics)</option>
-            {franchises.map((f: { id: string; name: string }) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
+            <DashboardReportToolbar
+              tab="overview"
+              filters={reportFilters}
+              onChange={setReportFilters}
+              franchiseId={franchiseFilter}
+            />
+            <DashboardOverview
+              stats={stats}
+              roleId={roleId}
+              recentPayments={recentPayments}
+              attendanceStats={attendanceStats}
+              recentSupportRequests={recentSupportRequests}
+              onCardClick={setSelectedCard}
+            />
+          </motion.div>
+        )}
 
-      <DashboardStats stats={stats} roleId={roleId} />
+        {activeTab === "analytics" && (
+          <motion.div
+            key="analytics-tab"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <DashboardAnalytics
+              filters={reportFilters}
+              onFiltersChange={setReportFilters}
+              franchiseId={franchiseFilter}
+            />
+          </motion.div>
+        )}
 
-      <DashboardCharts recentPayments={recentPayments} attendanceStats={attendanceStats} />
+        {activeTab === "activity" && (
+          <motion.div
+            key="activity-tab"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <DashboardActivity
+              filters={reportFilters}
+              onFiltersChange={setReportFilters}
+              franchiseId={franchiseFilter}
+              isAdmin={isSuperAdminOrAdmin}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {isSuperAdminOrAdmin && (stats.supportRequestsCount ?? 0) > 0 && (
-        <Card className="rounded-xl shadow-lg shadow-black/5 dark:shadow-none border-primary/20">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-primary" />
-                Support Requests ({stats.supportRequestsCount})
-              </CardTitle>
-              <Link
-                href="/dashboard/support"
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                View all →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentSupportRequests && recentSupportRequests.length > 0 ? (
-              <div className="space-y-3">
-                {recentSupportRequests.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted"
-                  >
-                    <Mail className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground">{r.fullName}</p>
-                      <a href={`mailto:${r.email}`} className="text-sm text-primary hover:underline">
-                        {r.email}
-                      </a>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(r.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No support requests yet.</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {showQuickActions && (
-        <Card className="rounded-xl shadow-lg shadow-black/5 dark:shadow-none">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {canRoleAccessPath(roleId, "/franchises") && (
-                <QuickActionButton label="Add Franchise" icon={Building2} href="/franchises/new" />
-              )}
-              {canRoleAccessPath(roleId, "/students") && (
-                <QuickActionButton label="Add Student" icon={GraduationCap} href="/students?add=1" />
-              )}
-              {canRoleAccessPath(roleId, "/certificates") && (
-                <QuickActionButton label="Certificates" icon={Award} href="/certificates/requests" />
-              )}
-              {isSuperAdminOrAdmin && (
-                <QuickActionButton label="Support Requests" icon={HelpCircle} href="/dashboard/support" />
-              )}
-              {canRoleAccessPath(roleId, "/reports") && (
-                <QuickActionButton label="Reports" icon={Activity} href="/reports" />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <StatDetailModal
+        card={selectedCard}
+        franchiseFilter={franchiseFilter}
+        onClose={() => setSelectedCard(null)}
+      />
     </div>
   );
 }
 
-function QuickActionButton({
-  label,
-  icon: Icon,
-  href,
+function DashboardWelcomePanel({
+  userName,
+  roleName,
+  franchiseFilter,
 }: {
-  label: string;
-  icon: React.ElementType;
-  href: string;
+  userName?: string;
+  roleName?: string;
+  franchiseFilter?: React.ReactNode;
 }) {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const greeting = useMemo(() => getTimeGreeting(now), [now]);
+  const firstName = userName?.trim().split(/\s+/)[0] ?? "Admin";
+  const GreetingIcon = greeting.icon;
+
+  const timeText = now.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+  const dateText = now.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
-    <a
-      href={href}
-      className="flex flex-col items-center gap-2 p-4 border border-border rounded-xl hover:bg-accent hover:shadow-md transition-all duration-200"
-    >
-      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-primary" />
+    <div className="relative z-10 overflow-visible rounded-xl border border-[#1E4A85]/25 bg-gradient-to-r from-[#0B132B] via-[#163A6B] to-[#1E4A85] text-white shadow-md">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl opacity-40 [background:radial-gradient(circle_at_10%_20%,rgba(196,163,90,.18),transparent_40%)]" />
+      <div className="relative flex flex-col gap-2.5 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4">
+        <div className="min-w-0 flex items-center gap-2.5">
+          <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${greeting.iconBg}`}>
+            <GreetingIcon className={`h-4 w-4 ${greeting.iconColor}`} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-bold leading-tight sm:text-lg">
+              {greeting.label}, <span className="text-[#C4A35A]">{firstName}</span>
+            </h1>
+            <p className="truncate text-[11px] text-white/65">
+              {roleName || "Admin"} · {dateText}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {franchiseFilter}
+          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.08] px-2.5 py-1.5">
+            <Clock3 className="h-3.5 w-3.5 text-[#C4A35A]" />
+            <span className="font-mono text-sm font-semibold tabular-nums tracking-wide">{timeText}</span>
+          </div>
+        </div>
       </div>
-      <span className="text-sm font-medium">{label}</span>
-    </a>
+    </div>
   );
+}
+
+function getTimeGreeting(date: Date) {
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 12) {
+    return {
+      label: "Good Morning",
+      icon: Sun,
+      iconBg: "bg-amber-400/20",
+      iconColor: "text-amber-300",
+    };
+  }
+  if (hour >= 12 && hour < 17) {
+    return {
+      label: "Good Afternoon",
+      icon: Sun,
+      iconBg: "bg-[#C4A35A]/25",
+      iconColor: "text-[#E8D5A3]",
+    };
+  }
+  if (hour >= 17 && hour < 21) {
+    return {
+      label: "Good Evening",
+      icon: Sunset,
+      iconBg: "bg-orange-400/20",
+      iconColor: "text-orange-300",
+    };
+  }
+  return {
+    label: "Good Night",
+    icon: Moon,
+    iconBg: "bg-indigo-400/20",
+    iconColor: "text-indigo-300",
+  };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiClock, FiBookOpen } from "react-icons/fi";
@@ -9,102 +10,118 @@ function getSlug(c: CourseItem): string {
   return c.slug || c.id;
 }
 
+function formatTitle(title: string): string {
+  const t = title.trim();
+  if (!t) return "Course";
+  if (t === t.toLowerCase() || t === t.toUpperCase()) {
+    return t
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+  return t;
+}
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80";
+
+function CourseCard({ course, index }: { course: CourseItem; index: number }) {
+  const [src, setSrc] = useState(course.image || FALLBACK_IMAGE);
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.45, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#1E4A85]/25 hover:shadow-[0_18px_40px_rgba(30,74,133,0.12)]"
+    >
+      <div className="relative h-44 overflow-hidden bg-[#EEF2F7]">
+        <img
+          src={src}
+          alt={formatTitle(course.title)}
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          onError={() => setSrc(FALLBACK_IMAGE)}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/70 via-[#0F2744]/10 to-transparent" />
+        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-[#0F2744]/80 px-2.5 py-1 text-[11px] font-semibold text-white">
+          <FiClock className="h-3 w-3 text-[#C4A35A]" />
+          {course.duration}
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="mb-2 text-[15px] font-bold leading-snug text-[#0F172A] transition-colors group-hover:text-[#1E4A85]">
+          {formatTitle(course.title)}
+        </h3>
+        {course.description ? (
+          <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-[#64748B]">
+            {course.description}
+          </p>
+        ) : (
+          <p className="mb-4 text-sm text-[#94A3B8]">Industry-aligned vocational programme.</p>
+        )}
+        <Link
+          href={`/userpanel/courses/${getSlug(course)}`}
+          className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#1E4A85] bg-white py-2.5 text-sm font-semibold text-[#1E4A85] transition-colors hover:bg-[#1E4A85] hover:text-white"
+        >
+          View Details
+          <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </motion.article>
+  );
+}
+
 interface CoursesSectionProps {
   config: UserPanelConfig;
 }
 
 export default function CoursesSection({ config }: CoursesSectionProps) {
   const { courses } = config;
-  const items = courses?.items || [];
+  const items = (courses?.items || []).filter((c) => c.enabled !== false).slice(0, 4);
   if (items.length === 0) return null;
 
   return (
-    <section id="courses" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[var(--up-bg)] overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_110%,rgba(45,93,168,0.06),transparent)] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto relative">
-        {/* heading */}
+    <section id="courses" className="relative overflow-hidden bg-[#F7F8FA] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <div className="relative mx-auto max-w-7xl">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.5 }}
+          className="mb-12 text-center"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#2D5DA8]/10 border border-[#2D5DA8]/20 text-[#2D5DA8] text-sm font-semibold uppercase tracking-wider mb-4">
-            <FiBookOpen className="w-4 h-4" /> Programs
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+            <FiBookOpen className="h-3.5 w-3.5" />
+            Programs
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-[#1A1A1A] tracking-tight">
-            {courses.sectionTitle}
+          <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
+            {courses.sectionTitle || "Featured Courses"}
           </h2>
-          <p className="text-[#6B7280] mt-3 text-lg max-w-xl mx-auto">
-            Pick a course and start building real skills today.
+          <p className="mx-auto mt-3 max-w-lg text-base text-[#64748B]">
+            Structured, job-ready programmes designed for real skills and better outcomes.
           </p>
         </motion.div>
 
-        {/* grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {items.map((course: CourseItem, i: number) => (
-            <motion.article
-              key={course.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-30px" }}
-              transition={{ type: "spring", stiffness: 90, damping: 18, delay: i * 0.07 }}
-              className="group relative flex flex-col rounded-2xl overflow-hidden bg-white border border-[var(--up-border)] hover:border-[#2D5DA8]/40 shadow-sm hover:shadow-xl transition-all duration-300"
-            >
-              {/* image */}
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/60 via-black/10 to-transparent" />
-                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm text-white text-xs font-medium">
-                  <FiClock className="w-3 h-3" />
-                  {course.duration}
-                </span>
-                {/* top accent line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2D5DA8] to-[#A8C63A]" />
-              </div>
-
-              {/* body */}
-              <div className="flex flex-col flex-1 p-5 gap-4">
-                <h3 className="font-bold text-base text-[#1A1A1A] group-hover:text-[#2D5DA8] transition-colors line-clamp-2 leading-snug flex-1">
-                  {course.title}
-                </h3>
-                <Link href={`/userpanel/courses/${getSlug(course)}`} className="block">
-                  <motion.span
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#F39C12] text-white text-sm font-bold hover:bg-[#D68910] transition-colors shadow-md cursor-pointer"
-                  >
-                    View Details
-                    <FiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </motion.span>
-                </Link>
-              </div>
-            </motion.article>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((course, i) => (
+            <CourseCard key={course.id} course={course} index={i} />
           ))}
         </div>
 
-        {/* view all */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center mt-12"
+          className="mt-12 text-center"
         >
-          <Link href="/userpanel/franchises">
-            <motion.span
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl border-2 border-[#2D5DA8] text-[#2D5DA8] font-semibold hover:bg-[#2D5DA8] hover:text-white transition-all cursor-pointer"
-            >
-              Browse all branches & courses
-              <FiArrowRight className="w-4 h-4" />
-            </motion.span>
+          <Link
+            href="/userpanel/courses"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1E4A85] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#163A6B]"
+          >
+            Browse all courses
+            <FiArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
       </div>

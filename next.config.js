@@ -13,6 +13,17 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'react-icons'],
+    // Keep pdfkit outside webpack so Helvetica.afm resolves from node_modules
+    serverComponentsExternalPackages: ['pdfkit', 'fontkit', 'png-js', 'linebreak'],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push('pdfkit');
+      }
+    }
+    return config;
   },
   // Serve dynamically uploaded files via API route in production
   async rewrites() {

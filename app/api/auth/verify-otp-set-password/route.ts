@@ -92,16 +92,11 @@ export async function POST(request: NextRequest) {
       "Password set successfully. Redirecting to dashboard..."
     );
 
-    const isProduction = process.env.NODE_ENV === "production";
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax" as const,
-      path: "/",
-    };
+    const { ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, getAuthCookieOptions } = await import("@/lib/auth-cookies");
+    const cookieOptions = getAuthCookieOptions();
 
-    response.cookies.set("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 });
-    response.cookies.set("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 });
+    response.cookies.set("accessToken", accessToken, { ...cookieOptions, maxAge: ACCESS_TOKEN_MAX_AGE });
+    response.cookies.set("refreshToken", refreshToken, { ...cookieOptions, maxAge: REFRESH_TOKEN_MAX_AGE });
 
     return response;
   } catch (err) {

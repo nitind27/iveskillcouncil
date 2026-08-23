@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     if (!admin) return errorResponse("Forbidden", 403);
 
     const { searchParams } = request.nextUrl;
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "500", 10), 500);
 
     const requests = await prisma.supportRequest.findMany({
       orderBy: { createdAt: "desc" },
@@ -109,5 +109,26 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("Support GET error:", err);
     return errorResponse("Failed to fetch support requests", 500);
+  }
+}
+
+/** DELETE: Remove a support request by id (Admin / Super admin). */
+export async function DELETE(request: NextRequest) {
+  try {
+    const admin = await requireSuperAdminOrAdmin();
+    if (!admin) return errorResponse("Forbidden", 403);
+
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("Missing id", 400);
+
+    await prisma.supportRequest.delete({
+      where: { id: BigInt(id) },
+    });
+
+    return successResponse({ deleted: true }, "Support request deleted");
+  } catch (err) {
+    console.error("Support DELETE error:", err);
+    return errorResponse("Failed to delete support request", 500);
   }
 }

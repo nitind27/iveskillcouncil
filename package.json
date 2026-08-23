@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/dev-with-proxy.ts",
+    "dev:next": "next dev",
+    "dev:all": "tsx scripts/dev-with-proxy.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,6 +13,7 @@
     "check:env": "node scripts/check-env.js",
     "setup:check": "tsx scripts/complete-setup-check.ts",
     "db:seed": "tsx scripts/seed-database.ts",
+    "db:proxy": "tsx scripts/db-proxy.ts",
     "db:test": "tsx scripts/test-connection.ts",
     "db:login-test": "tsx scripts/test-login.ts",
     "db:login-flow": "tsx scripts/test-login-flow.ts",

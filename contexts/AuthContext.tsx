@@ -1,7 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  fetchWithDbRetry,
+  refreshSession,
+  refreshSessionDetailed,
+} from "@/lib/session-client";
 
 interface User {
   id: string;
@@ -22,7 +27,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  /** True while DB is unreachable — session cookies may still be valid */
+  dbUnavailable: boolean;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   loginWithOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -37,9 +44,69 @@ function isPublicPath(path: string) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbUnavailable, setDbUnavailable] = useState(false);
   const router = useRouter();
+  const userRef = useRef<User | null>(null);
+  userRef.current = user;
 
-  // Check authentication on mount. Public pages wait until idle so first paint is not blocked.
+  const fetchMe = useCallback(async (): Promise<User | null> => {
+    const res = await fetchWithDbRetry("/api/auth/me", { credentials: "include" }, {
+      retries: 6,
+      baseDelayMs: 600,
+    });
+
+    if (res.status === 503) {
+      setDbUnavailable(true);
+      // Keep existing session in memory; cookies may still be valid once DB returns
+      if (userRef.current) return userRef.current;
+      return null;
+    }
+
+    setDbUnavailable(false);
+
+    if (res.status === 401) {
+      const refreshed = await refreshSessionDetailed();
+      if (refreshed === "unavailable") {
+        setDbUnavailable(true);
+        if (userRef.current) return userRef.current;
+        return null;
+      }
+      if (refreshed !== "ok") return null;
+
+      const retry = await fetchWithDbRetry("/api/auth/me", { credentials: "include" });
+      if (retry.status === 503) {
+        setDbUnavailable(true);
+        if (userRef.current) return userRef.current;
+        return null;
+      }
+      if (!retry.ok) return null;
+      const retryData = await retry.json();
+      return retryData.success && retryData.data ? retryData.data : null;
+    }
+
+    if (!res.ok) {
+      // Transient server errors — keep existing session if we already have one
+      if (userRef.current) return userRef.current;
+      return null;
+    }
+
+    const data = await res.json();
+    return data.success && data.data ? data.data : null;
+  }, []);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const nextUser = await fetchMe();
+      // Only clear user on confirmed auth failure (null after retries, and not DB blip with cookies)
+      setUser(nextUser);
+    } catch {
+      // Network blip — do not wipe an existing logged-in user
+      if (!userRef.current) setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchMe]);
+
   useEffect(() => {
     const path = typeof window !== "undefined" ? window.location.pathname : "";
     const isPublic = isPublicPath(path);
@@ -50,123 +117,145 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkAuth();
+  }, [checkAuth]);
+
+  // While DB was down, keep probing so session restores without re-login
+  useEffect(() => {
+    if (!dbUnavailable) return;
+
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const next = await fetchMe();
+        if (cancelled) return;
+        if (next) {
+          setUser(next);
+          setDbUnavailable(false);
+        }
+      } catch {
+        /* keep probing */
+      }
+    };
+
+    const id = window.setInterval(tick, 4000);
+    tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [dbUnavailable, fetchMe]);
+
+  // Silent keep-alive: refresh tokens every 20 minutes while tab is open
+  useEffect(() => {
+    const KEEP_ALIVE_MS = 20 * 60 * 1000;
+
+    const tick = async () => {
+      if (document.visibilityState === "hidden") return;
+      if (!userRef.current) return;
+      await refreshSession();
+    };
+
+    const id = window.setInterval(tick, KEEP_ALIVE_MS);
+
+    const onFocus = () => {
+      if (userRef.current) refreshSession();
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
-  const checkAuth = async () => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ ok: boolean; error?: string }> => {
     try {
-      const res = await fetch("/api/auth/me", {
-        credentials: 'include', // Important: Include cookies
-      });
-      
-      // 401 is EXPECTED when user is not logged in - this is normal behavior
-      // Browser console may show 401 as an error, but it's not a problem
-      if (res.status === 401) {
-        // User is not authenticated - this is normal, not an error
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      
-      if (res.ok) {
-        try {
-          const data = await res.json();
-          if (data.success && data.data) {
-            setUser(data.data);
-          } else {
-            setUser(null);
-          }
-        } catch (parseError) {
-          // JSON parse error - set user to null
-          setUser(null);
-        }
-      } else {
-        // Other HTTP errors (not 401) - set user to null
-        setUser(null);
-      }
-    } catch (error) {
-      // Network errors are fine - user just not logged in or server unreachable
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      console.log("🔐 Attempting login for:", email);
-      
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetchWithDbRetry(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
         },
-        credentials: 'include', // Important: Include cookies
-        body: JSON.stringify({ email, password }),
-      });
+        { retries: 5, baseDelayMs: 700 }
+      );
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        console.error("❌ Login failed:", data);
-        return false;
-      }
-
-      if (res.ok && data.success) {
-        console.log("✅ Login successful, setting user...");
-        
-        // Set user from response
-        if (data.data && data.data.user) {
-          setUser(data.data.user);
-          console.log("✅ User set in context");
+      if (!res.ok || !data.success) {
+        if (res.status === 503) {
+          setDbUnavailable(true);
+          return {
+            ok: false,
+            error:
+              data?.error ||
+              "Database unreachable. Run npm run dev (starts DB proxy), wait a few seconds, then retry.",
+          };
         }
-        
-        // Return true immediately - let login page handle cookie verification
-        // The login page will verify cookies before redirecting
-        return true;
+        return {
+          ok: false,
+          error: data?.error || "Invalid email or password",
+        };
       }
-      
-      return false;
+
+      setDbUnavailable(false);
+      if (data.data?.user) {
+        setUser(data.data.user);
+        return { ok: true };
+      }
+
+      return { ok: false, error: "Login failed" };
     } catch (error) {
-      console.error("❌ Login error:", error);
-      return false;
+      console.error("Login error:", error);
+      return { ok: false, error: "Network error. Please try again." };
     }
   };
 
   const loginWithOtp = async (email: string, otp: string): Promise<boolean> => {
     try {
-      const res = await fetch("/api/auth/verify-otp-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, otp }),
-      });
+      const res = await fetchWithDbRetry(
+        "/api/auth/verify-otp-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, otp }),
+        },
+        { retries: 4, baseDelayMs: 600 }
+      );
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        return false;
-      }
+      if (!res.ok || !data.success) return false;
 
       if (data.data?.user) {
+        setDbUnavailable(false);
         setUser(data.data.user);
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error("❌ OTP Login error:", error);
+      console.error("OTP Login error:", error);
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setUser(null);
-      router.push("/login");
-      router.refresh();
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+      setDbUnavailable(false);
+      router.push("/login");
+      router.refresh();
     }
   };
 
@@ -175,7 +264,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithOtp, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, dbUnavailable, login, loginWithOtp, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -188,4 +279,3 @@ export function useAuth() {
   }
   return context;
 }
-

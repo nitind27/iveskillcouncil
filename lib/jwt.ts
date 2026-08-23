@@ -15,7 +15,7 @@ export interface RefreshTokenPayload {
   tokenId: string;
 }
 
-// Generate access token (15 minutes)
+// Generate access token (1 hour) — kept alive via refresh while user stays logged in
 export function generateAccessToken(payload: TokenPayload): string {
   if (!ACCESS_TOKEN_SECRET || ACCESS_TOKEN_SECRET === 'your-access-token-secret-change-in-production') {
     console.error("❌ JWT_ACCESS_SECRET is not set or using default value!");
@@ -23,10 +23,9 @@ export function generateAccessToken(payload: TokenPayload): string {
   }
   
   const token = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: '15m',
+    expiresIn: '1h',
   });
   
-  console.log("✅ Access token generated successfully");
   return token;
 }
 

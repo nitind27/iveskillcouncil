@@ -76,10 +76,15 @@ export const rateLimitConfig = {
     maxRequests: 100,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
-  // Auth routes
+  // Auth routes (login / OTP) — strict
   auth: {
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+  // Session refresh — must stay generous so keep-alive never logs users out
+  authRefresh: {
+    maxRequests: 60,
+    windowMs: 15 * 60 * 1000,
   },
   // Search/query routes
   search: {

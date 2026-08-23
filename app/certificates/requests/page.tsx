@@ -1,16 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
-import { motion, AnimatePresence } from "framer-motion";
-import { Breadcrumb } from "@/components/common";
-import { Card, CardContent } from "@/components/common/Card";
-import { Award, Plus, Loader2, CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
+import {
+  Award,
+  Plus,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  RefreshCw,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+  Info,
+} from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { showSuccess, showError } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
+import {
+  canManageCertificateWorkflow,
+  canPrintCertificates,
+} from "@/lib/certificate-access";
+import { cn } from "@/lib/utils";
 import { CreateCertificateModal } from "@/components/certificates/CreateCertificateModal";
+import { CertificatePreviewModal } from "@/components/certificates/CertificatePreviewModal";
 
 interface CertItem {
   id: string;
@@ -29,15 +46,33 @@ interface CertResponse {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
+const STATUS_CHIP: Record<string, string> = {
+  ISSUED: "bg-emerald-500/10 text-emerald-800 border-emerald-200/80",
+  APPROVED: "bg-blue-500/10 text-blue-800 border-blue-200/80",
+  REJECTED: "bg-red-500/10 text-red-800 border-red-200/80",
+  REQUESTED: "bg-amber-500/10 text-amber-800 border-amber-200/80",
+};
+
+const STATUS_HINT: Record<string, string> = {
+  REQUESTED: "Waiting for institute approval",
+  APPROVED: "Approved — institute will print & dispatch",
+  ISSUED: "Printed by institute — hard copy on the way",
+  REJECTED: "Request rejected — contact institute",
+};
+
 export default function CertificatesRequestsPage() {
   const { user } = useAuth();
   const roleId = Number(user?.roleId) ?? 0;
-  const showFranchiseFilter = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+  const isInstituteAdmin = canManageCertificateWorkflow(roleId);
+  const canPrint = canPrintCertificates(roleId);
+  const showFranchiseFilter = isInstituteAdmin;
 
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [franchiseId, setFranchiseId] = useState("");
+  const [courseId, setCourseId] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [previewCert, setPreviewCert] = useState<CertItem | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams();
@@ -45,6 +80,7 @@ export default function CertificatesRequestsPage() {
   queryParams.set("limit", "12");
   if (status) queryParams.set("status", status);
   if (franchiseId) queryParams.set("franchiseId", franchiseId);
+  if (courseId) queryParams.set("courseId", courseId);
 
   const { data: franchisesData } = useSWR(
     showFranchiseFilter ? "/api/franchises?limit=200" : null,
@@ -52,18 +88,35 @@ export default function CertificatesRequestsPage() {
   );
   const franchises = Array.isArray(franchisesData)
     ? franchisesData
-    : ((franchisesData as { data?: unknown[]; franchises?: unknown[] } | null)?.data ??
-       (franchisesData as { data?: unknown[]; franchises?: unknown[] } | null)?.franchises ??
-       []);
+    : ((franchisesData as { data?: unknown[] } | null)?.data ?? []);
+
+  const coursesUrl =
+    roleId === ROLES.SUB_ADMIN ? "/api/students/franchise-courses" : "/api/courses?limit=200";
+  const { data: coursesData } = useSWR(coursesUrl, fetcher);
+  const coursesRaw = Array.isArray(coursesData)
+    ? coursesData
+    : ((coursesData as { items?: unknown[] } | null)?.items ??
+      (coursesData as { data?: unknown[] } | null)?.data ??
+      []);
+  const courses = (coursesRaw as { id: string; name: string; courseName?: string }[]).map((c) => ({
+    id: c.id,
+    name: c.name ?? c.courseName ?? "Course",
+  }));
 
   const { data, error, isLoading, mutate } = useSWR<CertResponse>(
     `/api/certificates?${queryParams.toString()}`,
     fetcher,
-    { revalidateOnFocus: true, keepPreviousData: true }
+    { revalidateOnFocus: true }
   );
 
   const items = data?.items ?? [];
   const pagination = data?.pagination ?? { page: 1, limit: 12, total: 0, totalPages: 1 };
+
+  const stats = {
+    requested: items.filter((c) => c.status === "REQUESTED").length,
+    approved: items.filter((c) => c.status === "APPROVED").length,
+    issued: items.filter((c) => c.status === "ISSUED").length,
+  };
 
   const updateStatus = async (id: string, newStatus: string) => {
     setActionLoading(id);
@@ -79,7 +132,7 @@ export default function CertificatesRequestsPage() {
         await showError("Error", d.error || "Failed to update");
         return;
       }
-      await showSuccess("Updated", "Certificate status updated");
+      await showSuccess("Updated", `Certificate ${newStatus.toLowerCase()}`);
       mutate();
     } catch {
       await showError("Error", "Failed to update");
@@ -88,227 +141,316 @@ export default function CertificatesRequestsPage() {
     }
   };
 
-  const getStatusBadge = (s: string) => {
-    switch (s) {
-      case "ISSUED":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-            <CheckCircle2 className="w-3 h-3" /> Issued
-          </span>
-        );
-      case "APPROVED":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-            <Clock className="w-3 h-3" /> Approved
-          </span>
-        );
-      case "REJECTED":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-            <XCircle className="w-3 h-3" /> Rejected
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-            <Clock className="w-3 h-3" /> Requested
-          </span>
-        );
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <Breadcrumb />
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Certificate Requests</h1>
-          <p className="text-muted-foreground mt-1">Manage and issue certificate requests</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          Create Request
-        </button>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-      >
-        <Card className="rounded-xl shadow-lg overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border mb-4">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <select
-                value={status}
-                onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-                className="rounded-lg border border-input bg-background px-3 py-2 text-sm min-w-[140px]"
-              >
-                <option value="">All statuses</option>
-                <option value="REQUESTED">Requested</option>
-                <option value="APPROVED">Approved</option>
-                <option value="ISSUED">Issued</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-              {showFranchiseFilter && (
-                <select
-                  value={franchiseId}
-                  onChange={(e) => { setFranchiseId(e.target.value); setPage(1); }}
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm min-w-[180px]"
-                >
-                  <option value="">All Franchises</option>
-                  {franchises.map((f: { id: string; name: string }) => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              )}
-              {(status || franchiseId) && (
-                <button
-                  type="button"
-                  onClick={() => { setStatus(""); setFranchiseId(""); setPage(1); }}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  Clear filters
-                </button>
-              )}
+    <div className="space-y-5 pb-6">
+      <header className="overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] text-white shadow-md shadow-[#1E4A85]/15">
+        <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <nav className="mb-1.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+              <Link href="/dashboard" className="hover:text-white/90">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-white/80">Certificate Requests</span>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Certificate Requests</h1>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#F5E6C8]">
+                <Award className="h-3 w-3" />
+                Workflow
+              </span>
             </div>
-
-            {isLoading && !data ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="mt-1 text-xs text-white/60 sm:text-sm">
+              {isInstituteAdmin
+                ? "Approve requests, issue certificates, and print hard copies for franchises"
+                : "Request certificates for your batch — institute admin will approve and send hard copies"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm backdrop-blur-sm">
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-200/80">Pending</p>
+                <p className="font-bold tabular-nums text-amber-100">{stats.requested}</p>
               </div>
-            ) : error ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 text-center">
-                <p className="text-amber-600 dark:text-amber-400 font-medium mb-2">
-                  {error instanceof Error ? error.message : "Failed to load"}
-                </p>
-                <button onClick={() => mutate()} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm">
-                  Retry
-                </button>
-              </motion.div>
-            ) : items.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-16 text-center"
-              >
-                <Award className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-                <p className="font-medium text-foreground">No certificate requests found</p>
-                <p className="text-sm text-muted-foreground mt-1">Create a request or wait for students to request</p>
-              </motion.div>
-            ) : (
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-sky-200/80">Approved</p>
+                <p className="font-bold tabular-nums text-sky-100">{stats.approved}</p>
+              </div>
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-200/80">Issued</p>
+                <p className="font-bold tabular-nums text-emerald-100">{stats.issued}</p>
+              </div>
+            </div>
+            {canPrint && (
               <>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-medium">Student</th>
-                        <th className="text-left py-3 px-4 font-medium">Course</th>
-                        {showFranchiseFilter && <th className="text-left py-3 px-4 font-medium">Franchise</th>}
-                        <th className="text-left py-3 px-4 font-medium">Cert #</th>
-                        <th className="text-left py-3 px-4 font-medium">Status</th>
-                        <th className="text-left py-3 px-4 font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <AnimatePresence mode="popLayout">
-                        {items.map((c, i) => (
-                          <motion.tr
-                            key={c.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2, delay: i * 0.02 }}
-                            className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                          >
-                            <td className="py-3 px-4">
-                              <div>
-                                <p className="font-medium">{c.studentName}</p>
-                                <p className="text-xs text-muted-foreground">{c.studentEmail}</p>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">{c.courseName}</td>
-                            {showFranchiseFilter && <td className="py-3 px-4">{c.franchiseName}</td>}
-                            <td className="py-3 px-4 font-mono text-xs">{c.certificateNumber}</td>
-                            <td className="py-3 px-4">{getStatusBadge(c.status)}</td>
-                            <td className="py-3 px-4">
-                              {c.status === "REQUESTED" && (
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => updateStatus(c.id, "APPROVED")}
-                                    disabled={actionLoading === c.id}
-                                    className="text-xs px-2 py-1 rounded-lg bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 disabled:opacity-50"
-                                  >
-                                    {actionLoading === c.id ? "..." : "Approve"}
-                                  </button>
-                                  <button
-                                    onClick={() => updateStatus(c.id, "REJECTED")}
-                                    disabled={actionLoading === c.id}
-                                    className="text-xs px-2 py-1 rounded-lg bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 disabled:opacity-50"
-                                  >
-                                    Reject
-                                  </button>
-                                </div>
-                              )}
-                              {c.status === "APPROVED" && (
-                                <button
-                                  onClick={() => updateStatus(c.id, "ISSUED")}
-                                  disabled={actionLoading === c.id}
-                                  className="text-xs px-2 py-1 rounded-lg bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 disabled:opacity-50"
-                                >
-                                  {actionLoading === c.id ? "..." : "Issue"}
-                                </button>
-                              )}
-                            </td>
-                          </motion.tr>
-                        ))}
-                      </AnimatePresence>
-                    </tbody>
-                  </table>
-                </div>
-
-                {pagination.totalPages > 1 && (
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground">
-                      Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                      {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page <= 1}
-                        className="px-3 py-1 rounded border border-border disabled:opacity-50 text-sm hover:bg-muted"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                        disabled={page >= pagination.totalPages}
-                        className="px-3 py-1 rounded border border-border disabled:opacity-50 text-sm hover:bg-muted"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <Link
+                  href="/certificates/print"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  Print Center
+                </Link>
+                <Link
+                  href="/certificates/issued"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Issued
+                </Link>
               </>
             )}
-          </CardContent>
-        </Card>
-      </motion.div>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B132B] transition hover:brightness-110"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {isInstituteAdmin ? "Create request" : "Request batch"}
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <CreateCertificateModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} onSuccess={() => mutate()} />
+      {!isInstituteAdmin && (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200/80 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            You can request certificates for your students but <strong>cannot print</strong> them here.
+            After institute approval, hard copies will be printed and sent to your centre.
+          </p>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-[#1E4A85]/12 bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.04] to-transparent px-4 py-3 sm:flex-row sm:items-center sm:px-5">
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="h-9 rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+          >
+            <option value="">All statuses</option>
+            <option value="REQUESTED">Requested</option>
+            <option value="APPROVED">Approved</option>
+            <option value="ISSUED">Issued</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+          <select
+            value={courseId}
+            onChange={(e) => {
+              setCourseId(e.target.value);
+              setPage(1);
+            }}
+            className="h-9 rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+          >
+            <option value="">All courses / batches</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {showFranchiseFilter && (
+            <select
+              value={franchiseId}
+              onChange={(e) => {
+                setFranchiseId(e.target.value);
+                setPage(1);
+              }}
+              className="h-9 rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+            >
+              <option value="">All franchises</option>
+              {(franchises as { id: string; name: string }[]).map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            type="button"
+            onClick={() => mutate()}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border/70 px-3 text-sm font-medium hover:bg-muted/50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
+        </div>
+
+        <div className="overflow-x-auto p-4 sm:p-5">
+          {isLoading && !data ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-[#1E4A85]" />
+            </div>
+          ) : error ? (
+            <p className="py-12 text-center text-red-600">
+              {error instanceof Error ? error.message : "Failed to load"}
+            </p>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center py-16 text-center">
+              <Award className="mb-3 h-12 w-12 text-[#1E4A85]/30" />
+              <p className="font-medium">No certificate requests</p>
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                className="mt-3 text-sm font-semibold text-[#1E4A85] hover:underline"
+              >
+                Create first request →
+              </button>
+            </div>
+          ) : (
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-[#1E4A85]/15">
+                  <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                    Student
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                    Course / Batch
+                  </th>
+                  {showFranchiseFilter && (
+                    <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                      Franchise
+                    </th>
+                  )}
+                  <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                    Cert #
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                    Status
+                  </th>
+                  <th className="px-3 py-3 text-right text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((c) => (
+                  <tr
+                    key={c.id}
+                    className="border-b border-[#1E4A85]/5 transition hover:bg-[#1E4A85]/[0.03]"
+                  >
+                    <td className="px-3 py-3">
+                      <p className="font-medium">{c.studentName}</p>
+                      <p className="text-xs text-muted-foreground">{c.studentEmail}</p>
+                    </td>
+                    <td className="px-3 py-3">{c.courseName}</td>
+                    {showFranchiseFilter && (
+                      <td className="px-3 py-3 text-muted-foreground">{c.franchiseName}</td>
+                    )}
+                    <td className="px-3 py-3 font-mono text-xs">{c.certificateNumber}</td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase",
+                          STATUS_CHIP[c.status] ?? STATUS_CHIP.REQUESTED
+                        )}
+                      >
+                        {c.status === "ISSUED" && <CheckCircle2 className="h-3 w-3" />}
+                        {c.status === "APPROVED" && <Clock className="h-3 w-3" />}
+                        {c.status === "REJECTED" && <XCircle className="h-3 w-3" />}
+                        {c.status === "REQUESTED" && <Clock className="h-3 w-3" />}
+                        {c.status}
+                      </span>
+                      {!isInstituteAdmin && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">{STATUS_HINT[c.status]}</p>
+                      )}
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        {canPrint && (c.status === "ISSUED" || c.status === "APPROVED") && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewCert(c)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#1E4A85]/10 px-2.5 py-1 text-xs font-semibold text-[#1E4A85] hover:bg-[#1E4A85]/20"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Preview
+                          </button>
+                        )}
+                        {isInstituteAdmin && c.status === "REQUESTED" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(c.id, "APPROVED")}
+                              disabled={actionLoading === c.id}
+                              className="rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateStatus(c.id, "REJECTED")}
+                              disabled={actionLoading === c.id}
+                              className="rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {isInstituteAdmin && c.status === "APPROVED" && (
+                          <button
+                            type="button"
+                            onClick={() => updateStatus(c.id, "ISSUED")}
+                            disabled={actionLoading === c.id}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            Issue
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {pagination.totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-[#1E4A85]/10 pt-4">
+              <p className="text-xs text-muted-foreground">
+                Page {pagination.page} of {pagination.totalPages} · {pagination.total} total
+              </p>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="rounded-lg border p-1.5 disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page >= pagination.totalPages}
+                  className="rounded-lg border p-1.5 disabled:opacity-40"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <CreateCertificateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={() => mutate()}
+      />
+      {canPrint && (
+        <CertificatePreviewModal
+          certificateId={previewCert?.id ?? ""}
+          open={!!previewCert}
+          onClose={() => setPreviewCert(null)}
+          studentName={previewCert?.studentName}
+        />
+      )}
     </div>
   );
 }

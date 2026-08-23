@@ -49,3 +49,34 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+/** DELETE: Remove an offer application by id (Super admin / Admin). */
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await requireSuperAdminOrAdmin();
+    if (!user) return unauthorizedResponse();
+
+    const model = (prisma as { offerApplication?: { delete: (opts: object) => Promise<unknown> } })
+      .offerApplication;
+    if (!model) {
+      return errorResponse("Offer applications not configured. Run prisma generate.", 503);
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("Missing id", 400);
+
+    await model.delete({ where: { id: BigInt(id) } });
+
+    return successResponse({ deleted: true }, "Application deleted");
+  } catch (error: unknown) {
+    console.error("Offer applications DELETE error:", error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return errorResponse("Database table `offer_applications` is missing.", 503);
+    }
+    return errorResponse(
+      error instanceof Error ? error.message : "Failed to delete application",
+      500
+    );
+  }
+}

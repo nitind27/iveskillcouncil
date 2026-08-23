@@ -72,7 +72,15 @@ export async function GET(
       planId:        app.planId,
       planName:      app.plan?.name ?? null,
       message:       app.message,
-      documents:     app.documents,
+      documents:     (() => {
+        const raw = app.documents;
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === "string") {
+          try { return JSON.parse(raw); } catch { return []; }
+        }
+        if (raw && typeof raw === "object") return Object.values(raw as object);
+        return [];
+      })(),
       status:        app.status,
       adminNotes:    app.adminNotes,
       reviewedAt:    app.reviewedAt?.toISOString() ?? null,

@@ -12,7 +12,6 @@ import {
   Building2,
 } from "lucide-react";
 import { useLogoConfig } from "@/hooks/useLogoConfig";
-import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMenuForRole, type RoleMenuItem } from "@/lib/role-menu-config";
 
@@ -51,9 +50,7 @@ export default function Sidebar({
     menuSectionsFiltered.forEach((section) => {
       section.items.forEach((item) => {
         if (item.children) {
-          const hasActiveChild = item.children.some(
-            (child) => child.href === pn
-          );
+          const hasActiveChild = item.children.some((child) => child.href === pn);
           if (hasActiveChild || item.href === pn) {
             activePaths.add(item.id);
           }
@@ -66,11 +63,8 @@ export default function Sidebar({
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
-      }
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
       return next;
     });
   };
@@ -90,38 +84,50 @@ export default function Sidebar({
       return (
         <div key={item.id}>
           <button
+            type="button"
             onClick={() => !isCollapsed && toggleExpanded(item.id)}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-              "text-sidebar-foreground",
-              "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              active && "bg-sidebar-accent text-sidebar-accent-foreground",
-              isCollapsed && "justify-center",
+              "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
+              "text-white/75 hover:bg-white/10 hover:text-white",
+              active && "bg-white/10 text-white",
+              isCollapsed && "justify-center px-2",
               level > 0 && "pl-6"
             )}
             title={isCollapsed ? item.label : undefined}
           >
-            <Icon className={cn("flex-shrink-0 text-sidebar-foreground", isCollapsed ? "w-5 h-5" : "w-4 h-4")} />
+            {active && (
+              <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
+            )}
+            <span
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition",
+                active
+                  ? "bg-[#C4A35A] text-[#0B132B] shadow-md shadow-[#C4A35A]/30"
+                  : "bg-white/10 text-[#E8D5A3] group-hover:bg-white/15"
+              )}
+            >
+              <Icon className={cn(isCollapsed ? "h-4 w-4" : "h-3.5 w-3.5")} />
+            </span>
             {!isCollapsed && (
               <>
-                <span className="flex-1 text-left text-sm font-medium">
+                <span className="flex-1 text-left text-[13px] font-semibold">
                   {item.label}
                 </span>
                 {item.badge && (
-                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
+                  <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
                     {item.badge}
                   </span>
                 )}
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-sidebar-foreground" />
+                  <ChevronDown className="h-3.5 w-3.5 text-white/50" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-sidebar-foreground" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/50" />
                 )}
               </>
             )}
           </button>
           {!isCollapsed && isExpanded && (
-            <div className="mt-1 ml-4 space-y-1 border-l border-sidebar-border pl-4">
+            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
               {item.children!.map((child) => renderMenuItem(child, level + 1))}
             </div>
           )}
@@ -134,26 +140,35 @@ export default function Sidebar({
         key={item.id}
         href={item.href || "#"}
         onClick={() => {
-          if (isMobileOpen) {
-            onMobileClose();
-          }
+          if (isMobileOpen) onMobileClose();
         }}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-          "text-sidebar-foreground",
-          "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          active && "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
-          isCollapsed && "justify-center",
+          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
+          "text-white/75 hover:bg-white/10 hover:text-white",
+          active && "bg-gradient-to-r from-[#C4A35A]/25 to-transparent text-white",
+          isCollapsed && "justify-center px-2",
           level > 0 && "pl-6"
         )}
         title={isCollapsed ? item.label : undefined}
       >
-        <Icon className={cn("flex-shrink-0", isCollapsed ? "w-5 h-5" : "w-4 h-4")} />
+        {active && (
+          <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#C4A35A] shadow-[0_0_12px_rgba(196,163,90,0.6)]" />
+        )}
+        <span
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition",
+            active
+              ? "bg-[#C4A35A] text-[#0B132B] shadow-md shadow-[#C4A35A]/35"
+              : "bg-white/10 text-[#E8D5A3] group-hover:bg-white/15"
+          )}
+        >
+          <Icon className={cn(isCollapsed ? "h-4 w-4" : "h-3.5 w-3.5")} />
+        </span>
         {!isCollapsed && (
           <>
-            <span className="flex-1 text-sm">{item.label}</span>
+            <span className="flex-1 text-[13px] font-semibold">{item.label}</span>
             {item.badge && (
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
+              <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
                 {item.badge}
               </span>
             )}
@@ -167,88 +182,119 @@ export default function Sidebar({
     <>
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-300 lg:hidden"
           onClick={onMobileClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed lg:sticky top-0 left-0 z-50 h-screen",
-          "bg-sidebar border-r border-sidebar-border",
+          "fixed left-0 top-0 z-50 flex h-screen flex-col lg:sticky",
+          "bg-gradient-to-b from-[#0B1F3A] via-[#122B4D] to-[#0F2744]",
+          "border-r border-white/10 shadow-xl shadow-black/20",
           "transition-all duration-300 ease-in-out",
-          "flex flex-col",
-          isCollapsed ? "w-16" : "w-64",
+          isCollapsed ? "w-[4.5rem]" : "w-64",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(196,163,90,0.12),transparent_50%)]" />
+
+        <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3">
           {!isCollapsed && (
-            <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+            <Link
+              href="/dashboard"
+              className="block min-w-0 flex-1 overflow-hidden pr-1"
+              aria-label={siteName || "Dashboard"}
+            >
               {logoUrl ? (
-                <img src={logoUrl} alt={siteName} className="h-16 w-auto max-w-[140px] object-contain" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt={siteName}
+                  className="block h-12 w-full max-w-full object-contain object-left"
+                />
               ) : (
-                <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
-                  {siteName || "Franchise Institute"}
-                </h2>
+                <div className="min-w-0">
+                  <p className="truncate text-base font-bold tracking-tight text-white">
+                    {siteName || "IVESDC"}
+                  </p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C4A35A]">
+                    Admin Panel
+                  </p>
+                </div>
               )}
             </Link>
           )}
           {isCollapsed && (
-            <Link href="/dashboard" className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center overflow-hidden flex-shrink-0">
+            <Link
+              href="/dashboard"
+              className="mx-auto flex h-10 w-10 shrink-0 items-center justify-center"
+              aria-label={siteName || "Dashboard"}
+            >
               {logoUrl ? (
-                <img src={logoUrl} alt={siteName} className="w-full h-full object-contain p-1" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={siteName} className="h-full w-full object-contain" />
               ) : (
-                <Building2 className="w-5 h-5 text-primary-foreground" />
+                <Building2 className="h-5 w-5 text-[#C4A35A]" />
               )}
             </Link>
           )}
           <button
+            type="button"
             onClick={() => {
-              if (window.innerWidth < 1024) {
-                onMobileClose();
-              } else {
-                onToggleCollapse();
-              }
+              if (window.innerWidth < 1024) onMobileClose();
+              else onToggleCollapse();
             }}
-            className="lg:flex hidden items-center justify-center w-8 h-8 rounded-lg hover:bg-sidebar-accent transition-colors"
+            className="hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white lg:flex"
             aria-label="Toggle sidebar"
           >
             {isCollapsed ? (
-              <PanelLeftOpen className="w-4 h-4 text-sidebar-foreground" />
+              <PanelLeftOpen className="h-4 w-4" />
             ) : (
-              <PanelLeftClose className="w-4 h-4 text-sidebar-foreground" />
+              <PanelLeftClose className="h-4 w-4" />
             )}
           </button>
           <button
+            type="button"
             onClick={onMobileClose}
-            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-sidebar-accent transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 lg:hidden"
             aria-label="Close sidebar"
           >
-            <X className="w-4 h-4 text-sidebar-foreground" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto sidebar-scrollbar p-4 space-y-6">
+        <nav className="relative flex-1 space-y-5 overflow-y-auto p-3 sidebar-scrollbar">
           {menuSectionsFiltered.map((section) => (
             <div key={section.id} className="space-y-1">
               {!isCollapsed && section.label && (
-                <h3 className="px-3 text-xs font-semibold text-sidebar-foreground/70 uppercase tracking-wider mb-2">
+                <h3 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]/80">
                   {section.label}
                 </h3>
               )}
-              <div className="space-y-1">
+              {isCollapsed && (
+                <div className="mx-auto mb-2 h-px w-6 bg-white/10" />
+              )}
+              <div className="space-y-0.5">
                 {section.items.map((item) => renderMenuItem(item))}
               </div>
             </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
-          {!isCollapsed && (
-            <div className="px-3 py-2 text-xs text-sidebar-foreground/70">
-              <p className="font-medium truncate">{siteName || "Franchise Institute"}</p>
-              <p className="text-xs">Management System</p>
+        <div className="relative border-t border-white/10 p-3">
+          {!isCollapsed ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+              <p className="truncate text-xs font-bold text-white">
+                {user?.fullName || siteName || "IVESDC"}
+              </p>
+              <p className="truncate text-[10px] text-[#E8D5A3]/90">
+                {user?.roleName || "Management System"}
+              </p>
+            </div>
+          ) : (
+            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#C4A35A]/20 text-xs font-bold text-[#E8D5A3]">
+              {(user?.fullName || "U").charAt(0).toUpperCase()}
             </div>
           )}
         </div>

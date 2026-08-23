@@ -83,6 +83,7 @@ model User {
   staff           Staff?
   student         Student?
   issuedCertificates Certificate[] @relation("CertificateIssuer")
+  requestedCertificates Certificate[] @relation("CertificateRequester")
   announcements   Announcement[] @relation("AnnouncementCreator")
 
   @@index([roleId], map: "idx_role")
@@ -138,6 +139,20 @@ model Franchise {
   pincode         String?       @db.VarChar(20)
   phone           String?       @db.VarChar(20)
   email           String?       @db.VarChar(150)
+  // Business & KYC
+  businessType    String?       @map("business_type") @db.VarChar(50)
+  legalName       String?       @map("legal_name") @db.VarChar(200)
+  alternatePhone  String?       @map("alternate_phone") @db.VarChar(20)
+  panNumber       String?       @map("pan_number") @db.VarChar(20)
+  aadhaarNumber   String?       @map("aadhaar_number") @db.VarChar(20)
+  gstNumber       String?       @map("gst_number") @db.VarChar(30)
+  msmeNumber      String?       @map("msme_number") @db.VarChar(50)
+  bankName        String?       @map("bank_name") @db.VarChar(100)
+  bankAccountName String?       @map("bank_account_name") @db.VarChar(150)
+  bankAccountNumber String?     @map("bank_account_number") @db.VarChar(50)
+  bankIfsc        String?       @map("bank_ifsc") @db.VarChar(20)
+  // KYC documents: [{key,url,name,type,label}]
+  documents       Json?         @db.Json
   status          FranchiseStatus @default(PENDING)
   rejectionReason String?       @map("rejection_reason") @db.VarChar(500)
   // Custom panel config (JSON: logoUrl, primaryColor, siteName, tagline, etc.)
@@ -228,17 +243,26 @@ model CourseCategory {
 }
 
 model Course {
-  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  franchiseId    BigInt?      @map("franchise_id") @db.UnsignedBigInt
-  name           String       @db.VarChar(150)
-  description    String?      @db.Text
-  type           CourseType
-  category       String?      @db.VarChar(100)
-  baseFee        Decimal     @map("base_fee") @db.Decimal(10, 2)
-  durationMonths Int         @map("duration_months")
-  status         CourseStatus @default(ACTIVE)
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamp
-  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamp
+  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  franchiseId      BigInt?       @map("franchise_id") @db.UnsignedBigInt
+  name             String        @db.VarChar(150)
+  slug             String?       @unique @db.VarChar(160)
+  description      String?       @db.Text
+  shortDescription String?       @map("short_description") @db.VarChar(300)
+  imageUrl         String?       @map("image_url") @db.VarChar(500)
+  type             CourseType
+  category         String?       @db.VarChar(100)
+  level            CourseLevel   @default(BEGINNER)
+  mode             CourseMode    @default(OFFLINE)
+  baseFee          Decimal       @map("base_fee") @db.Decimal(10, 2)
+  durationMonths   Int           @map("duration_months")
+  lectures         Int           @default(0)
+  videos           Int           @default(0)
+  notes            String?       @db.VarChar(255)
+  highlights       String?       @db.Text
+  status           CourseStatus  @default(ACTIVE)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamp
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamp
 
   franchise      Franchise?  @relation("FranchiseCourses", fields: [franchiseId], references: [id], onDelete: Cascade)
   students       Student[]
@@ -246,6 +270,7 @@ model Course {
 
   @@index([franchiseId], map: "idx_course_franchise")
   @@index([category], map: "idx_course_category")
+  @@index([status], map: "idx_course_status")
   @@map("courses")
 }
 
@@ -253,6 +278,18 @@ enum CourseType {
   SILVER
   GOLD
   DIAMOND
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CourseMode {
+  OFFLINE
+  ONLINE
+  HYBRID
 }
 
 enum CourseStatus {
@@ -401,12 +438,15 @@ model Certificate {
   issueDate       DateTime?         @map("issue_date") @db.Date
   status          CertificateStatus @default(REQUESTED)
   issuedBy        BigInt?           @map("issued_by") @db.UnsignedBigInt
+  requestedBy     BigInt?           @map("requested_by") @db.UnsignedBigInt
+  displayOverrides Json?            @map("display_overrides") @db.Json
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamp
   updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamp
 
   student         Student           @relation(fields: [studentId], references: [id])
   franchise       Franchise         @relation(fields: [franchiseId], references: [id])
   issuer          User?             @relation("CertificateIssuer", fields: [issuedBy], references: [id])
+  requester       User?             @relation("CertificateRequester", fields: [requestedBy], references: [id])
 
   @@index([franchiseId], map: "fk_certificate_franchise")
   @@index([studentId], map: "fk_certificate_student")

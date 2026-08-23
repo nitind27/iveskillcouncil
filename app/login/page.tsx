@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,7 +11,12 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
-  Smartphone
+  Smartphone,
+  GraduationCap,
+  Check,
+  X,
+  KeyRound,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +24,7 @@ import { showSuccess, showError } from "@/lib/toast";
 import { validateName, validateEmail } from "@/lib/validation";
 import { useLogoConfig } from "@/hooks/useLogoConfig";
 import PageLoader from "@/components/common/PageLoader";
+import LoginBrandPanel from "@/components/login/LoginBrandPanel";
 
 type LoginMethod = "password" | "otp";
 type OverlayFlow = "forgot" | "firstTime" | null;
@@ -25,13 +32,14 @@ type OverlayFlow = "forgot" | "firstTime" | null;
 function LoginForm() {
   const searchParams = useSearchParams();
   const { logoUrl, siteName, tagline } = useLogoConfig();
-  const { login, loginWithOtp, user, loading: authLoading } = useAuth();
+  const { login, loginWithOtp, user, loading: authLoading, dbUnavailable } = useAuth();
   
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [overlayFlow, setOverlayFlow] = useState<OverlayFlow>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   
   // OTP flow
@@ -92,12 +100,16 @@ function LoginForm() {
     e.preventDefault();
     setFormLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.ok) {
         showSuccess("Login Successful", "Redirecting...");
         setTimeout(() => { window.location.href = redirect; }, 1200);
       } else {
-        showError("Invalid Credentials", "Please check your email and password.");
+        const isDb = result.error?.toLowerCase().includes("database");
+        showError(
+          isDb ? "Server Unavailable" : "Invalid Credentials",
+          result.error || "Please check your email and password."
+        );
         setFormLoading(false);
       }
     } catch (error: unknown) {
@@ -375,214 +387,235 @@ function LoginForm() {
   const isOverlayOpen = overlayFlow !== null;
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white font-sans selection:bg-blue-100 overflow-hidden">
-      
-      {/* LEFT: Branding */}
-      <div className="relative hidden md:flex md:w-[45%] lg:w-[40%] overflow-hidden flex-col items-center justify-center p-12" style={{ background: "linear-gradient(135deg, #1a3d70 0%, #2D5DA8 50%, #1E4A85 100%)" }}>
-        {/* decorative blobs */}
-        <div className="absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full opacity-20" style={{ background: "radial-gradient(circle, #A8C63A, transparent 70%)" }} />
-        <div className="absolute -bottom-32 -left-16 w-[480px] h-[480px] rounded-full opacity-15" style={{ background: "radial-gradient(circle, #F39C12, transparent 70%)" }} />
-        {/* animated ring */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            className="w-[420px] h-[420px] rounded-full border border-white/10 border-dashed"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute w-[300px] h-[300px] rounded-full border border-[#A8C63A]/20 border-dashed"
-          />
-        </div>
+    <div className="login-page login-mesh-bg relative grid min-h-screen w-full grid-cols-1 overflow-x-hidden font-sans text-white lg:grid-cols-[minmax(0,44%)_minmax(0,56%)] lg:items-stretch">
 
-        <div className="relative z-10 flex flex-col items-center text-center">
-          {/* logo */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-10"
+      <LoginBrandPanel logoUrl={logoUrl} siteName={siteName} tagline={tagline} />
+
+      {/* RIGHT — login form */}
+      <div className="relative z-10 flex flex-col justify-center px-5 py-8 sm:px-8 lg:min-h-screen lg:px-10 lg:py-12 xl:px-14">
+        <div className="mx-auto w-full max-w-[420px]">
+          <Link
+            href="/userpanel"
+            className="mb-6 inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white/90"
           >
-            {logoUrl ? (
-              <img src={logoUrl} alt={siteName} className="max-w-[260px] w-full drop-shadow-2xl" />
-            ) : (
-              <div className="w-28 h-28 rounded-3xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-2xl">
-                <span className="text-white font-black text-5xl">{siteName.charAt(0)}</span>
-              </div>
-            )}
-          </motion.div>
+            ← Back to website
+          </Link>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            <h1 className="text-3xl font-extrabold text-white tracking-tight mb-3">{siteName}</h1>
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="h-px w-10 bg-[#A8C63A]/60 rounded-full" />
-              <div className="w-2 h-2 rounded-full bg-[#A8C63A]" />
-              <div className="h-px w-10 bg-[#A8C63A]/60 rounded-full" />
-            </div>
-            <p className="text-white/60 text-sm font-medium uppercase tracking-widest max-w-xs">{tagline || "Innovation in Learning"}</p>
-          </motion.div>
-
-          {/* feature pills */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-12 flex flex-col gap-3 w-full max-w-xs"
+            transition={{ duration: 0.45 }}
           >
-            {["Franchise Management", "Student Tracking", "Course & Fees", "Certificates"].map((f, i) => (
-              <motion.div
-                key={f}
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + i * 0.08 }}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/10 border border-white/10 backdrop-blur-sm"
-              >
-                <span className="w-2 h-2 rounded-full bg-[#A8C63A] flex-shrink-0" />
-                <span className="text-white/80 text-sm font-medium">{f}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* RIGHT: Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8 md:p-16 lg:p-24 bg-[#F8FAFC]">
-        <div className="w-full max-w-[420px]">
-          <div className="mb-8">
-            <h2 className="text-4xl font-extrabold tracking-tight text-[#1A1A1A] mb-3">Sign In</h2>
-            <p className="text-[#6B7280] text-lg">Welcome back. Choose how to sign in.</p>
-          </div>
-
-          {/* Method tabs: Password | OTP */}
-          <div className="flex gap-1 p-1 rounded-2xl bg-[#EEF2F7] mb-6">
-            <button
-              type="button"
-              onClick={() => { setLoginMethod("password"); closeOverlay(); setOtpSent(false); setOtp(""); setOtpError(""); }}
-              className={cn(
-                "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2",
-                loginMethod === "password" ? "bg-white text-[#2D5DA8] shadow-sm" : "text-[#6B7280] hover:text-[#1A1A1A]"
+            <div className="login-glass-card rounded-2xl p-6 sm:p-8">
+              {dbUnavailable && (
+                <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/15 px-3 py-2.5 text-xs leading-relaxed text-amber-100">
+                  <p className="font-semibold text-amber-50">Database reconnecting…</p>
+                  <p className="mt-1 text-amber-100/80">
+                    After a laptop restart, run <span className="font-mono text-amber-50">npm run dev</span>{" "}
+                    (starts DB proxy). Wait a few seconds, then try login again. Your session cookies are kept.
+                  </p>
+                </div>
               )}
-            >
-              <Lock className="w-4 h-4" /> Password
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginMethod("otp"); closeOverlay(); setOtpSent(false); setOtp(""); setOtpError(""); }}
-              className={cn(
-                "flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2",
-                loginMethod === "otp" ? "bg-white text-[#2D5DA8] shadow-sm" : "text-[#6B7280] hover:text-[#1A1A1A]"
+              {/* Header */}
+              {!isOverlayOpen ? (
+                <>
+                  <h2 className="text-2xl font-extrabold text-white sm:text-[1.65rem]">Sign in</h2>
+                  <p className="mt-1 text-sm text-white/50">Welcome back — enter your credentials</p>
+
+                  <div className="mt-6 flex rounded-xl bg-white/[0.06] p-1">
+                    <button
+                      type="button"
+                      onClick={() => { setLoginMethod("password"); setOtpSent(false); setOtp(""); setOtpError(""); }}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
+                        loginMethod === "password"
+                          ? "bg-white text-[#0B132B] shadow-sm"
+                          : "text-white/55 hover:text-white/85"
+                      )}
+                    >
+                      <Lock className="h-4 w-4" /> Password
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setLoginMethod("otp"); setOtpSent(false); setOtp(""); setOtpError(""); }}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
+                        loginMethod === "otp"
+                          ? "bg-white text-[#0B132B] shadow-sm"
+                          : "text-white/55 hover:text-white/85"
+                      )}
+                    >
+                      <Smartphone className="h-4 w-4" /> OTP
+                    </button>
+                  </div>
+                </>
+              ) : overlayFlow === "forgot" ? (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4A35A]/15 text-[#C4A35A]">
+                      <KeyRound className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h2 className="text-xl font-extrabold text-white">Reset password</h2>
+                      <p className="mt-1 text-sm text-white/50">
+                        {forgotStep === "email"
+                          ? "Enter your email to receive an OTP"
+                          : "Enter OTP and set a new password"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeOverlay}
+                    className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4A35A]/15 text-[#C4A35A]">
+                      <UserPlus className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h2 className="text-xl font-extrabold text-white">Set up your account</h2>
+                      <p className="mt-1 text-sm text-white/50">
+                        {firstTimeStep === "email"
+                          ? "Enter your email to begin setup"
+                          : firstTimeStep === "send"
+                            ? "Confirm and send OTP"
+                            : "Verify OTP and set your password"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeOverlay}
+                    className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               )}
-            >
-              <Smartphone className="w-4 h-4" /> OTP
-            </button>
-          </div>
 
           <AnimatePresence mode="wait">
-            {loginMethod === "password" && !isOverlayOpen && (
+            {!isOverlayOpen && loginMethod === "password" && (
               <motion.form
                 key="password"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 onSubmit={handlePasswordLogin}
-                className="space-y-6"
+                className="mt-6 space-y-5"
               >
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-[0.2em]">Email</label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#D1D5DB] group-focus-within:text-[#2D5DA8]" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-white/55">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="admin@eklavya.com"
-                      className="w-full pl-12 pr-4 py-4 bg-white border border-[#E5E7EB] rounded-2xl outline-none focus:ring-4 focus:ring-[#2D5DA8]/10 focus:border-[#2D5DA8] text-[#1A1A1A]"
+                      placeholder="admin@example.com"
+                      className="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-4 text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center px-1">
-                    <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-[0.2em]">Password</label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-white/55">Password</label>
                     <button
                       type="button"
                       onClick={() => { setOverlayFlow("forgot"); setForgotStep("email"); setForgotOtpSent(false); setOtp(""); setResetPassword(""); setResetConfirm(""); setOtpError(""); }}
-                      className="text-xs font-bold text-[#2D5DA8] hover:text-[#1E4A85]"
+                      className="text-xs font-semibold text-[#C4A35A] hover:text-[#D4B86A]"
                     >
-                      Forgot?
+                      Forgot password?
                     </button>
                   </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#D1D5DB] group-focus-within:text-[#2D5DA8]" />
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                     <input
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       placeholder="••••••••"
-                      className="w-full pl-12 pr-12 py-4 bg-white border border-[#E5E7EB] rounded-2xl outline-none focus:ring-4 focus:ring-[#2D5DA8]/10 focus:border-[#2D5DA8] text-[#1A1A1A]"
+                      className="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-10 text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#D1D5DB] hover:text-[#2D5DA8]">
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#1E4A85]">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
+
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-white/20 bg-white/10 accent-[#C4A35A]"
+                  />
+                  <span className="text-sm text-white/55">Remember me</span>
+                </label>
+
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className={cn("w-full py-4 px-6 rounded-2xl font-bold text-white bg-[#2D5DA8] hover:bg-[#1E4A85] flex items-center justify-center gap-2 shadow-lg transition-all", formLoading && "opacity-70 cursor-not-allowed")}
+                  className={cn(
+                    "login-btn-gold mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-[#0B132B] transition-all",
+                    formLoading && "cursor-not-allowed opacity-70"
+                  )}
                 >
-                  {formLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying...</> : <><span>Login</span><ChevronRight className="w-5 h-5" /></>}
+                  {formLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in...</> : <>Sign in<ChevronRight className="h-4 w-4" /></>}
                 </button>
               </motion.form>
             )}
 
             {loginMethod === "otp" && !isOverlayOpen && (
-              <motion.div key="otp" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+              <motion.div key="otp" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="mt-6 space-y-5">
                 {!otpSent ? (
-                  <form onSubmit={handleSendOtpLogin} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-[0.2em]">Email</label>
-                      <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#D1D5DB]" />
+                  <form onSubmit={handleSendOtpLogin} className="space-y-5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-white/55">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                         <input
                           type="email"
                           value={email}
                           onChange={(e) => { setEmail(e.target.value); setOtpError(""); }}
                           required
                           placeholder="your@email.com"
-                          className="w-full pl-12 pr-4 py-4 bg-white border border-[#E5E7EB] rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 focus:border-blue-600 text-[#1A1A1A]"
+                          className="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-4 text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
                         />
                       </div>
                     </div>
-                    {otpError && <p className="text-sm text-[#F39C12]">{otpError}</p>}
-                    <button type="submit" disabled={formLoading} className={cn("w-full py-4 px-6 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2", formLoading && "opacity-70")}>
-                      {formLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null} Send OTP to Email
+                    {otpError && <p className="text-sm text-red-400">{otpError}</p>}
+                    <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-[#0B132B] transition-all", formLoading && "cursor-not-allowed opacity-70")}>
+                      {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send OTP to email
                     </button>
                   </form>
                 ) : (
-                  <form onSubmit={handleVerifyOtpLogin} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-[0.2em]">Enter OTP</label>
+                  <form onSubmit={handleVerifyOtpLogin} className="space-y-5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-white/55">Enter OTP</label>
                       <input
                         type="text"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="000000"
                         maxLength={6}
-                        className="w-full px-4 py-4 bg-white border border-[#E5E7EB] rounded-2xl outline-none focus:ring-4 focus:ring-blue-600/5 text-center text-2xl tracking-[0.5em] font-mono text-[#1A1A1A]"
+                        className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
                       />
-                      <p className="text-xs text-[#6B7280]">OTP sent to {email}</p>
+                      <p className="text-xs text-white/45">OTP sent to {email}</p>
                     </div>
                     <div className="flex gap-3">
-                      <button type="button" onClick={() => { setOtpSent(false); setOtp(""); }} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Change Email</button>
-                      <button type="submit" disabled={formLoading} className={cn("flex-1 py-4 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-2", formLoading && "opacity-70")}>
-                        {formLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : null} Verify & Login
+                      <button type="button" onClick={() => { setOtpSent(false); setOtp(""); }} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">Change email</button>
+                      <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                        {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Verify & sign in
                       </button>
                     </div>
                   </form>
@@ -591,156 +624,275 @@ function LoginForm() {
             )}
           </AnimatePresence>
 
-          {/* Forgot Password Overlay */}
-          <AnimatePresence>
-            {overlayFlow === "forgot" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-                onClick={closeOverlay}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6"
+          {/* Forgot password — in-card */}
+          {overlayFlow === "forgot" && (
+            <motion.div
+              key="forgot"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6"
+            >
+              {forgotStep === "email" && (
+                <form onSubmit={handleForgotSendOtp} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        placeholder="your@email.com"
+                        className="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-4 text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                      />
+                    </div>
+                  </div>
+                  {otpError && <p className="text-sm text-red-400">{otpError}</p>}
+                  <div className="flex gap-3">
+                    <button type="button" onClick={closeOverlay} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                      {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send OTP
+                    </button>
+                  </div>
+                </form>
+              )}
+              {forgotStep === "otp" && (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">OTP</label>
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="000000"
+                      maxLength={6}
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-center font-mono text-xl tracking-widest text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                    <p className="text-xs text-white/45">OTP sent to {email}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">New password</label>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder="Min 8 characters"
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">Confirm password</label>
+                    <input
+                      type="password"
+                      value={resetConfirm}
+                      onChange={(e) => setResetConfirm(e.target.value)}
+                      required
+                      placeholder="Repeat password"
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={() => { setForgotStep("email"); setForgotOtpSent(false); setOtp(""); }} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">
+                      Back
+                    </button>
+                    <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                      {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Reset & login
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
+          )}
+
+          {/* First-time setup — in-card */}
+          {overlayFlow === "firstTime" && (
+            <motion.div
+              key="firstTime"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6"
+            >
+              {firstTimeStep === "email" && (
+                <form onSubmit={handleCheckFirstTime} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => { setEmail(e.target.value); setOtpError(""); }}
+                        required
+                        placeholder="your@email.com"
+                        className="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-4 text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                      />
+                    </div>
+                  </div>
+                  {otpError && <p className="text-sm text-red-400">{otpError}</p>}
+                  <div className="flex gap-3">
+                    <button type="button" onClick={closeOverlay} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                      {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Continue
+                    </button>
+                  </div>
+                </form>
+              )}
+              {firstTimeStep === "send" && (
+                <form onSubmit={handleFirstTimeSendOtp} className="space-y-5">
+                  <p className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/70">
+                    We&apos;ll send a one-time code to <span className="font-semibold text-white">{email}</span>
+                  </p>
+                  {otpError && <p className="text-sm text-red-400">{otpError}</p>}
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setFirstTimeStep("email")} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">
+                      Change email
+                    </button>
+                    <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                      {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send OTP
+                    </button>
+                  </div>
+                </form>
+              )}
+              {firstTimeStep === "verify" && (
+                <form onSubmit={handleVerifyOtpSetPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">OTP</label>
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="000000"
+                      maxLength={6}
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-center font-mono text-xl tracking-widest text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">New password</label>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder="Min 8 characters"
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white/55">Confirm password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      placeholder="Repeat password"
+                      className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                    />
+                  </div>
+                  <button type="submit" disabled={formLoading} className={cn("login-btn-gold flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-[#0B132B]", formLoading && "cursor-not-allowed opacity-70")}>
+                    {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Set password & login
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          )}
+
+          {!isOverlayOpen && (
+            <>
+              <p className="mt-5 text-center text-sm text-white/45">
+                New here?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOverlayFlow("firstTime");
+                    setFirstTimeStep("email");
+                    setOtpError("");
+                    setOtp("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="font-semibold text-[#C4A35A] hover:text-[#D4B86A]"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-[#1A1A1A]">Reset Password</h3>
-                    <button onClick={closeOverlay} className="p-1 text-[#7A7A7A] hover:text-[#6B7280] rounded-lg">×</button>
-                  </div>
-                  {forgotStep === "email" && (
-                    <form onSubmit={handleForgotSendOtp} className="space-y-4">
-                      <p className="text-sm text-[#6B7280]">Enter your email to receive an OTP for resetting your password.</p>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">Email</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="your@email.com" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8] focus:border-[#2D5DA8]" />
-                      </div>
-                      {otpError && <p className="text-sm text-[#F39C12]">{otpError}</p>}
-                      <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={closeOverlay} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Cancel</button>
-                        <button type="submit" disabled={formLoading} className="flex-1 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] disabled:opacity-70 flex items-center justify-center gap-2">{formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Send OTP</button>
-                      </div>
-                    </form>
-                  )}
-                  {forgotStep === "otp" && (
-                    <form onSubmit={handleResetPassword} className="space-y-4">
-                      <p className="text-sm text-[#6B7280]">Enter the OTP sent to {email} and set a new password.</p>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">OTP</label>
-                        <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" maxLength={6} className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-center text-xl tracking-widest font-mono focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">New Password</label>
-                        <input type={showPassword ? "text" : "password"} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} required minLength={8} placeholder="Min 8 characters" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">Confirm Password</label>
-                        <input type="password" value={resetConfirm} onChange={(e) => setResetConfirm(e.target.value)} required placeholder="Repeat password" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
-                      </div>
-                      <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={() => { setForgotStep("email"); setForgotOtpSent(false); setOtp(""); }} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Back</button>
-                        <button type="submit" disabled={formLoading} className="flex-1 py-3 rounded-xl bg-[#A8C63A] text-[#1A1A1A] font-semibold hover:bg-[#8FA92F] disabled:opacity-70 flex items-center justify-center gap-2">{formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Reset & Login</button>
-                      </div>
-                    </form>
-                  )}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  Set up your account →
+                </button>
+              </p>
+              <p className="mt-3 text-center text-xs text-white/35">
+                Need help?{" "}
+                <button type="button" onClick={() => setSupportOpen(true)} className="font-medium text-white/55 hover:text-white/80">
+                  Contact support
+                </button>
+              </p>
+            </>
+          )}
+            </div>
+          </motion.div>
 
-          {/* First-time setup Overlay */}
-          <AnimatePresence>
-            {overlayFlow === "firstTime" && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={closeOverlay}>
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-[#1A1A1A]">First Time Setup</h3>
-                    <button onClick={closeOverlay} className="p-1 text-[#7A7A7A] hover:text-[#6B7280] rounded-lg">×</button>
-                  </div>
-                  {firstTimeStep === "email" && (
-                    <form onSubmit={handleCheckFirstTime} className="space-y-4">
-                      <p className="text-sm text-[#6B7280]">Enter your email to begin setup.</p>
-                      <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setOtpError(""); }} required placeholder="your@email.com" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
-                      {otpError && <p className="text-sm text-[#F39C12]">{otpError}</p>}
-                      <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={closeOverlay} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Cancel</button>
-                        <button type="submit" disabled={formLoading} className="flex-1 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] disabled:opacity-70 flex items-center justify-center gap-2">{formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Continue</button>
-                      </div>
-                    </form>
-                  )}
-                  {firstTimeStep === "send" && (
-                    <form onSubmit={handleFirstTimeSendOtp} className="space-y-4">
-                      <p className="text-sm text-[#6B7280]">We&apos;ll send an OTP to {email}.</p>
-                      {otpError && <p className="text-sm text-[#F39C12]">{otpError}</p>}
-                      <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={() => setFirstTimeStep("email")} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Change Email</button>
-                        <button type="submit" disabled={formLoading} className="flex-1 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] disabled:opacity-70 flex items-center justify-center gap-2">{formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Send OTP</button>
-                      </div>
-                    </form>
-                  )}
-                  {firstTimeStep === "verify" && (
-                    <form onSubmit={handleVerifyOtpSetPassword} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">OTP</label>
-                        <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" maxLength={6} className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] text-center text-xl tracking-widest font-mono" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">New Password</label>
-                        <input type={showPassword ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} placeholder="Min 8 characters" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB]" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-[#6B7280] mb-1">Confirm Password</label>
-                        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="Repeat password" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB]" />
-                      </div>
-                      <button type="submit" disabled={formLoading} className="w-full py-3 rounded-xl bg-[#A8C63A] text-[#1A1A1A] font-semibold hover:bg-[#8FA92F] disabled:opacity-70 flex items-center justify-center gap-2">{formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Set Password & Login</button>
-                    </form>
-                  )}
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <p className="mt-8 text-center">
-            <button type="button" onClick={() => setOverlayFlow("firstTime")} className="text-sm text-[#2D5DA8] hover:text-[#1E4A85] font-medium">
-              First time? Set up your account →
-            </button>
-          </p>
-
-          <p className="mt-6 text-center text-[#6B7280] text-sm">
-            Need help?{" "}
-            <button type="button" onClick={() => setSupportOpen(true)} className="text-[#2D5DA8] font-bold hover:underline underline-offset-4">Contact Support</button>
-            {" "}or{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}?subject=Support%20Request`} className="text-[#2D5DA8] font-bold hover:underline underline-offset-4">email {SUPPORT_EMAIL}</a>
-          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-white/40">
+          <span>© {new Date().getFullYear()} {siteName}</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            All systems operational
+          </span>
+          </div>
         </div>
       </div>
 
       {/* Support Modal */}
       <AnimatePresence>
         {supportOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setSupportOpen(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-lg font-bold text-[#1A1A1A] mb-4">Contact Support</h3>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#070F1C]/75 p-4 backdrop-blur-sm"
+            onClick={() => setSupportOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              onClick={(e) => e.stopPropagation()}
+              className="login-glass-card relative w-full max-w-md rounded-2xl p-6 sm:p-7"
+            >
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Contact support</h3>
+                  <p className="mt-1 text-sm text-white/50">We&apos;ll get back to you soon</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSupportOpen(false)}
+                  className="rounded-lg p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
               <form onSubmit={handleSupportSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Name</label>
-                  <input type="text" value={supportName} onChange={(e) => setSupportName(e.target.value)} required placeholder="Your name" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-white/55">Name</label>
+                  <input type="text" value={supportName} onChange={(e) => setSupportName(e.target.value)} required placeholder="Your name" className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20" />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Email</label>
-                  <input type="email" value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} required placeholder="your@email.com" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8]" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-white/55">Email</label>
+                  <input type="email" value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} required placeholder="your@email.com" className="w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20" />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#6B7280] mb-1">Message</label>
-                  <textarea value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} required rows={4} placeholder="How can we help?" className="w-full px-4 py-3 rounded-xl border border-[#E5E7EB] focus:ring-2 focus:ring-[#2D5DA8]/20 focus:border-[#2D5DA8] resize-none" />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-white/55">Message</label>
+                  <textarea value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} required rows={4} placeholder="How can we help?" className="w-full resize-none rounded-xl border border-white/10 bg-white px-4 py-3 text-[#0F172A] outline-none focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20" />
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setSupportOpen(false)} className="flex-1 py-3 rounded-xl border border-[#E5E7EB] text-[#374151] font-medium hover:bg-[#F8FAFC]">Cancel</button>
-                  <button type="submit" disabled={supportSubmitting} className="flex-1 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] disabled:opacity-70 flex items-center justify-center gap-2">{supportSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Send</button>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setSupportOpen(false)} className="flex-1 rounded-xl border border-white/15 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/5">Cancel</button>
+                  <button type="submit" disabled={supportSubmitting} className={cn("login-btn-gold flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[#0B132B]", supportSubmitting && "cursor-not-allowed opacity-70")}>
+                    {supportSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Send
+                  </button>
                 </div>
               </form>
             </motion.div>

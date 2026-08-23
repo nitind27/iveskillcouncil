@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   FiMail, FiPhone, FiMapPin, FiFacebook, FiTwitter,
-  FiLinkedin, FiInstagram, FiYoutube, FiUser, FiHash,
+  FiLinkedin, FiInstagram, FiYoutube, FiUser, FiArrowRight,
 } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 
@@ -16,50 +16,56 @@ function quickLinkHref(href: string): string {
 }
 
 const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  facebook:  FiFacebook,
-  twitter:   FiTwitter,
-  linkedin:  FiLinkedin,
+  facebook: FiFacebook,
+  twitter: FiTwitter,
+  linkedin: FiLinkedin,
   instagram: FiInstagram,
-  youtube:   FiYoutube,
+  youtube: FiYoutube,
 };
 
-// ── Fixed IVESDC team data ────────────────────────────────────────────────────
 const TEAM = [
-  { name: "Yashvantbhai Prajapati", role: "Managing Director",   phone: "9824817111" },
-  { name: "Sonali Prajapati",       role: "Chief Executive Officer", phone: "9689271627" },
-  { name: "Rajendra Sandanshiv",    role: "Executive Director",  phone: "9638019997" },
+  { name: "Yashvantbhai Prajapati", role: "Managing Director", phone: "9824817111" },
+  { name: "Sonali Prajapati", role: "Chief Executive Officer", phone: "9689271627" },
+  { name: "Rajendra Sandanshiv", role: "Executive Director", phone: "9638019997" },
 ];
 
 const FIXED_CONTACT = {
   helpline: "9925222523",
-  address:  "Shivaji Nagar, Fort-Songadh, Dist-Tapi, Gujarat - 394670",
-  cin:      "U88900GJ2026NPL175855",
-  email:    "iveskillcouncil@gmail.com",
+  address: "Shivaji Nagar, Fort-Songadh, Dist-Tapi, Gujarat - 394670",
+  cin: "U88900GJ2026NPL175855",
+  email: "iveskillcouncil@gmail.com",
 };
 
 interface UserPanelFooterProps {
   config: UserPanelConfig;
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="mb-5 text-sm font-bold uppercase tracking-[0.16em] text-white">
+      {children}
+      <span className="mt-2 block h-[2px] w-10 rounded-full bg-[#C4A35A]" />
+    </h4>
+  );
+}
+
 export default function UserPanelFooter({ config }: UserPanelFooterProps) {
   const { site, footer } = config;
 
   return (
-    <footer id="contact" className="relative bg-[#1A1A1A] overflow-hidden">
-      {/* top accent bar */}
-      <div className="h-1 bg-gradient-to-r from-[#2D5DA8] via-[#A8C63A] to-[#F39C12]" />
+    <footer id="contact" className="relative overflow-hidden bg-[#070F1C]">
+      <div className="h-[3px] bg-gradient-to-r from-[#163A6B] via-[#C4A35A] to-[#1E4A85]" />
+      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-[#C4A35A]/10 blur-3xl" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-10 mb-12">
-
-          {/* ── Col 1: Brand ── */}
+      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mb-12 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="space-y-5"
           >
-            {/* Logo */}
             <div>
               {site.logoUrl ? (
                 <img
@@ -70,160 +76,152 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
                 />
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="w-12 h-12 rounded-xl bg-[#2D5DA8] flex items-center justify-center font-bold text-xl text-white">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1E4A85] text-xl font-bold text-white">
                     {site.logoLetter}
                   </span>
-                  <span className="font-bold text-lg text-white">{site.name}</span>
+                  <span className="text-lg font-bold text-white">{site.name}</span>
                 </div>
               )}
             </div>
-            <p className="text-white/60 text-sm leading-relaxed">{footer.tagline}</p>
-
-            {/* CIN */}
-            <div className="flex items-start gap-2 text-xs text-white/50">
-              <FiHash className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[#A8C63A]" />
-              <span>CIN: <span className="text-white/70 font-mono">{FIXED_CONTACT.cin}</span></span>
+            <p className="text-sm leading-relaxed text-white/65">{footer.tagline}</p>
+            <div className="inline-flex rounded-lg border border-[#C4A35A]/25 bg-[#C4A35A]/10 px-3 py-2">
+              <p className="text-[11px] leading-snug text-white/70">
+                <span className="font-semibold text-[#C4A35A]">CIN</span>
+                <span className="mt-0.5 block font-mono text-white/80">{FIXED_CONTACT.cin}</span>
+              </p>
             </div>
-
-            {/* Social */}
             <div className="flex gap-2 pt-1">
               {(footer.social || []).map((s) => {
                 const Icon = SOCIAL_ICONS[s.iconKey] || FiFacebook;
                 return (
-                  <motion.a
+                  <a
                     key={s.iconKey}
                     href={s.href}
-                    whileHover={{ scale: 1.12, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-[#2D5DA8] text-white/60 hover:text-white transition-all border border-white/10"
+                    aria-label={s.label || s.iconKey}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-all hover:-translate-y-0.5 hover:border-[#C4A35A]/40 hover:bg-[#1E4A85] hover:text-white"
                   >
-                    <Icon className="w-4 h-4" />
-                  </motion.a>
+                    <Icon className="h-4 w-4" />
+                  </a>
                 );
               })}
             </div>
           </motion.div>
 
-          {/* ── Col 2: Quick Links ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.08 }}
           >
-            <h4 className="font-bold text-white mb-5 text-sm uppercase tracking-widest">Quick Links</h4>
+            <SectionTitle>Quick Links</SectionTitle>
             <ul className="space-y-2.5">
               {(footer.quickLinks || []).map((link) => (
                 <li key={link.href + link.label}>
-                  <Link href={quickLinkHref(link.href)}>
-                    <motion.span
-                      whileHover={{ x: 5 }}
-                      className="inline-flex items-center gap-2 text-white/60 hover:text-[#A8C63A] text-sm transition-colors cursor-pointer"
-                    >
-                      <span className="w-1 h-1 rounded-full bg-[#2D5DA8] flex-shrink-0" />
-                      {link.label}
-                    </motion.span>
+                  <Link
+                    href={quickLinkHref(link.href)}
+                    className="group inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-[#C4A35A]"
+                  >
+                    <FiArrowRight className="h-3.5 w-3.5 text-[#C4A35A] opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+                    <span className="transition-transform group-hover:translate-x-0.5">{link.label}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           </motion.div>
 
-          {/* ── Col 3: Team ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.16 }}
           >
-            <h4 className="font-bold text-white mb-5 text-sm uppercase tracking-widest">Our Team</h4>
-            <ul className="space-y-4">
+            <SectionTitle>Our Team</SectionTitle>
+            <ul className="space-y-3">
               {TEAM.map((member) => (
-                <li key={member.name} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#2D5DA8]/30 border border-[#2D5DA8]/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <FiUser className="w-3.5 h-3.5 text-[#2D5DA8]" />
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-semibold leading-tight">{member.name}</p>
-                    <p className="text-[#A8C63A] text-[11px] font-medium mt-0.5">{member.role}</p>
-                    <a href={`tel:${member.phone}`} className="flex items-center gap-1 text-white/50 hover:text-white text-xs mt-1 transition-colors">
-                      <FiPhone className="w-3 h-3" />
-                      {member.phone}
-                    </a>
+                <li key={member.name} className="rounded-xl border border-white/8 bg-white/[0.04] p-3 transition-colors hover:border-[#C4A35A]/25 hover:bg-white/[0.06]">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                      <FiUser className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight text-white">{member.name}</p>
+                      <p className="mt-0.5 text-[11px] font-medium text-[#C4A35A]">{member.role}</p>
+                      <a
+                        href={`tel:${member.phone}`}
+                        className="mt-1 inline-flex items-center gap-1.5 text-xs text-white/55 transition-colors hover:text-white"
+                      >
+                        <FiPhone className="h-3 w-3" />
+                        {member.phone}
+                      </a>
+                    </div>
                   </div>
                 </li>
               ))}
             </ul>
           </motion.div>
 
-          {/* ── Col 4: Contact ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.24 }}
           >
-            <h4 className="font-bold text-white mb-5 text-sm uppercase tracking-widest">Contact Us</h4>
-            <ul className="space-y-4">
-              {/* Helpline */}
-              <li className="flex items-start gap-3">
-                <span className="w-9 h-9 rounded-lg bg-[#F39C12]/15 border border-[#F39C12]/25 flex items-center justify-center flex-shrink-0">
-                  <FiPhone className="w-4 h-4 text-[#F39C12]" />
-                </span>
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-0.5">Help Line</p>
-                  <a href={`tel:${FIXED_CONTACT.helpline}`} className="text-white text-sm font-semibold hover:text-[#F39C12] transition-colors">
-                    {FIXED_CONTACT.helpline}
-                  </a>
+            <SectionTitle>Contact Us</SectionTitle>
+            <ul className="space-y-3">
+              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#C4A35A]/15 text-[#C4A35A]">
+                    <FiPhone className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Help Line</p>
+                    <a href={`tel:${FIXED_CONTACT.helpline}`} className="text-sm font-semibold text-white transition-colors hover:text-[#C4A35A]">
+                      {FIXED_CONTACT.helpline}
+                    </a>
+                  </div>
                 </div>
               </li>
-
-              {/* Email */}
-              <li className="flex items-start gap-3">
-                <span className="w-9 h-9 rounded-lg bg-[#2D5DA8]/20 border border-[#2D5DA8]/30 flex items-center justify-center flex-shrink-0">
-                  <FiMail className="w-4 h-4 text-[#2D5DA8]" />
-                </span>
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-0.5">Email</p>
-                  <a href={`mailto:${FIXED_CONTACT.email}`} className="text-white text-sm font-semibold hover:text-[#2D5DA8] transition-colors break-all">
-                    {FIXED_CONTACT.email}
-                  </a>
+              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                    <FiMail className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Email</p>
+                    <a href={`mailto:${FIXED_CONTACT.email}`} className="break-all text-sm font-semibold text-white transition-colors hover:text-[#C4A35A]">
+                      {FIXED_CONTACT.email}
+                    </a>
+                  </div>
                 </div>
               </li>
-
-              {/* Address */}
-              <li className="flex items-start gap-3">
-                <span className="w-9 h-9 rounded-lg bg-[#A8C63A]/15 border border-[#A8C63A]/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <FiMapPin className="w-4 h-4 text-[#A8C63A]" />
-                </span>
-                <div>
-                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-0.5">Office Address</p>
-                  <p className="text-white/80 text-sm leading-relaxed">{FIXED_CONTACT.address}</p>
+              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                    <FiMapPin className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Office Address</p>
+                    <p className="text-sm leading-relaxed text-white/80">{FIXED_CONTACT.address}</p>
+                  </div>
                 </div>
               </li>
             </ul>
           </motion.div>
         </div>
 
-        {/* ── Bottom bar ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4"
-        >
-          <p className="text-white/40 text-xs text-center sm:text-left">
-            © {new Date().getFullYear()} <span className="text-white/60 font-semibold">{site.name}</span>. {footer.copyrightText}
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
+          <p className="text-center text-xs text-white/45 sm:text-left">
+            © {new Date().getFullYear()} <span className="font-semibold text-white/70">{site.name}</span>. {footer.copyrightText}
           </p>
-          <div className="flex items-center gap-4 text-white/40 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#A8C63A] animate-pulse" />
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-white/45">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C4A35A]" />
               All services operational
             </span>
-            <span>·</span>
-            <span>CIN: {FIXED_CONTACT.cin}</span>
+            <span className="hidden sm:inline text-white/20">|</span>
+            <span>CIN {FIXED_CONTACT.cin}</span>
           </div>
-        </motion.div>
+        </div>
       </div>
     </footer>
   );

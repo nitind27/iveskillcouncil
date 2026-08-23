@@ -20,9 +20,20 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const limit = Math.min(50, Math.max(5, parseInt(searchParams.get("limit") || "20")));
+    const search = searchParams.get("search")?.trim() || "";
+
+    const where = search
+      ? {
+          OR: [
+            { title: { contains: search } },
+            { message: { contains: search } },
+          ],
+        }
+      : undefined;
 
     const [announcements, total] = await Promise.all([
       prisma.announcement.findMany({
+        where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -30,7 +41,7 @@ export async function GET(request: NextRequest) {
           creator: { select: { fullName: true, email: true } },
         },
       }),
-      prisma.announcement.count(),
+      prisma.announcement.count({ where }),
     ]);
 
     const items = announcements.map((a) => ({
@@ -88,5 +99,26 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("Announcements POST:", err);
     return errorResponse("Failed to create announcement", 500);
+  }
+}
+
+/** DELETE: Remove an announcement (Super Admin / Admin). */
+export async function DELETE(request: NextRequest) {
+  try {
+    const admin = await requireSuperAdminOrAdmin();
+    if (!admin) return errorResponse("Forbidden", 403);
+
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+    if (!id) return errorResponse("Missing id", 400);
+
+    await prisma.announcement.delete({
+      where: { id: BigInt(id) },
+    });
+
+    return successResponse({ deleted: true }, "Announcement deleted");
+  } catch (err) {
+    console.error("Announcements DELETE:", err);
+    return errorResponse("Failed to delete announcement", 500);
   }
 }

@@ -5,6 +5,24 @@ import { successResponse, errorResponse, forbiddenResponse } from "@/lib/api-res
 
 export const dynamic = "force-dynamic";
 
+function normalizeDocsJson(raw: unknown): Array<Record<string, unknown>> {
+  let value: unknown = raw;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) return value as Array<Record<string, unknown>>;
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).filter(
+      (v) => v && typeof v === "object"
+    ) as Array<Record<string, unknown>>;
+  }
+  return [];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await requireSuperAdminOrAdmin();
@@ -27,7 +45,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const [apps, total] = await Promise.all([
+    const [apps, total, statusGroups] = await Promise.all([
       prisma.franchiseApplication.findMany({
         where,
         skip: (page - 1) * limit,
@@ -36,7 +54,18 @@ export async function GET(request: NextRequest) {
         include: { plan: { select: { name: true, price: true } } },
       }),
       prisma.franchiseApplication.count({ where }),
+      prisma.franchiseApplication.groupBy({
+        by: ["status"],
+        _count: { _all: true },
+      }),
     ]);
+
+    const counts: Record<string, number> = { PENDING: 0, APPROVED: 0, REJECTED: 0, VERIFIED: 0 };
+    let allTotal = 0;
+    for (const g of statusGroups) {
+      counts[g.status] = g._count._all;
+      allTotal += g._count._all;
+    }
 
     const items = apps.map((a) => ({
       id:            a.id.toString(),
@@ -53,7 +82,7 @@ export async function GET(request: NextRequest) {
       planId:        a.planId,
       planName:      a.plan?.name ?? null,
       message:       a.message,
-      documents:     a.documents,
+      documents:     normalizeDocsJson(a.documents),
       status:        a.status,
       adminNotes:    a.adminNotes,
       reviewedAt:    a.reviewedAt?.toISOString() ?? null,
@@ -61,7 +90,11 @@ export async function GET(request: NextRequest) {
     }));
 
     return successResponse(
-      { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } },
+      {
+        items,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        counts: { ...counts, total: allTotal },
+      },
       "Applications"
     );
   } catch (err) {

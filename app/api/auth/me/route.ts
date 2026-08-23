@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getUserFromToken } from "@/lib/auth";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { DatabaseUnavailableError, isDbUnavailableError } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,14 @@ export async function GET(request: NextRequest) {
     return successResponse(user, "User retrieved successfully");
   } catch (err: unknown) {
     console.error("Get user error:", err);
-    return unauthorizedResponse();
+    if (err instanceof DatabaseUnavailableError || isDbUnavailableError(err)) {
+      return errorResponse(
+        "Database temporarily unreachable. Start with npm run dev (includes DB proxy).",
+        503
+      );
+    }
+    // Do not return 401 on unexpected server errors — that falsely logs users out
+    return errorResponse("Failed to load session", 500);
   }
 }
 
@@ -58,7 +66,9 @@ export async function PATCH(request: NextRequest) {
     return successResponse(updated ?? { ...user, ...updates }, "Profile updated");
   } catch (err: unknown) {
     console.error("Patch profile error:", err);
+    if (err instanceof DatabaseUnavailableError || isDbUnavailableError(err)) {
+      return errorResponse("Database temporarily unreachable", 503);
+    }
     return errorResponse("Failed to update profile", 500);
   }
 }
-

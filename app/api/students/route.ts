@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    const [students, total] = await Promise.all([
+    const [students, total, statusGroups] = await Promise.all([
       prisma.student.findMany({
         where,
         skip: (page - 1) * limit,
@@ -65,14 +65,28 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.student.count({ where }),
+      prisma.student.groupBy({
+        by: ["status"],
+        where: getFranchiseFilter(user),
+        _count: { _all: true },
+      }),
     ]);
+
+    const counts: Record<string, number> = { ACTIVE: 0, COMPLETED: 0, DROPPED: 0 };
+    let allTotal = 0;
+    for (const g of statusGroups) {
+      counts[g.status] = g._count._all;
+      allTotal += g._count._all;
+    }
 
     const items = students.map((s) => ({
       id: s.id.toString(),
       fullName: s.user.fullName,
       email: s.user.email,
       phone: s.user.phone,
+      franchiseId: s.franchise.id.toString(),
       franchiseName: s.franchise.name,
+      courseId: s.course.id.toString(),
       courseName: s.course.name,
       totalFee: Number(s.totalFee),
       paidFee: Number(s.paidFee),
@@ -87,7 +101,11 @@ export async function GET(request: NextRequest) {
     }));
 
     return successResponse(
-      { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } },
+      {
+        items,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        counts: { ...counts, total: allTotal },
+      },
       "Students retrieved"
     );
   } catch (err: unknown) {

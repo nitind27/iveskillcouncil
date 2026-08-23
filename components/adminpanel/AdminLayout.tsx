@@ -22,23 +22,53 @@ export default function AdminLayout({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser, dbUnavailable } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const pn = pathname || "";
+  const [authChecked, setAuthChecked] = useState(false);
 
   const isLoginPage = pn === "/login";
   // User panel (courses, booking, Enquire Now) is public — no login required
   const isUserPanelPage = pn === "/" || pn === "/userpanel" || pn.startsWith("/userpanel/");
 
+  // Confirm session (with refresh) before hard-redirecting to login
   useEffect(() => {
-    if (!loading && !user && !isLoginPage && !isUserPanelPage) {
-      // Don't redirect to /403 as the return URL
-      const safeRedirect = (pn === "/403" || pn === "/401") ? "/dashboard" : pn;
-      const redirectUrl = `/login?redirect=${encodeURIComponent(safeRedirect)}`;
-      window.location.href = redirectUrl;
+    if (isLoginPage || isUserPanelPage) {
+      setAuthChecked(true);
+      return;
     }
-  }, [loading, user, pn, isLoginPage, isUserPanelPage]);
+
+    if (loading) {
+      setAuthChecked(false);
+      return;
+    }
+
+    if (user) {
+      setAuthChecked(true);
+      return;
+    }
+
+    // loading done, no user yet — try one silent refresh before logout redirect
+    let cancelled = false;
+    setAuthChecked(false);
+    (async () => {
+      await refreshUser();
+      if (!cancelled) setAuthChecked(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, isLoginPage, isUserPanelPage, refreshUser]);
+
+  useEffect(() => {
+    // Don't force logout redirect while DB/proxy is temporarily down
+    if (!authChecked || loading || user || isLoginPage || isUserPanelPage || dbUnavailable) return;
+    const safeRedirect = pn === "/403" || pn === "/401" ? "/dashboard" : pn;
+    const redirectUrl = `/login?redirect=${encodeURIComponent(safeRedirect)}`;
+    window.location.href = redirectUrl;
+  }, [authChecked, loading, user, pn, isLoginPage, isUserPanelPage, dbUnavailable]);
 
   const roleId = Number(user?.roleId) || 0;
   const pathNormalized = pn.replace(/\/$/, "").trim() || "/";
@@ -63,8 +93,13 @@ export default function AdminLayout({
     router.replace("/403");
   }, [loading, user, hasAccess, pn, router]);
 
-  if (loading && !isLoginPage && !isUserPanelPage) {
-    return <PageLoader variant="admin" text="Loading dashboard..." />;
+  if ((loading || !authChecked || (dbUnavailable && !user)) && !isLoginPage && !isUserPanelPage) {
+    return (
+      <PageLoader
+        variant="admin"
+        text={dbUnavailable ? "Connecting to database…" : "Loading dashboard..."}
+      />
+    );
   }
 
   if (isLoginPage || isUserPanelPage) {
@@ -94,10 +129,13 @@ export default function AdminLayout({
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
           user={user}
         />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Navbar onSidebarToggle={() => setIsMobileOpen(!isMobileOpen)} user={user} />
-          <main className="flex-1 overflow-y-auto scrollbar-thin">
-            <div className="container mx-auto px-4 lg:px-6 py-6 bg-background dark:bg-background">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* overflow-visible so navbar dropdowns are not clipped */}
+          <div className="relative z-[60] shrink-0 overflow-visible">
+            <Navbar onSidebarToggle={() => setIsMobileOpen(!isMobileOpen)} user={user} />
+          </div>
+          <main className="relative z-0 min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+            <div className="container mx-auto bg-background px-4 py-6 dark:bg-background lg:px-6">
               {children}
             </div>
           </main>

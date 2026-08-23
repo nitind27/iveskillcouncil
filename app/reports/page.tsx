@@ -1,204 +1,263 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
-import { Breadcrumb } from "@/components/common";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/common/Card";
-import { BarChart3, Loader2, IndianRupee, GraduationCap, ClipboardCheck } from "lucide-react";
+  BarChart3,
+  Loader2,
+  RefreshCw,
+  Activity,
+  TrendingUp,
+  IndianRupee,
+  GraduationCap,
+  ClipboardCheck,
+  Building2,
+} from "lucide-react";
+import DashboardAnalytics from "@/components/adminpanel/dashboard/DashboardAnalytics";
+import DashboardActivity from "@/components/adminpanel/dashboard/DashboardActivity";
+import FranchiseFilterDropdown from "@/components/dashboard/FranchiseFilterDropdown";
+import type { ReportFiltersState } from "@/components/adminpanel/dashboard/DashboardReportToolbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/lib/permissions";
 import { fetcher } from "@/lib/fetcher";
+import { cn } from "@/lib/utils";
 
-interface DashboardData {
-  stats: {
-    totalFranchises: number;
-    activeFranchises: number;
-    totalStudents: number;
-    totalStaff: number;
-    totalRevenue: number;
-    pendingFees: number;
-    pendingCertificates: number;
-    attendancePercent: number;
-  };
-  recentPayments: { id: string; studentName: string; amount: string; status: string; date: string }[];
-  attendanceStats: Record<string, number>;
+type ReportTab = "analytics" | "activity";
+
+const REPORT_TABS: { id: ReportTab; label: string; icon: typeof BarChart3 }[] = [
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "activity", label: "Activity Feed", icon: Activity },
+];
+
+interface DashboardStats {
+  totalFranchises: number;
+  activeFranchises: number;
+  totalStudents: number;
+  totalRevenue: number;
+  pendingFees: number;
+  attendancePercent: number;
 }
 
-const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
-
 export default function ReportsPage() {
-  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
-    revalidateOnFocus: true,
+  const { user } = useAuth();
+  const roleId = user?.roleId ?? 0;
+  const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+
+  const [franchiseFilter, setFranchiseFilter] = useState("");
+  const [activeTab, setActiveTab] = useState<ReportTab>("analytics");
+  const [reportFilters, setReportFilters] = useState<ReportFiltersState>({
+    range: "30d",
+    from: "",
+    to: "",
+    status: "ALL",
   });
 
-  const barData = useMemo(() => {
-    const payments = data?.recentPayments ?? [];
-    return payments.slice(0, 8).map((p) => ({
-      name: p.studentName.length > 10 ? p.studentName.slice(0, 10) + "…" : p.studentName,
-      amount: Number(p.amount) || 0,
-    }));
-  }, [data?.recentPayments]);
+  const dashboardUrl = franchiseFilter
+    ? `/api/dashboard?franchiseId=${franchiseFilter}`
+    : "/api/dashboard";
 
-  const pieData = useMemo(() => {
-    const stats = data?.attendanceStats ?? {};
-    const entries = Object.entries(stats).filter(([, v]) => v > 0);
-    if (entries.length === 0) return [{ name: "No data", value: 1, color: "#94a3b8" }];
-    return entries.map(([name, value], i) => ({
-      name: name.charAt(0) + name.slice(1).toLowerCase(),
-      value,
-      color: CHART_COLORS[i % CHART_COLORS.length],
-    }));
-  }, [data?.attendanceStats]);
+  const { data: franchisesData } = useSWR(
+    isSuperAdminOrAdmin ? "/api/franchises?limit=100" : null,
+    fetcher
+  );
 
-  const stats = data?.stats ?? {
+  const { data: dashData, isLoading: dashLoading, mutate } = useSWR<{
+    stats: DashboardStats;
+  }>(dashboardUrl, fetcher, {
+    revalidateOnFocus: true,
+    dedupingInterval: 5000,
+  });
+
+  const franchises = Array.isArray(franchisesData)
+    ? franchisesData
+    : ((franchisesData as { data?: { id: string; name: string }[] } | null)?.data ?? []);
+
+  const stats = dashData?.stats ?? {
     totalFranchises: 0,
     activeFranchises: 0,
     totalStudents: 0,
-    totalStaff: 0,
     totalRevenue: 0,
     pendingFees: 0,
-    pendingCertificates: 0,
     attendancePercent: 0,
   };
 
-  if (isLoading && !data) {
-    return (
-      <div className="space-y-6">
-        <Breadcrumb />
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <Breadcrumb />
+    <div className="space-y-5 pb-8">
+      {/* Header */}
+      <header className="overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] text-white shadow-md shadow-[#1E4A85]/15">
+        <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <nav className="mb-1.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+              <Link href="/dashboard" className="hover:text-white/90">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-white/80">Reports</span>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+                Analytics & Reports
+              </h1>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]">
+                <TrendingUp className="h-3 w-3" />
+                Insights
+              </span>
+            </div>
+            <p className="mt-1 max-w-xl text-xs text-white/60 sm:text-sm">
+              Revenue, attendance, leads & payments — filter by period and export Excel/PDF
+            </p>
+          </div>
 
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Analytics & Reports</h1>
-        <p className="text-muted-foreground mt-1">Overview of key metrics and performance</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {isSuperAdminOrAdmin && franchises.length > 0 && (
+              <FranchiseFilterDropdown
+                value={franchiseFilter}
+                onChange={setFranchiseFilter}
+                options={franchises.map((f: { id: string; name: string }) => ({
+                  id: f.id,
+                  name: f.name,
+                }))}
+                variant="dark"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => mutate()}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/15"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", dashLoading && "animate-spin")} />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Quick stats strip */}
+        <div className="border-t border-white/10 bg-black/10 px-5 py-3 sm:px-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <StatPill
+              icon={IndianRupee}
+              label="Revenue (30d)"
+              value={`₹${stats.totalRevenue.toLocaleString("en-IN")}`}
+              loading={dashLoading && !dashData}
+            />
+            <StatPill
+              icon={GraduationCap}
+              label="Students"
+              value={String(stats.totalStudents)}
+              loading={dashLoading && !dashData}
+            />
+            <StatPill
+              icon={Building2}
+              label="Franchises"
+              value={`${stats.activeFranchises}/${stats.totalFranchises}`}
+              loading={dashLoading && !dashData}
+            />
+            <StatPill
+              icon={IndianRupee}
+              label="Pending fees"
+              value={String(stats.pendingFees)}
+              loading={dashLoading && !dashData}
+            />
+            <StatPill
+              icon={ClipboardCheck}
+              label="Attendance"
+              value={`${stats.attendancePercent}%`}
+              loading={dashLoading && !dashData}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className="inline-flex w-full flex-wrap gap-1 rounded-xl border border-[#1E4A85]/12 bg-card p-1 shadow-sm sm:w-auto">
+        {REPORT_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition sm:flex-none",
+                active
+                  ? "bg-[#1E4A85] text-white shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-[#1E4A85]"
+              )}
+            >
+              <Icon className={cn("h-3.5 w-3.5", active && "text-[#C4A35A]")} />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <IndianRupee className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Revenue (30d)</p>
-                <p className="text-xl font-bold">₹{stats.totalRevenue.toLocaleString("en-IN")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-xl font-bold">{stats.totalStudents}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <IndianRupee className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Fees</p>
-                <p className="text-xl font-bold">{stats.pendingFees}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Attendance %</p>
-                <p className="text-xl font-bold">{stats.attendancePercent}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tab content */}
+      <AnimatePresence mode="wait">
+        {activeTab === "analytics" && (
+          <motion.div
+            key="analytics"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <DashboardAnalytics
+              filters={reportFilters}
+              onFiltersChange={setReportFilters}
+              franchiseId={franchiseFilter}
+            />
+          </motion.div>
+        )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Recent Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
-                  <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, "Amount"]} />
-                  <Bar dataKey="amount" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Amount" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-lg">Today&apos;s Attendance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {pieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {activeTab === "activity" && (
+          <motion.div
+            key="activity"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <DashboardActivity
+              filters={reportFilters}
+              onFiltersChange={setReportFilters}
+              franchiseId={franchiseFilter}
+              isAdmin={isSuperAdminOrAdmin}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function StatPill({
+  icon: Icon,
+  label,
+  value,
+  loading,
+}: {
+  icon: typeof IndianRupee;
+  label: string;
+  value: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#C4A35A]/20 text-[#E8D5A3]">
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/50">
+          {label}
+        </p>
+        {loading ? (
+          <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-white/70" />
+        ) : (
+          <p className="truncate text-sm font-bold tabular-nums">{value}</p>
+        )}
       </div>
     </div>
   );

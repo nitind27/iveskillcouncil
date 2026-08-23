@@ -9,6 +9,84 @@ import { hashPassword } from '@/lib/auth';
 import { ROLES } from '@/lib/permissions';
 import { sendFranchiseCredentialsEmail } from '@/lib/email';
 import { generateFranchiseCredentialsPdf } from '@/lib/franchise-credentials-pdf';
+import {
+  validateName,
+  validateEmail,
+  validatePhone,
+  validatePincode,
+  validateFranchiseName,
+  validatePan,
+  validateAadhaar,
+  validateGstin,
+  validateMsme,
+  validateIfsc,
+  validateBankAccount,
+  validateRequiredText,
+  validateSubscriptionDates,
+} from '@/lib/validation';
+
+function validateFranchiseCreatePayload(body: Record<string, unknown>): string | null {
+  const name = String(body.name || '');
+  const ownerName = String(body.ownerName || '');
+  const ownerEmail = String(body.ownerEmail || '');
+  const ownerPhone = String(body.ownerPhone || '');
+  const businessType = String(body.businessType || 'INDIVIDUAL');
+  const isEntity = businessType !== 'INDIVIDUAL';
+
+  const checks = [
+    validateFranchiseName(name),
+    validateName(ownerName),
+    validateEmail(ownerEmail),
+    validatePhone(ownerPhone),
+    body.alternatePhone ? validatePhone(String(body.alternatePhone)) : { valid: true as const },
+    validateSubscriptionDates(String(body.subscriptionStart || ''), String(body.subscriptionEnd || '')),
+    body.pincode ? validatePincode(String(body.pincode), true) : { valid: true as const },
+    body.address ? validateRequiredText(String(body.address), 'Address', { min: 5, max: 500 }) : { valid: true as const },
+    body.phone ? validatePhone(String(body.phone)) : { valid: true as const },
+    body.email ? validateEmail(String(body.email)) : { valid: true as const },
+    body.panNumber ? validatePan(String(body.panNumber), true) : { valid: true as const },
+    body.aadhaarNumber ? validateAadhaar(String(body.aadhaarNumber), true) : { valid: true as const },
+    validateGstin(String(body.gstNumber || ''), isEntity && !!body.panNumber),
+    body.msmeNumber ? validateMsme(String(body.msmeNumber), false) : { valid: true as const },
+    body.bankAccountNumber ? validateBankAccount(String(body.bankAccountNumber), true) : { valid: true as const },
+    body.bankIfsc ? validateIfsc(String(body.bankIfsc), true) : { valid: true as const },
+    body.bankAccountName ? validateName(String(body.bankAccountName)) : { valid: true as const },
+  ];
+
+  // When KYC fields are sent (admin multi-step form), require the full set
+  const hasKycPayload = !!(body.panNumber || body.aadhaarNumber || body.documents);
+  if (hasKycPayload) {
+    checks.push(
+      validatePan(String(body.panNumber || ''), true),
+      validateAadhaar(String(body.aadhaarNumber || ''), true),
+      validateGstin(String(body.gstNumber || ''), isEntity),
+      validateRequiredText(String(body.bankName || ''), 'Bank name', { min: 2, max: 100 }),
+      validateName(String(body.bankAccountName || '')),
+      validateBankAccount(String(body.bankAccountNumber || ''), true),
+      validateIfsc(String(body.bankIfsc || ''), true),
+      validateRequiredText(String(body.address || ''), 'Address', { min: 5, max: 500 }),
+      validatePincode(String(body.pincode || ''), true),
+      validateRequiredText(String(body.city || ''), 'City', { min: 2, max: 100 }),
+      validateRequiredText(String(body.state || ''), 'State', { min: 2, max: 100 }),
+    );
+
+    if (!Array.isArray(body.documents) || body.documents.length === 0) {
+      return 'At least one KYC document is required';
+    }
+    const docs = body.documents as Array<{ key?: string }>;
+    const keys = new Set(docs.map((d) => d.key).filter(Boolean));
+    const requiredKeys = ['pan', 'aadhar', 'photo', 'signature', 'address_proof', 'bank'];
+    if (isEntity) requiredKeys.push('gst', 'entity_reg');
+    const missing = requiredKeys.filter((k) => !keys.has(k));
+    if (missing.length) return `Missing required documents: ${missing.join(', ')}`;
+  }
+
+  for (const c of checks) {
+    if (!c.valid && c.error) return c.error;
+  }
+  if (!body.planId) return 'Subscription plan is required';
+  return null;
+}
 
 const SUB_ADMIN_ROLE_ID = ROLES.SUB_ADMIN;
 
@@ -175,7 +253,38 @@ export async function POST(request: NextRequest) {
       city,
       state,
       pincode,
+      phone,
+      email,
+      businessType,
+      legalName,
+      alternatePhone,
+      panNumber,
+      aadhaarNumber,
+      gstNumber,
+      msmeNumber,
+      bankName,
+      bankAccountName,
+      bankAccountNumber,
+      bankIfsc,
+      documents,
     } = body;
+
+    const kycData = {
+      phone: phone || ownerPhone || undefined,
+      email: email || ownerEmail || undefined,
+      businessType: businessType || undefined,
+      legalName: legalName || undefined,
+      alternatePhone: alternatePhone || undefined,
+      panNumber: panNumber || undefined,
+      aadhaarNumber: aadhaarNumber || undefined,
+      gstNumber: gstNumber || undefined,
+      msmeNumber: msmeNumber || undefined,
+      bankName: bankName || undefined,
+      bankAccountName: bankAccountName || undefined,
+      bankAccountNumber: bankAccountNumber || undefined,
+      bankIfsc: bankIfsc || undefined,
+      documents: Array.isArray(documents) ? documents : undefined,
+    };
 
     const createWithNewOwner = !ownerId && ownerEmail && ownerName;
 
@@ -185,6 +294,11 @@ export async function POST(request: NextRequest) {
 
       if (!name || !planId || !subscriptionStart || !subscriptionEnd) {
         return errorResponse('Missing required fields: name, planId, subscriptionStart, subscriptionEnd', 400);
+      }
+
+      const validationError = validateFranchiseCreatePayload(body);
+      if (validationError) {
+        return errorResponse(validationError, 400);
       }
 
       const existingUser = await prisma.user.findUnique({ where: { email: ownerEmail } });
@@ -218,6 +332,7 @@ export async function POST(request: NextRequest) {
           city,
           state,
           pincode,
+          ...kycData,
           status: 'PENDING',
         },
         include: {
@@ -321,6 +436,7 @@ export async function POST(request: NextRequest) {
         city,
         state,
         pincode,
+        ...kycData,
         status: 'PENDING',
       },
       include: {

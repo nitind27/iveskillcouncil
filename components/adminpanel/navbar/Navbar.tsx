@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import useSWR from "swr";
 import {
   Bell,
@@ -20,6 +21,8 @@ import {
   FileCheck,
   Award,
   MessageCircle,
+  Search,
+  ChevronRight,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,55 +67,65 @@ const NOTIFICATIONS_SEEN_KEY = "admin-notifications-seen";
 function NotificationIcon({ type }: { type: string }) {
   switch (type) {
     case "course_enquiry":
-      return <MessageSquare className="w-4 h-4 text-blue-500" />;
+      return <MessageSquare className="h-4 w-4 text-[#1E4A85]" />;
     case "offer_application":
-      return <Tag className="w-4 h-4 text-amber-500" />;
+      return <Tag className="h-4 w-4 text-[#C4A35A]" />;
     case "franchise_inquiry":
-      return <Building2 className="w-4 h-4 text-emerald-500" />;
+      return <Building2 className="h-4 w-4 text-emerald-600" />;
     case "pending_franchise":
-      return <FileCheck className="w-4 h-4 text-orange-500" />;
+      return <FileCheck className="h-4 w-4 text-amber-600" />;
     case "certificate_request":
-      return <Award className="w-4 h-4 text-purple-500" />;
+      return <Award className="h-4 w-4 text-[#1E4A85]" />;
     case "feedback":
-      return <MessageCircle className="w-4 h-4 text-cyan-500" />;
+      return <MessageCircle className="h-4 w-4 text-sky-600" />;
     default:
-      return <Bell className="w-4 h-4 text-gray-500" />;
+      return <Bell className="h-4 w-4 text-slate-500" />;
   }
 }
+
+type OpenPanel = null | "notifications" | "profile" | `menu:${string}`;
 
 export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const { logout } = useAuth();
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const pathname = usePathname() || "";
+  const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
+  const [quickSearch, setQuickSearch] = useState("");
+  const barRef = useRef<HTMLElement>(null);
 
   const menuSections = getMenuForRole(user?.roleId ?? 1);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (notificationRef.current && !notificationRef.current.contains(target)) setIsNotificationOpen(false);
-      if (profileRef.current && !profileRef.current.contains(target)) setIsProfileOpen(false);
-      const clickedInsideAnyMenu = Object.values(menuRefs.current).some((ref) => ref?.contains(target));
-      if (!clickedInsideAnyMenu) setOpenMenuId(null);
+      if (barRef.current && !barRef.current.contains(event.target as Node)) {
+        setOpenPanel(null);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenPanel(null);
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
-  const toggleMenu = (sectionId: string) => {
-    setOpenMenuId((prev) => (prev === sectionId ? null : sectionId));
+  useEffect(() => {
+    setOpenPanel(null);
+  }, [pathname]);
+
+  const togglePanel = (panel: OpenPanel) => {
+    setOpenPanel((prev) => (prev === panel ? null : panel));
   };
 
-  const { data: notifData, isLoading: notifLoading } = useSWR<{ notifications: NotificationItem[] }>(
-    user ? "/api/notifications" : null,
-    fetcher,
-    { refreshInterval: 60000, revalidateOnFocus: true }
-  );
+  const { data: notifData, isLoading: notifLoading } = useSWR<{
+    notifications: NotificationItem[];
+  }>(user ? "/api/notifications" : null, fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: true,
+  });
 
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -131,7 +144,10 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
       const next = new Set(prev);
       next.add(id);
       try {
-        localStorage.setItem(`${NOTIFICATIONS_SEEN_KEY}-${user?.id ?? "default"}`, JSON.stringify([...next]));
+        localStorage.setItem(
+          `${NOTIFICATIONS_SEEN_KEY}-${user?.id ?? "default"}`,
+          JSON.stringify([...next])
+        );
       } catch {
         /* ignore */
       }
@@ -143,200 +159,409 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const notifications = allNotifications.filter((n) => !seenIds.has(n.id));
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  return (
-    <header className="sticky top-0 z-50 w-full h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 backdrop-blur-sm bg-opacity-95 shadow-sm">
-      <div className="flex items-center justify-between h-full px-4 lg:px-6">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={onSidebarToggle}
-            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Toggle sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <nav className="hidden lg:flex items-center gap-1">
-            {menuSections.map((section) => {
-              if (!section.items.length) return null;
-              const isDropdown = section.items.length > 1;
-              const isOpen = openMenuId === section.id;
-              const firstItem = section.items[0];
-              const Icon = firstItem.icon;
+  const crumbs = pathname.split("/").filter(Boolean);
+  const pageTitle = crumbs[crumbs.length - 1]?.replace(/-/g, " ") || "dashboard";
 
-              return (
-                <div
-                  key={section.id}
-                  ref={(el) => { menuRefs.current[section.id] = el; }}
-                  className="relative"
-                >
-                  {isDropdown ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => toggleMenu(section.id)}
+  const isSectionActive = (section: (typeof menuSections)[0]) =>
+    section.items.some(
+      (item) =>
+        pathname === item.href ||
+        pathname.startsWith(item.href + "/") ||
+        item.children?.some(
+          (c) => pathname === c.href || pathname.startsWith(c.href + "/")
+        )
+    );
+
+  const isItemActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <header
+      ref={barRef}
+      className="sticky top-0 z-[60] w-full shrink-0"
+    >
+      {/* Light bar — contrasts dark sidebar */}
+      <div className="relative border-b border-slate-200/90 bg-[#F7F9FC] dark:border-slate-800 dark:bg-[#0F172A]">
+        {/* Gold accent line */}
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
+        {/* Soft navy wash (not solid sidebar navy) */}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(30,74,133,0.06)_0%,transparent_40%,rgba(196,163,90,0.05)_100%)] dark:bg-[linear-gradient(90deg,rgba(30,74,133,0.25)_0%,transparent_50%)]" />
+
+        <div className="relative flex h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
+            <button
+              type="button"
+              onClick={onSidebarToggle}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1E4A85]/15 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/40 hover:bg-[#1E4A85]/5 lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <div className="hidden min-w-0 sm:block">
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                <span className="font-semibold text-[#1E4A85] dark:text-[#E8D5A3]">
+                  Admin
+                </span>
+                <ChevronRight className="h-3 w-3" />
+                <span className="capitalize">{pageTitle}</span>
+              </div>
+              <p className="mt-0.5 truncate text-[15px] font-bold tracking-tight text-[#0B1F3A] dark:text-white">
+                Control Center
+              </p>
+            </div>
+
+            <nav className="ml-1 hidden items-center gap-1 xl:flex">
+              {menuSections.slice(0, 5).map((section) => {
+                if (!section.items.length) return null;
+                const isDropdown = section.items.length > 1;
+                const panelId = `menu:${section.id}` as const;
+                const isOpen = openPanel === panelId;
+                const firstItem = section.items[0];
+                const Icon = firstItem.icon;
+                const active = isSectionActive(section);
+
+                return (
+                  <div key={section.id} className="relative">
+                    {isDropdown ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => togglePanel(panelId)}
+                          aria-expanded={isOpen}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all",
+                            active || isOpen
+                              ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-md shadow-[#1E4A85]/25"
+                              : "border-transparent text-[#1E4A85]/80 hover:border-[#1E4A85]/15 hover:bg-white hover:text-[#1E4A85] dark:text-slate-200 dark:hover:bg-white/10"
+                          )}
+                        >
+                          {Icon && <Icon className="h-3.5 w-3.5" />}
+                          <span>{section.label || firstItem.label}</span>
+                          <ChevronDown
+                            className={cn(
+                              "h-3.5 w-3.5 transition-transform duration-200",
+                              isOpen && "rotate-180"
+                            )}
+                          />
+                        </button>
+
+                        {isOpen && (
+                          <div
+                            className="absolute left-0 top-[calc(100%+0.5rem)] z-[80] min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                            role="menu"
+                          >
+                            <div className="border-b border-slate-100 bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-2.5 dark:border-slate-800">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#E8D5A3]">
+                                {section.label || firstItem.label}
+                              </p>
+                            </div>
+                            <div className="max-h-[min(70vh,28rem)] space-y-0.5 overflow-y-auto p-1.5">
+                              {section.items.map((item) => {
+                                const ItemIcon = item.icon;
+                                const itemActive = isItemActive(item.href);
+                                const hasChildren =
+                                  !!item.children && item.children.length > 0;
+
+                                return (
+                                  <div key={item.id}>
+                                    <Link
+                                      href={item.href}
+                                      onClick={() => setOpenPanel(null)}
+                                      role="menuitem"
+                                      className={cn(
+                                        "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
+                                        itemActive
+                                          ? "bg-[#1E4A85]/10 text-[#1E4A85]"
+                                          : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                                      )}
+                                    >
+                                      {ItemIcon && (
+                                        <span
+                                          className={cn(
+                                            "flex h-8 w-8 items-center justify-center rounded-lg",
+                                            itemActive
+                                              ? "bg-[#C4A35A] text-[#0B132B]"
+                                              : "bg-[#1E4A85]/8 text-[#1E4A85] dark:bg-white/10 dark:text-[#E8D5A3]"
+                                          )}
+                                        >
+                                          <ItemIcon className="h-4 w-4" />
+                                        </span>
+                                      )}
+                                      <span className="flex-1 text-sm font-semibold">
+                                        {item.label}
+                                      </span>
+                                      {item.badge && (
+                                        <span className="rounded-full bg-[#C4A35A]/20 px-2 py-0.5 text-[10px] font-bold text-[#8B6914]">
+                                          {item.badge}
+                                        </span>
+                                      )}
+                                    </Link>
+                                    {hasChildren && (
+                                      <div className="mb-1 ml-4 space-y-0.5 border-l border-slate-100 pl-2 dark:border-slate-800">
+                                        {item.children!.map((child) => {
+                                          const childActive = isItemActive(
+                                            child.href
+                                          );
+                                          return (
+                                            <Link
+                                              key={child.id}
+                                              href={child.href}
+                                              onClick={() => setOpenPanel(null)}
+                                              className={cn(
+                                                "block rounded-lg px-3 py-2 text-[13px] font-medium transition",
+                                                childActive
+                                                  ? "bg-[#C4A35A]/15 text-[#1E4A85]"
+                                                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
+                                              )}
+                                            >
+                                              {child.label}
+                                            </Link>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        href={firstItem.href}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                          "text-gray-700 dark:text-gray-300",
-                          "hover:bg-gray-100 dark:hover:bg-gray-700",
-                          isOpen && "bg-gray-100 dark:bg-gray-700"
+                          "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all",
+                          active
+                            ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-md shadow-[#1E4A85]/25"
+                            : "border-transparent text-[#1E4A85]/80 hover:border-[#1E4A85]/15 hover:bg-white hover:text-[#1E4A85] dark:text-slate-200 dark:hover:bg-white/10"
                         )}
                       >
-                        {Icon && <Icon className="w-4 h-4" />}
-                        <span>{section.label || firstItem.label}</span>
-                        <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", isOpen && "rotate-180")} />
-                      </button>
-                      {isOpen && (
-                        <div className="absolute top-full left-0 mt-1 pt-1 min-w-[220px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50">
-                          {section.items.map((item) => {
-                            const ItemIcon = item.icon;
-                            return (
-                              <Link
-                                key={item.id}
-                                href={item.href}
-                                onClick={() => setOpenMenuId(null)}
-                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group text-left"
-                              >
-                                {ItemIcon && (
-                                  <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-primary/10 transition-colors">
-                                    <ItemIcon className="w-4 h-4 text-gray-600 dark:text-gray-400 group-hover:text-primary" />
-                                  </div>
-                                )}
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
-                                {item.badge && (
-                                  <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{item.badge}</span>
-                                )}
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Link
-                      href={firstItem.href}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                        "text-gray-700 dark:text-gray-300",
-                        "hover:bg-gray-100 dark:hover:bg-gray-700"
-                      )}
-                    >
-                      {Icon && <Icon className="w-4 h-4" />}
-                      <span>{firstItem.label}</span>
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-          <div className="relative" ref={notificationRef}>
+                        {Icon && <Icon className="h-3.5 w-3.5" />}
+                        <span>{firstItem.label}</span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <div className="relative hidden md:block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                value={quickSearch}
+                onChange={(e) => setQuickSearch(e.target.value)}
+                placeholder="Quick find…"
+                className="h-10 w-40 rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-52 focus:border-[#C4A35A]/60 focus:ring-2 focus:ring-[#C4A35A]/20 lg:w-48 dark:border-slate-700 dark:bg-white/5 dark:text-white"
+              />
+            </div>
+
             <button
-              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-              className="relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Notifications"
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/40 hover:bg-[#C4A35A]/10 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+              aria-label="Toggle theme"
             >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-gray-800" />
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
               )}
             </button>
-            {isNotificationOpen && (
-              <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Notifications</h3>
-                  <button onClick={() => setIsNotificationOpen(false)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <X className="w-4 h-4" />
-                  </button>
+
+            {/* Notifications */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => togglePanel("notifications")}
+                aria-expanded={openPanel === "notifications"}
+                className={cn(
+                  "relative flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition",
+                  openPanel === "notifications"
+                    ? "border-[#1E4A85] bg-[#1E4A85] text-white"
+                    : "border-slate-200 bg-white text-[#1E4A85] hover:border-[#C4A35A]/40 hover:bg-[#C4A35A]/10 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+                )}
+                aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C4A35A] px-1 text-[10px] font-bold text-[#0B132B] ring-2 ring-[#F7F9FC] dark:ring-[#0F172A]">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {openPanel === "notifications" && (
+                <div
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                  role="dialog"
+                  aria-label="Notifications"
+                >
+                  <div className="flex items-center justify-between bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-3 text-white">
+                    <div>
+                      <h3 className="text-sm font-bold">Notifications</h3>
+                      <p className="text-[11px] text-white/65">
+                        {unreadCount} unread update{unreadCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPanel(null)}
+                      className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="max-h-[min(70vh,28rem)] overflow-y-auto p-2">
+                    {notifLoading && !notifications.length ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-7 w-7 animate-spin text-[#1E4A85]" />
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="py-12 text-center text-sm text-slate-500">
+                        No notifications yet
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <Link
+                          key={n.id}
+                          href={n.href}
+                          onClick={() => {
+                            markAsSeen(n.id);
+                            setOpenPanel(null);
+                          }}
+                          className={cn(
+                            "mb-1 flex gap-3 rounded-xl p-3 transition hover:bg-slate-50 dark:hover:bg-white/5",
+                            n.unread && "bg-[#1E4A85]/[0.06]"
+                          )}
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                            <NotificationIcon type={n.type} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {n.title}
+                            </p>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                              {n.message}
+                            </p>
+                            <p className="mt-1 text-[10px] text-slate-400">
+                              {timeAgo(n.createdAt)}
+                            </p>
+                          </div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div className="max-h-[28rem] overflow-y-auto p-2">
-                  {notifLoading && !notifications.length ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div className="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
-                      No notifications yet
-                    </div>
-                  ) : (
-                    notifications.map((n) => (
-                      <Link
-                        key={n.id}
-                        href={n.href}
-                        onClick={() => {
-                          markAsSeen(n.id);
-                          setIsNotificationOpen(false);
-                        }}
-                        className={cn(
-                          "flex gap-3 p-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/80 block",
-                          n.unread && "bg-blue-50/60 dark:bg-blue-900/20"
-                        )}
-                      >
-                        <div className="flex-shrink-0 mt-0.5">
-                          <NotificationIcon type={n.type} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{timeAgo(n.createdAt)}</p>
-                        </div>
-                      </Link>
-                    ))
+              )}
+            </div>
+
+            {/* Profile */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => togglePanel("profile")}
+                aria-expanded={openPanel === "profile"}
+                className={cn(
+                  "flex items-center gap-2 rounded-xl border py-1.5 pl-1.5 pr-2.5 shadow-sm transition sm:pr-3",
+                  openPanel === "profile"
+                    ? "border-[#1E4A85] bg-[#1E4A85] text-white"
+                    : "border-slate-200 bg-white text-[#0B1F3A] hover:border-[#C4A35A]/40 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                )}
+                aria-label="User menu"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#C4A35A] to-[#A8893E] text-sm font-bold text-[#0B132B] ring-2 ring-[#C4A35A]/25">
+                  {user?.fullName?.charAt(0).toUpperCase() || "U"}
+                </span>
+                <div className="hidden text-left lg:block">
+                  <p
+                    className={cn(
+                      "max-w-[120px] truncate text-xs font-bold leading-tight",
+                      openPanel === "profile" ? "text-white" : "text-[#0B1F3A] dark:text-white"
+                    )}
+                  >
+                    {user?.fullName || "User"}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-[10px]",
+                      openPanel === "profile"
+                        ? "text-[#E8D5A3]"
+                        : "text-[#C4A35A]"
+                    )}
+                  >
+                    {user?.roleName || "User"}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "hidden h-3.5 w-3.5 transition lg:block",
+                    openPanel === "profile"
+                      ? "rotate-180 text-white/80"
+                      : "text-slate-400"
                   )}
+                />
+              </button>
+
+              {openPanel === "profile" && (
+                <div
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                  role="menu"
+                >
+                  <div className="bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-3.5 text-white">
+                    <p className="text-sm font-bold">{user?.fullName || "User"}</p>
+                    <p className="truncate text-xs text-white/65">
+                      {user?.email || ""}
+                    </p>
+                    {user?.franchiseId && (
+                      <p className="mt-1 text-[10px] text-[#E8D5A3]">
+                        Franchise #{user.franchiseId}
+                      </p>
+                    )}
+                  </div>
+                  <div className="py-1.5">
+                    <Link
+                      href="/profile"
+                      onClick={() => setOpenPanel(null)}
+                      role="menuitem"
+                      className="mx-1.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E4A85]/10 text-[#1E4A85]">
+                        <User className="h-4 w-4" />
+                      </span>
+                      Profile
+                    </Link>
+                    <Link
+                      href="/account"
+                      onClick={() => setOpenPanel(null)}
+                      role="menuitem"
+                      className="mx-1.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E4A85]/10 text-[#1E4A85]">
+                        <Settings className="h-4 w-4" />
+                      </span>
+                      Account & Password
+                    </Link>
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                    <button
+                      type="button"
+                      onClick={logout}
+                      role="menuitem"
+                      className="mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950/40">
+                        <LogOut className="h-4 w-4" />
+                      </span>
+                      Logout
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div className="relative" ref={profileRef}>
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="User menu"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">{user?.fullName?.charAt(0).toUpperCase() || "U"}</span>
-              </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.fullName || "User"}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.roleName || "User"}</p>
-              </div>
-              <ChevronDown className={cn("hidden lg:block w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200", isProfileOpen && "rotate-180")} />
-            </button>
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-50">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <p className="font-semibold text-sm text-gray-900 dark:text-white">{user?.fullName || "User"}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || ""}</p>
-                  {user?.franchiseId && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Franchise ID: {user.franchiseId}</p>}
-                </div>
-                <div className="py-1">
-                  <Link
-                    href="/profile"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left text-gray-700 dark:text-gray-300"
-                  >
-                    <User className="w-4 h-4" /> Profile
-                  </Link>
-                  <Link
-                    href="/account"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left text-gray-700 dark:text-gray-300"
-                  >
-                    <Settings className="w-4 h-4" /> Account & Password
-                  </Link>
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
-                  <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left text-red-600 dark:text-red-400">
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

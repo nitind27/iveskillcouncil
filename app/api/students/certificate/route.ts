@@ -5,6 +5,7 @@ import { ROLES } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
+/** Students see certificate status only — hard copy is sent by institute */
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -18,29 +19,44 @@ export async function GET() {
 
     const student = await prisma.student.findUnique({
       where: { userId: BigInt(user.id) },
+      include: { course: { select: { name: true } } },
     });
 
     if (!student) {
       return NextResponse.json({ success: true, data: { certificate: null } });
     }
 
-    const certificate = await prisma.certificate.findFirst({
+    const cert = await prisma.certificate.findFirst({
       where: { studentId: student.id },
       orderBy: { createdAt: "desc" },
     });
 
-    const data = certificate
-      ? {
-          certificate: {
-            id: certificate.id.toString(),
-            certificateNumber: certificate.certificateNumber,
-            status: certificate.status,
-            issueDate: certificate.issueDate?.toISOString().split("T")[0] ?? null,
-          },
-        }
-      : { certificate: null };
+    if (!cert) {
+      return NextResponse.json({ success: true, data: { certificate: null } });
+    }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: {
+        certificate: {
+          id: cert.id.toString(),
+          certificateNumber: cert.certificateNumber,
+          status: cert.status,
+          issueDate: cert.issueDate?.toISOString().split("T")[0] ?? null,
+          courseName: student.course?.name ?? null,
+          message:
+            cert.status === "ISSUED"
+              ? "Your certificate has been issued. The hard copy will be sent to your training centre by the institute."
+              : cert.status === "APPROVED"
+                ? "Your certificate is approved and will be printed by the institute shortly."
+                : cert.status === "REQUESTED"
+                  ? "Certificate request submitted. Awaiting institute approval."
+                  : cert.status === "REJECTED"
+                    ? "Certificate request was rejected. Contact your training centre."
+                    : null,
+        },
+      },
+    });
   } catch (e) {
     console.error("GET /api/students/certificate", e);
     return NextResponse.json({ success: false, error: "Failed to fetch" }, { status: 500 });

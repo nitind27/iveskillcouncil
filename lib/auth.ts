@@ -2,6 +2,11 @@ import { prisma } from './prisma';
 import { generateAccessToken, generateRefreshToken, verifyAccessToken, type TokenPayload } from './jwt';
 import bcrypt from 'bcryptjs';
 import { getEffectivePermissions } from './get-effective-permissions';
+import {
+  DatabaseUnavailableError,
+  isDbUnavailableError,
+  withDbRetry,
+} from './db';
 
 export interface LoginCredentials {
   email: string;
@@ -35,72 +40,73 @@ export async function hashPassword(password: string): Promise<string> {
 // Authenticate user
 export async function authenticateUser(credentials: LoginCredentials): Promise<AuthResult | null> {
   try {
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: credentials.email },
-      include: {
-        role: true,
-      },
-    });
+    return await withDbRetry(async () => {
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email },
+        include: {
+          role: true,
+        },
+      });
 
-    if (!user) {
-      console.error('User not found:', credentials.email);
-      return null;
-    }
+      if (!user) {
+        console.error('User not found:', credentials.email);
+        return null;
+      }
 
-    // Check if user is active
-    if (user.status !== 'ACTIVE') {
-      console.error('User not active:', credentials.email, 'Status:', user.status);
-      return null;
-    }
+      if (user.status !== 'ACTIVE') {
+        console.error('User not active:', credentials.email, 'Status:', user.status);
+        return null;
+      }
 
-    // First-time setup: must use OTP flow, not password
-    if ((user as { mustChangePassword?: boolean }).mustChangePassword) {
-      console.error('User must set password via OTP first:', credentials.email);
-      return null;
-    }
+      if ((user as { mustChangePassword?: boolean }).mustChangePassword) {
+        console.error('User must set password via OTP first:', credentials.email);
+        return null;
+      }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(credentials.password, user.password);
-    if (!isValidPassword) {
-      console.error('Invalid password for user:', credentials.email);
-      return null;
-    }
+      const isValidPassword = await verifyPassword(credentials.password, user.password);
+      if (!isValidPassword) {
+        console.error('Invalid password for user:', credentials.email);
+        return null;
+      }
 
-    const permissions = await getEffectivePermissions(
-      user.roleId,
-      user.franchiseId?.toString()
-    );
+      const permissions = await getEffectivePermissions(
+        user.roleId,
+        user.franchiseId?.toString()
+      );
 
-    const tokenPayload: TokenPayload = {
-      userId: user.id.toString(),
-      roleId: user.roleId,
-      franchiseId: user.franchiseId?.toString(),
-      email: user.email,
-    };
-
-    const accessToken = generateAccessToken(tokenPayload);
-    const refreshToken = generateRefreshToken({
-      userId: user.id.toString(),
-      tokenId: `${user.id}-${Date.now()}`,
-    });
-
-    return {
-      user: {
-        id: user.id.toString(),
-        email: user.email,
-        fullName: user.fullName,
+      const tokenPayload: TokenPayload = {
+        userId: user.id.toString(),
         roleId: user.roleId,
-        roleName: user.role.name,
         franchiseId: user.franchiseId?.toString(),
-        permissions,
-      },
-      accessToken,
-      refreshToken,
-    };
+        email: user.email,
+      };
+
+      const accessToken = generateAccessToken(tokenPayload);
+      const refreshToken = generateRefreshToken({
+        userId: user.id.toString(),
+        tokenId: `${user.id}-${Date.now()}`,
+      });
+
+      return {
+        user: {
+          id: user.id.toString(),
+          email: user.email,
+          fullName: user.fullName,
+          roleId: user.roleId,
+          roleName: user.role.name,
+          franchiseId: user.franchiseId?.toString(),
+          permissions,
+        },
+        accessToken,
+        refreshToken,
+      };
+    });
   } catch (error) {
     console.error('Authentication error:', error);
-    return null;
+    if (error instanceof DatabaseUnavailableError || isDbUnavailableError(error)) {
+      throw new DatabaseUnavailableError();
+    }
+    throw error;
   }
 }
 
@@ -112,47 +118,55 @@ export async function getUserFromToken(token: string) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: BigInt(payload.userId) },
-      include: {
-        role: true,
-        franchise: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
+    return await withDbRetry(async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: BigInt(payload.userId) },
+        include: {
+          role: true,
+          franchise: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
           },
         },
-      },
+      });
+
+      if (!user || user.status !== 'ACTIVE') {
+        return null;
+      }
+
+      const permissions = await getEffectivePermissions(
+        user.roleId,
+        user.franchiseId?.toString()
+      );
+
+      return {
+        id: user.id.toString(),
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        roleId: user.roleId,
+        roleName: user.role.name,
+        franchiseId: user.franchiseId?.toString(),
+        franchise: user.franchise
+          ? {
+              id: user.franchise.id.toString(),
+              name: user.franchise.name,
+              status: user.franchise.status,
+            }
+          : null,
+        permissions,
+      };
     });
-
-    if (!user || user.status !== 'ACTIVE') {
-      return null;
-    }
-
-    const permissions = await getEffectivePermissions(
-      user.roleId,
-      user.franchiseId?.toString()
-    );
-
-    return {
-      id: user.id.toString(),
-      email: user.email,
-      fullName: user.fullName,
-      phone: user.phone,
-      roleId: user.roleId,
-      roleName: user.role.name,
-      franchiseId: user.franchiseId?.toString(),
-      franchise: user.franchise ? {
-        id: user.franchise.id.toString(),
-        name: user.franchise.name,
-        status: user.franchise.status,
-      } : null,
-      permissions,
-    };
   } catch (error) {
     console.error('Get user from token error:', error);
-    return null;
+    // DB down ≠ invalid session — let callers return 503 and retry
+    if (error instanceof DatabaseUnavailableError || isDbUnavailableError(error)) {
+      throw new DatabaseUnavailableError();
+    }
+    throw error;
   }
 }
 

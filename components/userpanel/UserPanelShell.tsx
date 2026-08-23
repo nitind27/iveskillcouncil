@@ -13,7 +13,7 @@ export default function UserPanelShell({ children }: { children: React.ReactNode
   const userName = user?.fullName ?? null;
 
   return (
-    <div className="userpanel min-h-screen bg-[var(--up-bg)] text-[var(--up-text)] overflow-x-hidden">
+    <div className="userpanel min-h-screen bg-[var(--up-bg)] text-[var(--up-text)] overflow-x-clip">
       <GlobalWelcomeModal config={config.welcomePopup} />
       <ScrollProgress />
       <UserPanelNavbar config={config} userName={userName} notificationCount={0} />

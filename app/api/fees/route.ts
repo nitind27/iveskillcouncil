@@ -25,8 +25,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const pendingOnly = searchParams.get("pendingOnly") === "1";
+    const feeStatus = (searchParams.get("feeStatus") || "").toUpperCase(); // PENDING | PAID
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = pendingOnly ? 200 : Math.min(50, Math.max(10, parseInt(searchParams.get("limit") || "15", 10) || 15));
+    const limit = pendingOnly ? 200 : Math.min(50, Math.max(5, parseInt(searchParams.get("limit") || "15", 10) || 15));
     const search = (searchParams.get("search") || "").trim();
     const franchiseId = searchParams.get("franchiseId");
 
@@ -47,11 +48,41 @@ export async function GET(request: NextRequest) {
 
     const paymentFilter = baseWhere.franchiseId != null ? { franchiseId: baseWhere.franchiseId } : franchiseFilter;
 
-    const [allStudents, recentPayments, agg] = await Promise.all([
-      prisma.student.findMany({
+    const needFeeFilter = feeStatus === "PENDING" || feeStatus === "PAID" || pendingOnly;
+
+    let pageStudentIds: bigint[] | null = null;
+    let filteredTotal = 0;
+
+    if (needFeeFilter) {
+      const candidates = await prisma.student.findMany({
         where: baseWhere,
-        skip: pendingOnly ? 0 : (page - 1) * limit,
-        take: limit,
+        select: { id: true, totalFee: true, paidFee: true },
+        orderBy: { createdAt: "desc" },
+      });
+      const filtered = candidates.filter((s) => {
+        const pending = Number(s.totalFee) - Number(s.paidFee);
+        if (pendingOnly || feeStatus === "PENDING") return pending > 0;
+        if (feeStatus === "PAID") return pending <= 0;
+        return true;
+      });
+      filteredTotal = filtered.length;
+      if (pendingOnly) {
+        pageStudentIds = filtered.map((s) => s.id);
+      } else {
+        pageStudentIds = filtered
+          .slice((page - 1) * limit, page * limit)
+          .map((s) => s.id);
+      }
+    }
+
+    const [allStudents, recentPayments, agg, pendingCountRows] = await Promise.all([
+      prisma.student.findMany({
+        where: pageStudentIds
+          ? { id: { in: pageStudentIds } }
+          : baseWhere,
+        ...(pageStudentIds
+          ? {}
+          : { skip: (page - 1) * limit, take: limit }),
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { fullName: true, email: true, phone: true } },
@@ -61,7 +92,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.payment.findMany({
         where: paymentFilter,
-        take: 15,
+        take: 12,
         orderBy: { createdAt: "desc" },
         include: {
           student: { include: { user: { select: { fullName: true } } } },
@@ -72,9 +103,22 @@ export async function GET(request: NextRequest) {
         _sum: { totalFee: true, paidFee: true },
         _count: true,
       }),
+      prisma.student.findMany({
+        where: baseWhere,
+        select: { totalFee: true, paidFee: true },
+      }),
     ]);
 
-    let items = allStudents.map((s) => ({
+    // Preserve fee-filter order when using id IN
+    let orderedStudents = allStudents;
+    if (pageStudentIds) {
+      const map = new Map(allStudents.map((s) => [s.id.toString(), s]));
+      orderedStudents = pageStudentIds
+        .map((id) => map.get(id.toString()))
+        .filter(Boolean) as typeof allStudents;
+    }
+
+    let items = orderedStudents.map((s) => ({
       id: s.id.toString(),
       fullName: s.user.fullName,
       email: s.user.email,
@@ -95,7 +139,12 @@ export async function GET(request: NextRequest) {
       items = items.filter((s) => s.pendingFee > 0);
     }
 
-    const totalCount = agg._count;
+    const pendingStudents = pendingCountRows.filter(
+      (s) => Number(s.totalFee) - Number(s.paidFee) > 0
+    ).length;
+    const paidStudents = pendingCountRows.length - pendingStudents;
+
+    const totalCount = needFeeFilter && !pendingOnly ? filteredTotal : agg._count;
     const totalFee = Number(agg._sum.totalFee ?? 0);
     const paidFee = Number(agg._sum.paidFee ?? 0);
 
@@ -111,7 +160,9 @@ export async function GET(request: NextRequest) {
         paymentDate: p.paymentDate?.toISOString() ?? p.createdAt.toISOString(),
       })),
       summary: {
-        totalStudents: totalCount,
+        totalStudents: agg._count,
+        pendingStudents,
+        paidStudents,
         totalFee,
         paidFee,
         pendingFee: totalFee - paidFee,
@@ -122,7 +173,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages: Math.ceil(totalCount / limit) || 0,
       };
     }
     return successResponse(responseData, "Fees retrieved");

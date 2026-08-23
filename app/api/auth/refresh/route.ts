@@ -1,21 +1,22 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyRefreshToken, generateAccessToken } from '@/lib/jwt';
-import { successResponse, unauthorizedResponse, rateLimitResponse } from '@/lib/api-response';
+import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/jwt';
+import { successResponse, unauthorizedResponse, rateLimitResponse, errorResponse } from '@/lib/api-response';
 import { rateLimiter, rateLimitConfig, getClientIdentifier } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
+import { ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, getAuthCookieOptions } from '@/lib/auth-cookies';
+import { randomUUID } from 'crypto';
+import { DatabaseUnavailableError, isDbUnavailableError, withDbRetry } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
     const clientId = getClientIdentifier(request);
-    if (!rateLimiter.check(clientId, rateLimitConfig.auth.maxRequests, rateLimitConfig.auth.windowMs)) {
+    if (!rateLimiter.check(clientId, rateLimitConfig.authRefresh.maxRequests, rateLimitConfig.authRefresh.windowMs)) {
       return rateLimitResponse();
     }
 
-    // Get refresh token from cookies using Next.js cookies() API
     const cookieStore = cookies();
     const refreshToken = cookieStore.get('refreshToken')?.value;
 
@@ -23,26 +24,26 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    // Verify refresh token
     const payload = verifyRefreshToken(refreshToken);
     if (!payload) {
       return unauthorizedResponse();
     }
 
-    // Get user from database using userId from refresh token payload
-    const userData = await prisma.user.findUnique({
-      where: { id: BigInt(payload.userId) },
-      include: {
-        role: true,
-        franchise: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
+    const userData = await withDbRetry(() =>
+      prisma.user.findUnique({
+        where: { id: BigInt(payload.userId) },
+        include: {
+          role: true,
+          franchise: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+            },
           },
         },
-      },
-    });
+      })
+    );
 
     if (!userData || userData.status !== 'ACTIVE') {
       return unauthorizedResponse();
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       id: userData.id.toString(),
       email: userData.email,
       fullName: userData.fullName,
+      phone: userData.phone,
       roleId: userData.roleId,
       roleName: userData.role.name,
       franchiseId: userData.franchiseId?.toString(),
@@ -62,7 +64,6 @@ export async function POST(request: NextRequest) {
       } : null,
     };
 
-    // Generate new access token
     const newAccessToken = generateAccessToken({
       userId: user.id,
       roleId: user.roleId,
@@ -70,26 +71,33 @@ export async function POST(request: NextRequest) {
       email: user.email,
     });
 
-    // Create response with new token
-    const response = successResponse(
-      {
-        user,
-      },
-      'Token refreshed successfully'
-    );
+    // Sliding refresh — extend session while user stays active
+    const newRefreshToken = generateRefreshToken({
+      userId: user.id,
+      tokenId: randomUUID(),
+    });
 
-    // Set new access token cookie
+    const response = successResponse({ user }, 'Token refreshed successfully');
+    const cookieOptions = getAuthCookieOptions();
+
     response.cookies.set('accessToken', newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60, // 15 minutes
-      path: '/',
+      ...cookieOptions,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+    response.cookies.set('refreshToken', newRefreshToken, {
+      ...cookieOptions,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Refresh token error:', error);
+    if (error instanceof DatabaseUnavailableError || isDbUnavailableError(error)) {
+      return errorResponse(
+        'Database temporarily unreachable. Keep npm run dev running (includes DB proxy).',
+        503
+      );
+    }
     return unauthorizedResponse();
   }
 }

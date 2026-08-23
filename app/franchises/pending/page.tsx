@@ -1,14 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import useSWR from "swr";
-import { Breadcrumb } from "@/components/common";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/common/Card";
+import { AnimatePresence, motion } from "framer-motion";
 import { Modal } from "@/components/common/Modal";
 import {
   FileCheck,
@@ -19,9 +14,25 @@ import {
   XCircle,
   Eye,
   Download,
-  Filter,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Clock,
+  Mail,
+  Phone,
+  MapPin,
+  IndianRupee,
+  Calendar,
+  ShieldCheck,
+  AlertTriangle,
+  ExternalLink,
+  ImageIcon,
+  X,
+  Package,
+  User,
+  CreditCard,
 } from "lucide-react";
 import { showSuccess, showError, showDeleteConfirm } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -45,6 +56,23 @@ interface PendingFranchise {
   updatedAt: string;
 }
 
+interface FranchiseDetail extends PendingFranchise {
+  businessType?: string;
+  legalName?: string;
+  alternatePhone?: string;
+  phone?: string;
+  email?: string;
+  panNumber?: string;
+  aadhaarNumber?: string;
+  gstNumber?: string;
+  msmeNumber?: string;
+  bankName?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  documents?: unknown;
+}
+
 interface Plan {
   id: number;
   name: string;
@@ -52,31 +80,119 @@ interface Plan {
   durationInDays: number;
 }
 
-const inputClass =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary";
-const labelClass = "block text-sm font-medium text-foreground mb-1";
+interface Doc {
+  key: string;
+  url: string;
+  name: string;
+  type: string;
+  label: string;
+}
+
+const DOC_LABELS: Record<string, string> = {
+  pan: "PAN Card",
+  aadhar: "Aadhaar Card",
+  photo: "Photo",
+  signature: "Signature",
+  address_proof: "Address Proof",
+  bank: "Bank Proof",
+  gst: "GST Certificate",
+  entity_reg: "Entity Registration",
+  logo: "Logo",
+  centre_photo: "Centre Photo",
+};
+
+function normalizeDocuments(raw: unknown): Doc[] {
+  let value: unknown = raw;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (!value) return [];
+
+  const list: unknown[] = Array.isArray(value)
+    ? value
+    : typeof value === "object"
+      ? Object.values(value as Record<string, unknown>)
+      : [];
+
+  return list
+    .map((item, index): Doc | null => {
+      if (!item || typeof item !== "object") return null;
+      const d = item as Record<string, unknown>;
+      const url = String(d.url || d.path || d.fileUrl || "").trim();
+      if (!url) return null;
+      const key = String(d.key || d.docType || d.type || `doc_${index}`);
+      return {
+        key,
+        url,
+        name: String(d.name || d.fileName || key),
+        type: String(d.type || d.mimeType || ""),
+        label: String(d.label || DOC_LABELS[key] || key),
+      };
+    })
+    .filter((d): d is Doc => !!d);
+}
+
+function isImageDoc(doc: Doc) {
+  return (
+    doc.type?.startsWith("image/") ||
+    /\.(jpe?g|png|webp|gif)$/i.test(doc.url) ||
+    /\.(jpe?g|png|webp|gif)$/i.test(doc.name)
+  );
+}
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function daysWaiting(createdAt: string) {
+  const days = Math.floor(
+    (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
 
 export default function ApprovalsPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [planIdFilter, setPlanIdFilter] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [planIdFilter, setPlanIdFilter] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [detailItem, setDetailItem] = useState<PendingFranchise | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selected, setSelected] = useState<FranchiseDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [rejectItem, setRejectItem] = useState<PendingFranchise | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
   const [bulkRejectReason, setBulkRejectReason] = useState("");
   const [actioning, setActioning] = useState<string | "bulk-approve" | "bulk-reject" | null>(null);
+  const [docPreview, setDocPreview] = useState<Doc | null>(null);
 
-  const limit = 10;
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, planIdFilter, pageSize]);
+
   const params = new URLSearchParams({
     status: "PENDING",
     page: String(page),
-    limit: String(limit),
+    limit: String(pageSize),
   });
-  if (search.trim()) params.set("search", search.trim());
+  if (debouncedSearch) params.set("search", debouncedSearch);
   if (planIdFilter) params.set("planId", planIdFilter);
   const pendingKey = `/api/franchises?${params}`;
 
@@ -86,15 +202,34 @@ export default function ApprovalsPage() {
   });
   const plans = plansData ?? [];
 
-  const { data: pendingData, isLoading, mutate: mutatePending } = useSWR(
+  const { data: pendingData, isLoading, error, mutate: mutatePending } = useSWR(
     pendingKey,
     fetcherWithPagination<PendingFranchise[]>,
     { revalidateOnFocus: true, dedupingInterval: 2000, keepPreviousData: true }
   );
 
   const list = pendingData?.data ?? [];
-  const totalPages = pendingData?.pagination?.totalPages ?? 1;
-  const total = pendingData?.pagination?.total ?? 0;
+  const pagination = pendingData?.pagination ?? {
+    page: 1,
+    limit: pageSize,
+    total: 0,
+    totalPages: 0,
+  };
+  const total = pagination.total;
+  const totalPages = pagination.totalPages || 1;
+
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const set = new Set(
+      [1, totalPages, page, page - 1, page + 1].filter((p) => p >= 1 && p <= totalPages)
+    );
+    return Array.from(set).sort((a, b) => a - b);
+  }, [page, totalPages]);
+
+  const docs = useMemo(
+    () => (selected ? normalizeDocuments(selected.documents) : []),
+    [selected]
+  );
 
   const handleApprove = async (item: PendingFranchise) => {
     const result = await showDeleteConfirm(
@@ -117,9 +252,8 @@ export default function ApprovalsPage() {
       }
       await showSuccess("Approved", `${item.name} has been approved.`);
       mutatePending();
-      setDetailModalOpen(false);
-      setDetailItem(null);
-    } catch (e) {
+      setSelected(null);
+    } catch {
       await showError("Error", "Request failed.");
     } finally {
       setActioning(null);
@@ -155,9 +289,8 @@ export default function ApprovalsPage() {
       setRejectItem(null);
       setRejectReason("");
       mutatePending();
-      setDetailModalOpen(false);
-      setDetailItem(null);
-    } catch (e) {
+      setSelected(null);
+    } catch {
       await showError("Error", "Request failed.");
     } finally {
       setActioning(null);
@@ -193,11 +326,6 @@ export default function ApprovalsPage() {
     if (failed > 0) await showError("Partial", `${done} approved, ${failed} failed.`);
     else await showSuccess("Done", `${done} franchise(s) approved.`);
     mutatePending();
-  };
-
-  const handleBulkReject = async () => {
-    if (selectedIds.size === 0) return;
-    setBulkRejectOpen(true);
   };
 
   const confirmBulkReject = async () => {
@@ -271,7 +399,10 @@ export default function ApprovalsPage() {
       f.pincode ?? "",
       f.createdAt,
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -281,360 +412,679 @@ export default function ApprovalsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const openDetail = (item: PendingFranchise) => {
-    setDetailItem(item);
-    setDetailModalOpen(true);
-  };
+  const openDetail = useCallback(async (item: PendingFranchise) => {
+    setSelected({ ...item });
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/franchises/${item.id}`, { credentials: "include" });
+      const data = await res.json();
+      if (res.ok && data?.data) {
+        setSelected(data.data as FranchiseDetail);
+      }
+    } catch {
+      /* keep list snapshot */
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const inputClass =
+    "w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15";
 
   return (
-    <div className="space-y-6">
-      <Breadcrumb />
-      <div className="flex items-center gap-2">
-        <FileCheck className="w-8 h-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Approvals</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and approve or reject pending franchise applications.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-5 pb-8">
+      {/* Header */}
+      <header className="overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] text-white shadow-md shadow-[#1E4A85]/15">
+        <div className="flex flex-col gap-4 px-5 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <nav className="mb-1.5 flex flex-wrap items-center gap-1 text-[11px] text-white/55">
+              <Link href="/dashboard" className="hover:text-white/90">
+                Dashboard
+              </Link>
+              <span>/</span>
+              <Link href="/franchises" className="hover:text-white/90">
+                Franchises
+              </Link>
+              <span>/</span>
+              <span className="text-white/80">Approvals</span>
+            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+                Pending Approvals
+              </h1>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-100">
+                <FileCheck className="h-3 w-3" />
+                Review queue
+              </span>
+            </div>
+            <p className="mt-1 max-w-xl text-xs text-white/60 sm:text-sm">
+              Approve or reject franchise onboarding — verify owner, plan & KYC before activation
+            </p>
+          </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card variant="default">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-foreground">{total}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm backdrop-blur-sm">
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-200/80">
+                  Pending
+                </p>
+                <p className="font-bold tabular-nums leading-tight text-amber-50">{total}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <FileCheck className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">
+                  This page
+                </p>
+                <p className="font-bold tabular-nums leading-tight">{list.length}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card variant="default">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">On this page</p>
-                <p className="text-2xl font-bold text-foreground">{list.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card variant="default">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Selected</p>
-                <p className="text-2xl font-bold text-foreground">{selectedIds.size}</p>
+              <div className="h-7 w-px bg-white/20" />
+              <div className="text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-[#E8D5A3]/70">
+                  Selected
+                </p>
+                <p className="font-bold tabular-nums leading-tight text-[#F5E6C8]">
+                  {selectedIds.size}
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters & actions */}
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search name, email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && mutatePending()}
-                className={inputClass + " pl-9"}
-              />
-            </div>
-            <select
-              value={planIdFilter}
-              onChange={(e) => setPlanIdFilter(e.target.value)}
-              className={inputClass + " w-auto min-w-[140px]"}
-            >
-              <option value="">All plans</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
             <button
               type="button"
               onClick={() => mutatePending()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/15"
             >
-              <Filter className="w-4 h-4" />
-              Apply
+              <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+              Refresh
             </button>
-          </div>
-          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={exportCsv}
               disabled={list.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted text-sm disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B132B] transition hover:brightness-110 disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              Export CSV
+              <Download className="h-3.5 w-3.5" />
+              Export
             </button>
-            {selectedIds.size > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleBulkApprove}
-                  disabled={!!actioning}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm disabled:opacity-50"
-                >
-                  {actioning === "bulk-approve" ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  Approve ({selectedIds.size})
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBulkReject}
-                  disabled={!!actioning}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm disabled:opacity-50"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Reject ({selectedIds.size})
-                </button>
-              </>
-            )}
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading && !pendingData ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : list.length === 0 ? (
-            <div className="py-16 text-center text-muted-foreground">
-              <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium">No pending franchises</p>
-              <p className="text-sm mt-1">All caught up or adjust filters.</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="text-left py-3 px-4 w-10">
-                        <input
-                          type="checkbox"
-                          checked={list.length > 0 && selectedIds.size === list.length}
-                          onChange={toggleSelectAll}
-                          className="w-4 h-4 rounded border-input text-primary"
-                        />
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold">Franchise</th>
-                      <th className="text-left py-3 px-4 font-semibold">Owner</th>
-                      <th className="text-left py-3 px-4 font-semibold">Plan</th>
-                      <th className="text-left py-3 px-4 font-semibold">Subscription</th>
-                      <th className="text-left py-3 px-4 font-semibold">Created</th>
-                      <th className="text-right py-3 px-4 font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.map((row) => (
-                      <tr
-                        key={row.id}
-                        className={cn(
-                          "border-b border-border/50 hover:bg-muted/30",
-                          selectedIds.has(row.id) && "bg-primary/5"
-                        )}
-                      >
-                        <td className="py-3 px-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(row.id)}
-                            onChange={() => toggleSelect(row.id)}
-                            className="w-4 h-4 rounded border-input text-primary"
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{row.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <p className="font-medium">{row.owner.name}</p>
-                          <p className="text-xs text-muted-foreground">{row.owner.email}</p>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span>{row.plan.name}</span>
-                          <p className="text-xs text-muted-foreground">
-                            ₹{parseFloat(row.plan.price).toLocaleString()}
-                          </p>
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {new Date(row.subscriptionStart).toLocaleDateString()} –{" "}
-                          {new Date(row.subscriptionEnd).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {new Date(row.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openDetail(row)}
-                              className="p-2 rounded-lg hover:bg-muted"
-                              title="View"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleApprove(row)}
-                              disabled={!!actioning}
-                              className="p-2 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 disabled:opacity-50"
-                              title="Approve"
-                            >
-                              {actioning === row.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <CheckCircle2 className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openRejectModal(row)}
-                              disabled={!!actioning}
-                              className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 disabled:opacity-50"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        </div>
+      </header>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages} ({total} total)
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1}
-                      className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page >= totalPages}
-                      className="p-2 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Detail modal */}
-      <Modal
-        open={detailModalOpen}
-        onClose={() => {
-          setDetailModalOpen(false);
-          setDetailItem(null);
-        }}
-        size="lg"
-        title="Franchise details"
-        description="Review before approving or rejecting."
-      >
-        {detailItem && (
-          <div className="space-y-4">
-            <div>
-              <label className={labelClass}>Name</label>
-              <p className="text-base font-semibold">{detailItem.name}</p>
-            </div>
-            <div>
-              <label className={labelClass}>Owner</label>
-              <p className="text-base">{detailItem.owner.name}</p>
-              <p className="text-sm text-muted-foreground">{detailItem.owner.email}</p>
-              {detailItem.owner.phone && (
-                <p className="text-sm text-muted-foreground">{detailItem.owner.phone}</p>
-              )}
-            </div>
-            <div>
-              <label className={labelClass}>Plan</label>
-              <p className="text-base">{detailItem.plan.name} — ₹{parseFloat(detailItem.plan.price).toLocaleString()}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Subscription start</label>
-                <p className="text-sm">{new Date(detailItem.subscriptionStart).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <label className={labelClass}>Subscription end</label>
-                <p className="text-sm">{new Date(detailItem.subscriptionEnd).toLocaleDateString()}</p>
-              </div>
-            </div>
-            {(detailItem.address || detailItem.city) && (
-              <div>
-                <label className={labelClass}>Address</label>
-                <p className="text-sm">
-                  {[detailItem.address, detailItem.city, detailItem.state, detailItem.pincode]
-                    .filter(Boolean)
-                    .join(", ")}
-                </p>
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+      {/* Bulk actions bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#1E4A85]/20 bg-[#1E4A85]/[0.06] px-4 py-3"
+          >
+            <p className="text-sm font-semibold text-[#1E4A85]">
+              {selectedIds.size} franchise{selectedIds.size === 1 ? "" : "s"} selected
+            </p>
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => handleApprove(detailItem)}
-                disabled={!!actioning}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                onClick={() => setSelectedIds(new Set())}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted"
               >
-                {actioning === detailItem.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Approve
+                Clear
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setDetailModalOpen(false);
-                  openRejectModal(detailItem);
-                }}
+                onClick={handleBulkApprove}
                 disabled={!!actioning}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                <XCircle className="w-4 h-4" />
-                Reject
+                {actioning === "bulk-approve" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                )}
+                Approve all
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkRejectOpen(true)}
+                disabled={!!actioning}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Reject all
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Table card */}
+      <div className="overflow-hidden rounded-2xl border border-[#1E4A85]/12 bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.04] to-transparent px-4 py-3 sm:px-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search franchise, owner, email…"
+                className="h-9 w-full rounded-lg border border-border/70 bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={planIdFilter}
+                onChange={(e) => setPlanIdFilter(e.target.value)}
+                className="h-9 min-w-[140px] rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+              >
+                <option value="">All plans</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="h-9 rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+              >
+                {[10, 15, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} / page
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {isLoading && !pendingData ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-[#1E4A85]" />
+            </div>
+          ) : error ? (
+            <div className="px-6 py-16 text-center">
+              <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-amber-500" />
+              <p className="font-semibold text-amber-700">Failed to load pending franchises</p>
+              <button
+                type="button"
+                onClick={() => mutatePending()}
+                className="mt-3 rounded-lg bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white"
+              >
+                Retry
+              </button>
+            </div>
+          ) : list.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10">
+                <ShieldCheck className="h-7 w-7 text-emerald-600" />
+              </div>
+              <p className="text-lg font-bold text-foreground">All caught up!</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                No pending franchise approvals{debouncedSearch || planIdFilter ? " for these filters" : ""}.
+              </p>
+              <Link
+                href="/franchises"
+                className="mt-4 inline-flex text-sm font-semibold text-[#1E4A85] hover:underline"
+              >
+                View all franchises →
+              </Link>
+            </div>
+          ) : (
+            <table className="w-full min-w-[880px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[#1E4A85]/10 bg-muted/40">
+                  <th className="w-10 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={list.length > 0 && selectedIds.size === list.length}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Franchise
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Owner
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Plan
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Subscription
+                  </th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Waiting
+                  </th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((row) => (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      "border-b border-border/50 transition hover:bg-[#1E4A85]/[0.03]",
+                      selectedIds.has(row.id) && "bg-[#1E4A85]/[0.06]"
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(row.id)}
+                        onChange={() => toggleSelect(row.id)}
+                        className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E4A85]/10 text-[#1E4A85]">
+                          <Building2 className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">{row.name}</p>
+                          {(row.city || row.state) && (
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              {[row.city, row.state].filter(Boolean).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{row.owner.name}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3" />
+                        {row.owner.email}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-[#C4A35A]/30 bg-[#C4A35A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#8B6914]">
+                        <Package className="h-3 w-3" />
+                        {row.plan.name}
+                      </span>
+                      <p className="mt-1 flex items-center gap-0.5 text-xs text-muted-foreground">
+                        <IndianRupee className="h-3 w-3" />
+                        {parseFloat(row.plan.price).toLocaleString("en-IN")}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <p className="flex items-center gap-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        {formatDate(row.subscriptionStart)} – {formatDate(row.subscriptionEnd)}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/80 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        <Clock className="h-3 w-3" />
+                        {daysWaiting(row.createdAt)}
+                      </span>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Applied {formatDate(row.createdAt)}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openDetail(row)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-[#1E4A85] transition hover:bg-[#1E4A85]/10"
+                          title="Review"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(row)}
+                          disabled={!!actioning}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                          title="Approve"
+                        >
+                          {actioning === row.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openRejectModal(row)}
+                          disabled={!!actioning}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                          title="Reject"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {totalPages > 1 && list.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-[#1E4A85]/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <p className="text-xs text-muted-foreground">
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage(1)}
+                disabled={page <= 1}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {pageNumbers.map((p, i) => (
+                <React.Fragment key={p}>
+                  {i > 0 && pageNumbers[i - 1] !== p - 1 && (
+                    <span className="px-1 text-muted-foreground">…</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-xs font-semibold",
+                      page === p
+                        ? "border-[#1E4A85] bg-[#1E4A85] text-white"
+                        : "border-border hover:bg-muted"
+                    )}
+                  >
+                    {p}
+                  </button>
+                </React.Fragment>
+              ))}
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage(totalPages)}
+                disabled={page >= totalPages}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-40"
+              >
+                <ChevronsRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         )}
-      </Modal>
+      </div>
 
-      {/* Reject (single) modal */}
+      {/* Review drawer */}
+      <AnimatePresence>
+        {selected && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-sm"
+              onClick={() => setSelected(null)}
+            />
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="fixed right-0 top-0 z-[80] flex h-full w-full max-w-lg flex-col border-l border-[#1E4A85]/15 bg-background shadow-2xl"
+            >
+              <div className="border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#0F2A4A] to-[#1E4A85] px-5 py-4 text-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#E8D5A3]">
+                      Review franchise
+                    </p>
+                    <h2 className="mt-1 truncate text-lg font-bold">{selected.name}</h2>
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold text-amber-100">
+                      <Clock className="h-3 w-3" />
+                      Pending · {daysWaiting(selected.createdAt)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    className="rounded-lg bg-white/10 p-2 hover:bg-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5">
+                {detailLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#1E4A85]" />
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <section className="rounded-xl border border-border/60 p-4">
+                      <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                        <User className="h-3.5 w-3.5" />
+                        Owner
+                      </h3>
+                      <p className="font-semibold">{selected.owner.name}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5" />
+                        {selected.owner.email}
+                      </p>
+                      {selected.owner.phone && (
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5" />
+                          {selected.owner.phone}
+                        </p>
+                      )}
+                    </section>
+
+                    <section className="rounded-xl border border-border/60 p-4">
+                      <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                        <Package className="h-3.5 w-3.5" />
+                        Plan & subscription
+                      </h3>
+                      <p className="font-semibold">
+                        {selected.plan.name} — ₹
+                        {parseFloat(selected.plan.price).toLocaleString("en-IN")}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatDate(selected.subscriptionStart)} → {formatDate(selected.subscriptionEnd)}
+                      </p>
+                    </section>
+
+                    {(selected.address || selected.city) && (
+                      <section className="rounded-xl border border-border/60 p-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                          <MapPin className="h-3.5 w-3.5" />
+                          Location
+                        </h3>
+                        <p className="text-sm">
+                          {[selected.address, selected.city, selected.state, selected.pincode]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </p>
+                      </section>
+                    )}
+
+                    {(selected.panNumber ||
+                      selected.aadhaarNumber ||
+                      selected.gstNumber ||
+                      selected.bankName) && (
+                      <section className="rounded-xl border border-border/60 p-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          KYC & bank
+                        </h3>
+                        <dl className="grid grid-cols-2 gap-2 text-sm">
+                          {selected.panNumber && (
+                            <>
+                              <dt className="text-muted-foreground">PAN</dt>
+                              <dd className="font-medium">{selected.panNumber}</dd>
+                            </>
+                          )}
+                          {selected.aadhaarNumber && (
+                            <>
+                              <dt className="text-muted-foreground">Aadhaar</dt>
+                              <dd className="font-medium">
+                                ****{String(selected.aadhaarNumber).slice(-4)}
+                              </dd>
+                            </>
+                          )}
+                          {selected.gstNumber && (
+                            <>
+                              <dt className="text-muted-foreground">GST</dt>
+                              <dd className="font-medium">{selected.gstNumber}</dd>
+                            </>
+                          )}
+                          {selected.bankName && (
+                            <>
+                              <dt className="text-muted-foreground">Bank</dt>
+                              <dd className="font-medium">{selected.bankName}</dd>
+                            </>
+                          )}
+                          {selected.bankIfsc && (
+                            <>
+                              <dt className="text-muted-foreground">IFSC</dt>
+                              <dd className="font-medium">{selected.bankIfsc}</dd>
+                            </>
+                          )}
+                        </dl>
+                      </section>
+                    )}
+
+                    {docs.length > 0 && (
+                      <section className="rounded-xl border border-border/60 p-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
+                          <FileCheck className="h-3.5 w-3.5" />
+                          Documents ({docs.length})
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {docs.map((doc) => (
+                            <button
+                              key={doc.key + doc.url}
+                              type="button"
+                              onClick={() => setDocPreview(doc)}
+                              className="flex items-center gap-2 rounded-lg border border-border/60 p-2.5 text-left text-xs transition hover:border-[#1E4A85]/30 hover:bg-[#1E4A85]/5"
+                            >
+                              {isImageDoc(doc) ? (
+                                <ImageIcon className="h-4 w-4 shrink-0 text-[#1E4A85]" />
+                              ) : (
+                                <FileCheck className="h-4 w-4 shrink-0 text-[#1E4A85]" />
+                              )}
+                              <span className="min-w-0 flex-1 truncate font-medium">
+                                {doc.label}
+                              </span>
+                              <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 border-t border-border/60 p-4">
+                <button
+                  type="button"
+                  onClick={() => handleApprove(selected)}
+                  disabled={!!actioning || detailLoading}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {actioning === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected(null);
+                    openRejectModal(selected);
+                  }}
+                  disabled={!!actioning}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Reject
+                </button>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Doc preview */}
+      <AnimatePresence>
+        {docPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setDocPreview(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl bg-background shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b px-4 py-3">
+                <p className="font-semibold">{docPreview.label}</p>
+                <button
+                  type="button"
+                  onClick={() => setDocPreview(null)}
+                  className="rounded-lg p-1.5 hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="max-h-[75vh] overflow-auto p-4">
+                {isImageDoc(docPreview) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={docPreview.url}
+                    alt={docPreview.label}
+                    className="mx-auto max-h-[70vh] rounded-lg object-contain"
+                  />
+                ) : (
+                  <a
+                    href={docPreview.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-[#1E4A85] hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open document
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reject modal */}
       <Modal
         open={rejectModalOpen}
         onClose={() => {
@@ -648,12 +1098,12 @@ export default function ApprovalsPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className={labelClass}>Reason (optional)</label>
+            <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               className={inputClass + " min-h-[80px]"}
-              placeholder="e.g. Incomplete documents, invalid address..."
+              placeholder="e.g. Incomplete documents, invalid address…"
               rows={3}
             />
           </div>
@@ -665,7 +1115,7 @@ export default function ApprovalsPage() {
                 setRejectItem(null);
                 setRejectReason("");
               }}
-              className="px-4 py-2 rounded-lg border border-border hover:bg-muted"
+              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
             >
               Cancel
             </button>
@@ -673,11 +1123,9 @@ export default function ApprovalsPage() {
               type="button"
               onClick={handleReject}
               disabled={!!actioning}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {actioning === rejectItem?.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : null}
+              {actioning === rejectItem?.id && <Loader2 className="h-4 w-4 animate-spin" />}
               Reject
             </button>
           </div>
@@ -697,12 +1145,12 @@ export default function ApprovalsPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className={labelClass}>Reason (optional, applies to all)</label>
+            <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
             <textarea
               value={bulkRejectReason}
               onChange={(e) => setBulkRejectReason(e.target.value)}
               className={inputClass + " min-h-[80px]"}
-              placeholder="e.g. Batch rejection – documents pending"
+              placeholder="e.g. Batch rejection — documents pending"
               rows={3}
             />
           </div>
@@ -713,7 +1161,7 @@ export default function ApprovalsPage() {
                 setBulkRejectOpen(false);
                 setBulkRejectReason("");
               }}
-              className="px-4 py-2 rounded-lg border border-border hover:bg-muted"
+              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
             >
               Cancel
             </button>
@@ -721,11 +1169,9 @@ export default function ApprovalsPage() {
               type="button"
               onClick={confirmBulkReject}
               disabled={!!actioning}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {actioning === "bulk-reject" ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : null}
+              {actioning === "bulk-reject" && <Loader2 className="h-4 w-4 animate-spin" />}
               Reject {selectedIds.size}
             </button>
           </div>

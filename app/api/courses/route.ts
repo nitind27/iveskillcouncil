@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
+import { parseHighlights, serializeCourse, slugifyCourseName } from "@/lib/course-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,16 @@ export async function GET(request: NextRequest) {
     const assignable = request.nextUrl.searchParams.get("assignable") === "1";
     const targetFranchiseIdParam = request.nextUrl.searchParams.get("franchiseId");
     const targetFranchiseId = targetFranchiseIdParam ? BigInt(targetFranchiseIdParam) : null;
+    const includeInactive = request.nextUrl.searchParams.get("all") === "1";
 
-    let courses: { id: bigint; name: string; baseFee: unknown; durationMonths: number; type: string; franchiseId: bigint | null }[];
+    const effectiveFranchiseId =
+      roleId === ROLES.SUB_ADMIN && franchiseId
+        ? franchiseId
+        : roleId === ROLES.SUPER_ADMIN && targetFranchiseId
+          ? targetFranchiseId
+          : null;
 
-    const effectiveFranchiseId = (roleId === ROLES.SUB_ADMIN && franchiseId) ? franchiseId : (roleId === ROLES.SUPER_ADMIN && targetFranchiseId) ? targetFranchiseId : null;
+    let courses;
 
     if (assignable && effectiveFranchiseId) {
       const assigned = await prisma.franchiseCourseFee.findMany({
@@ -38,9 +45,11 @@ export async function GET(request: NextRequest) {
         orderBy: { name: "asc" },
       });
     } else {
-      const where: { status: "ACTIVE"; OR?: { franchiseId: bigint | null }[] } = {
-        status: "ACTIVE",
-      };
+      const where: {
+        status?: "ACTIVE" | "INACTIVE";
+        OR?: { franchiseId: bigint | null }[];
+      } = {};
+      if (!includeInactive) where.status = "ACTIVE";
       if (roleId === ROLES.SUB_ADMIN && franchiseId) {
         where.OR = [{ franchiseId: null }, { franchiseId }];
       }
@@ -50,16 +59,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const data = courses.map((c) => ({
-      id: c.id.toString(),
-      name: c.name,
-      baseFee: Number(c.baseFee),
-      durationMonths: c.durationMonths,
-      type: c.type,
-      franchiseId: c.franchiseId?.toString() ?? null,
-    }));
-
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: courses.map(serializeCourse),
+    });
   } catch (e) {
     console.error("GET /api/courses", e);
     return NextResponse.json({ success: false, error: "Failed to fetch courses" }, { status: 500 });
@@ -75,7 +78,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, type, category, baseFee, durationMonths } = body;
+    const {
+      name,
+      slug,
+      description,
+      shortDescription,
+      imageUrl,
+      type,
+      category,
+      level,
+      mode,
+      baseFee,
+      durationMonths,
+      lectures,
+      videos,
+      notes,
+      highlights,
+      status,
+    } = body;
 
     if (!name?.trim() || !type || baseFee == null || durationMonths == null) {
       return NextResponse.json(
@@ -85,18 +105,34 @@ export async function POST(request: NextRequest) {
     }
 
     const roleId = Number(user.roleId);
-    const franchiseId = roleId === ROLES.SUB_ADMIN && user.franchiseId ? BigInt(user.franchiseId) : null;
+    const franchiseId =
+      roleId === ROLES.SUB_ADMIN && user.franchiseId ? BigInt(user.franchiseId) : null;
+
+    let finalSlug = slug ? slugifyCourseName(String(slug)) : slugifyCourseName(String(name));
+    if (finalSlug) {
+      const taken = await prisma.course.findUnique({ where: { slug: finalSlug } });
+      if (taken) finalSlug = `${finalSlug}-${Date.now().toString(36)}`;
+    }
 
     const course = await prisma.course.create({
       data: {
         franchiseId,
         name: String(name).trim(),
+        slug: finalSlug || null,
         description: description ? String(description).trim() : null,
+        shortDescription: shortDescription ? String(shortDescription).trim() : null,
+        imageUrl: imageUrl ? String(imageUrl).trim() : null,
         type,
         category: category ? String(category).trim() : null,
+        level: level || "BEGINNER",
+        mode: mode || "OFFLINE",
         baseFee: Number(baseFee),
         durationMonths: Number(durationMonths),
-        status: "ACTIVE",
+        lectures: Number(lectures) || 0,
+        videos: Number(videos) || 0,
+        notes: notes ? String(notes).trim() : null,
+        highlights: parseHighlights(highlights),
+        status: status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
       },
     });
 
@@ -110,15 +146,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: course.id.toString(),
-        name: course.name,
-        baseFee: Number(course.baseFee),
-        durationMonths: course.durationMonths,
-      },
-    });
+    return NextResponse.json({ success: true, data: serializeCourse(course) });
   } catch (e) {
     console.error("POST /api/courses", e);
     return NextResponse.json({ success: false, error: "Failed to create course" }, { status: 500 });

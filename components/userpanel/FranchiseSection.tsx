@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight, FiBriefcase, FiExternalLink, FiCheckCircle } from "react-icons/fi";
+import {
+  FiMapPin, FiUser, FiPhone, FiMail, FiArrowRight,
+  FiBriefcase, FiExternalLink, FiCheckCircle,
+} from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import FranchiseInquiryModal from "./FranchiseInquiryModal";
 import FranchisePlansModal from "./FranchisePlansModal";
@@ -11,6 +14,9 @@ import FranchisePlansModal from "./FranchisePlansModal";
 interface FranchiseSectionProps {
   config: UserPanelConfig;
 }
+
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&q=80";
 
 const perks = [
   "Full training & onboarding support",
@@ -25,6 +31,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
   const [plansOpen, setPlansOpen] = useState(false);
   const { franchise } = config;
   const highlight = franchise?.highlight;
+  const [highlightSrc, setHighlightSrc] = useState(highlight?.image || FALLBACK_IMAGE);
 
   const openInquiry = (f?: { id?: string; name: string } | null) => {
     setInquiryFranchise(f ?? null);
@@ -33,117 +40,124 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
 
   return (
     <>
-      <section id="franchise" className="relative py-28 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[var(--up-bg)]">
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#2D5DA8]/[0.04] blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#A8C63A]/[0.05] blur-[120px] rounded-full pointer-events-none" />
+      <section id="franchise" className="relative overflow-hidden bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/[0.06] blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-[#C4A35A]/[0.08] blur-3xl" />
 
-        <div className="max-w-7xl mx-auto relative space-y-16">
-
-          {/* heading */}
+        <div className="relative mx-auto max-w-7xl space-y-10">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#A8C63A]/15 border border-[#A8C63A]/30 text-[#8FA92F] text-sm font-semibold uppercase tracking-wider mb-4">
-              <FiBriefcase className="w-4 h-4" /> Franchise
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+              <FiBriefcase className="h-3.5 w-3.5" />
+              Franchise
             </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-[#1A1A1A] tracking-tight">
-              {franchise?.sectionTitle || "Grow With Us"}
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
+              {franchise?.sectionTitle || "Featured Branch"}
             </h2>
-            <p className="text-[#6B7280] mt-3 text-lg max-w-xl mx-auto">
+            <p className="mx-auto mt-3 max-w-xl text-base text-[#64748B]">
               Join our franchise network and build a successful education business.
             </p>
           </motion.div>
 
-          {/* CTA banner — Blue brand gradient */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-3xl overflow-hidden"
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-3xl border border-[#1E4A85]/20 shadow-[0_24px_60px_rgba(15,39,68,0.18)]"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2D5DA8] via-[#1E4A85] to-[#1a3d70]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(168,198,58,0.15),transparent)]" />
-            <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="text-center md:text-left">
-                <h3 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0F2744] via-[#163A6B] to-[#1E4A85]" />
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#C4A35A]/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#C4A35A] via-white/70 to-[#C4A35A]" />
+
+            <div className="relative grid items-center gap-8 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:gap-12 lg:p-12">
+              <div>
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#C4A35A]">
+                  Partner with IVESDC
+                </p>
+                <h3 className="mb-3 text-2xl font-extrabold leading-tight text-white drop-shadow-[0_0_18px_rgba(196,163,90,0.25)] md:text-3xl">
                   Ready to open your own branch?
                 </h3>
-                <p className="text-white/75 text-base max-w-lg">
+                <p className="mb-6 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
                   Partner with us and get full support — from setup to operations. Our team is with you every step.
                 </p>
-                <div className="mt-5 grid grid-cols-2 gap-2 max-w-sm">
-                  {perks.map((p) => (
-                    <div key={p} className="flex items-center gap-2 text-white/80 text-sm">
-                      <FiCheckCircle className="w-4 h-4 text-[#A8C63A] flex-shrink-0" />
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {perks.map((p, i) => (
+                    <motion.div
+                      key={p}
+                      initial={{ opacity: 0, x: -8 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 + i * 0.06 }}
+                      className="flex items-start gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/90"
+                    >
+                      <FiCheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#C4A35A]" />
                       {p}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col gap-3 flex-shrink-0">
-                <motion.button
+
+              <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/20 p-5 backdrop-blur-sm">
+                <button
                   type="button"
                   onClick={() => setPlansOpen(true)}
-                  whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)" }}
-                  whileTap={{ scale: 0.97 }}
-                  className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-[#F39C12] text-white font-extrabold text-base shadow-xl hover:bg-[#D68910] transition-all"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C4A35A] px-6 py-3.5 text-sm font-bold text-[#0F172A] shadow-lg transition-colors hover:bg-[#A88B48] hover:text-white"
                 >
                   View Plans &amp; Buy
-                  <FiArrowRight className="w-5 h-5" />
-                </motion.button>
-                <Link href="/userpanel/apply-franchise">
-                  <motion.span
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex items-center justify-center gap-2 px-8 py-3 rounded-2xl bg-white/10 border border-white/25 text-white font-semibold text-sm hover:bg-white/20 transition-all cursor-pointer"
-                  >
-                    Apply with Documents
-                  </motion.span>
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+                <Link
+                  href="/userpanel/apply-franchise"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+                >
+                  Apply with Documents
                 </Link>
-                <motion.button
+                <button
                   type="button"
                   onClick={() => openInquiry(null)}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="px-8 py-3 rounded-2xl bg-white/10 border border-white/25 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white/90 transition-colors hover:bg-white/10"
                 >
                   Just Enquire
-                </motion.button>
+                </button>
               </div>
             </div>
           </motion.div>
 
-          {/* featured branch */}
           {highlight && (
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ type: "spring", stiffness: 80, damping: 20 }}
-              className="rounded-3xl overflow-hidden border border-[var(--up-border)] shadow-xl bg-white"
+              transition={{ duration: 0.5 }}
+              className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
             >
               <div className="grid md:grid-cols-2">
-                {/* image */}
-                <div className="relative min-h-[280px] md:min-h-[380px] overflow-hidden">
-                  <img src={highlight.image} alt={highlight.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/50 via-black/10 to-transparent" />
-                  <div className="absolute bottom-4 left-4">
-                    <span className="px-3 py-1.5 rounded-xl bg-[#A8C63A] text-[#1A1A1A] text-xs font-bold uppercase tracking-wider shadow-lg">
-                      Featured Branch
-                    </span>
-                  </div>
+                <div className="relative min-h-[240px] overflow-hidden bg-[#EEF2F7] md:min-h-[340px]">
+                  <img
+                    src={highlightSrc}
+                    alt={highlight.name}
+                    className="h-full w-full object-cover"
+                    onError={() => setHighlightSrc(FALLBACK_IMAGE)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/55 via-transparent to-transparent" />
+                  <span className="absolute bottom-4 left-4 rounded-md bg-[#C4A35A] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#0F172A]">
+                    Featured Branch
+                  </span>
                 </div>
 
-                {/* info */}
-                <div className="p-8 md:p-10 flex flex-col justify-center gap-6">
+                <div className="flex flex-col justify-center gap-6 p-7 md:p-10">
                   <div>
-                    <p className="text-[#2D5DA8] text-xs font-bold uppercase tracking-wider mb-1">
-                      {franchise.sectionTitle || "Spotlight"}
+                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+                      Spotlight
                     </p>
-                    <h3 className="text-2xl md:text-3xl font-extrabold text-[#1A1A1A]">
+                    <h3 className="text-2xl font-extrabold text-[#0F172A] md:text-3xl">
                       {highlight.name}
                     </h3>
                   </div>
@@ -155,33 +169,28 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                       { icon: FiPhone, value: highlight.contact },
                       { icon: FiMail, value: highlight.email },
                     ].map(({ icon: Icon, value }) => (
-                      <li key={value} className="flex items-center gap-3 text-[#6B7280] text-sm">
-                        <span className="w-8 h-8 rounded-lg bg-[#2D5DA8]/10 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-4 h-4 text-[#2D5DA8]" />
+                      <li key={value} className="flex items-center gap-3 text-sm text-[#475569]">
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/10">
+                          <Icon className="h-4 w-4 text-[#1E4A85]" />
                         </span>
                         {value}
                       </li>
                     ))}
                   </ul>
 
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <motion.button
+                  <div className="flex flex-wrap gap-3 pt-1">
+                    <button
                       type="button"
                       onClick={() => openInquiry({ name: highlight.name })}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold shadow-lg hover:bg-[#1E4A85] transition-all text-sm"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#163A6B]"
                     >
-                      Visit & Enquire <FiExternalLink className="w-4 h-4" />
-                    </motion.button>
-                    <Link href={highlight.detailsUrl || "/userpanel/franchises"}>
-                      <motion.span
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[var(--up-border)] text-[#374151] font-semibold hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] transition-all text-sm cursor-pointer"
-                      >
-                        All Franchises <FiArrowRight className="w-4 h-4" />
-                      </motion.span>
+                      Visit & Enquire <FiExternalLink className="h-4 w-4" />
+                    </button>
+                    <Link
+                      href={highlight.detailsUrl || "/userpanel/franchises"}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] px-5 py-2.5 text-sm font-semibold text-[#334155] transition-colors hover:border-[#1E4A85]/40 hover:text-[#1E4A85]"
+                    >
+                      All Franchises <FiArrowRight className="h-4 w-4" />
                     </Link>
                   </div>
                 </div>
