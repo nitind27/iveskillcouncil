@@ -14,7 +14,7 @@ interface LanguageSwitcherProps {
   className?: string;
 }
 
-export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitcherProps) {
   const {
     locale,
     userState,
@@ -27,6 +27,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     t,
   } = useLanguage();
   const stateOption = getStateLanguageOption(userState);
+  const compact = variant === "admin";
 
   const selectLocale = (next: UiLocale) => {
     if (next === "en") setLocale("en");
@@ -35,17 +36,23 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
 
   return (
     <div className={cn("relative flex items-center gap-1", className)}>
-      <Globe className="h-4 w-4 shrink-0 text-[#1E4A85]" />
+      {!compact && <Globe className="h-4 w-4 shrink-0 text-[#1E4A85]" />}
 
-      <div className="flex overflow-hidden rounded-lg border border-[#E5E7EB] text-xs font-semibold">
+      <div
+        className={cn(
+          "flex overflow-hidden rounded-xl border border-slate-200/90 text-[11px] font-semibold shadow-sm dark:border-white/10",
+          compact && "h-9"
+        )}
+      >
         <button
           type="button"
           onClick={() => selectLocale("en")}
           className={cn(
-            "px-2.5 py-1.5 transition",
+            "px-2.5 transition",
+            compact ? "h-full px-2.5" : "px-2.5 py-1.5",
             locale === "en"
               ? "bg-[#1E4A85] text-white"
-              : "bg-white text-[#1E4A85] hover:bg-slate-50"
+              : "bg-white text-[#1E4A85] hover:bg-slate-50 dark:bg-white/5 dark:text-[#E8D5A3] dark:hover:bg-white/10"
           )}
         >
           EN
@@ -55,10 +62,11 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
           onClick={() => selectLocale(regionalLocale)}
           title={`${stateOption.state} — ${stateOption.englishName}`}
           className={cn(
-            "px-2.5 py-1.5 transition",
+            "max-w-[4.5rem] truncate transition",
+            compact ? "h-full px-2" : "px-2.5 py-1.5",
             locale === regionalLocale
               ? "bg-[#1E4A85] text-white"
-              : "bg-white text-[#1E4A85] hover:bg-slate-50"
+              : "bg-white text-[#1E4A85] hover:bg-slate-50 dark:bg-white/5 dark:text-[#E8D5A3] dark:hover:bg-white/10"
           )}
         >
           {regionalLabel}
@@ -68,7 +76,10 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
       <div className="relative group">
         <button
           type="button"
-          className="inline-flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-slate-100"
+          className={cn(
+            "inline-flex items-center gap-0.5 rounded-xl text-[10px] font-medium text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10",
+            compact ? "h-9 px-1.5" : "px-1.5 py-1.5"
+          )}
           title={
             stateDetecting
               ? t("lang.detectingState", "Detecting your state…")
@@ -79,7 +90,8 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
                   : t("lang.stateAutoDetected", "State auto-detected")
           }
         >
-          <span className="max-w-[88px] truncate">
+          <Globe className={cn("shrink-0 text-[#1E4A85]/70", compact ? "h-3.5 w-3.5" : "hidden")} />
+          <span className={cn("truncate", compact ? "max-w-[56px] hidden xl:inline" : "max-w-[88px]")}>
             {stateDetecting ? "…" : stateOption.state}
           </span>
           <ChevronDown className="h-3 w-3" />

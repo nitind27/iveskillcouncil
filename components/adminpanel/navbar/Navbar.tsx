@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useSWR from "swr";
@@ -22,7 +22,6 @@ import {
   Award,
   MessageCircle,
   Search,
-  ChevronRight,
 } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,6 +63,18 @@ function timeAgo(dateStr: string): string {
   return d.toLocaleDateString();
 }
 
+function formatPageTitle(pathname: string): string {
+  const parts = pathname.split("/").filter(Boolean);
+  if (!parts.length) return "Dashboard";
+  const last = parts[parts.length - 1];
+  if (/^\d+$/.test(last) && parts.length > 1) {
+    return parts[parts.length - 2]
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return last.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const NOTIFICATIONS_SEEN_KEY = "admin-notifications-seen";
 
 function NotificationIcon({ type }: { type: string }) {
@@ -85,7 +96,10 @@ function NotificationIcon({ type }: { type: string }) {
   }
 }
 
-type OpenPanel = null | "notifications" | "profile" | `menu:${string}`;
+type OpenPanel = null | "notifications" | "profile" | "search" | `menu:${string}`;
+
+const iconBtn =
+  "flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/45 hover:bg-[#C4A35A]/8 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]";
 
 export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
@@ -95,8 +109,10 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [quickSearch, setQuickSearch] = useState("");
   const barRef = useRef<HTMLElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const menuSections = getMenuForRole(user?.roleId ?? 1);
+  const pageTitle = useMemo(() => formatPageTitle(pathname), [pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -118,6 +134,12 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   useEffect(() => {
     setOpenPanel(null);
   }, [pathname]);
+
+  useEffect(() => {
+    if (openPanel === "search") {
+      searchInputRef.current?.focus();
+    }
+  }, [openPanel]);
 
   const togglePanel = (panel: OpenPanel) => {
     setOpenPanel((prev) => (prev === panel ? null : panel));
@@ -162,9 +184,6 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const notifications = allNotifications.filter((n) => !seenIds.has(n.id));
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const crumbs = pathname.split("/").filter(Boolean);
-  const pageTitle = crumbs[crumbs.length - 1]?.replace(/-/g, " ") || "dashboard";
-
   const isSectionActive = (section: (typeof menuSections)[0]) =>
     section.items.some(
       (item) =>
@@ -178,44 +197,45 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const isItemActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
-  return (
-    <header
-      ref={barRef}
-      className="sticky top-0 z-[60] w-full shrink-0"
-    >
-      {/* Light bar — contrasts dark sidebar */}
-      <div className="relative border-b border-slate-200/90 bg-[#F7F9FC] dark:border-slate-800 dark:bg-[#0F172A]">
-        {/* Gold accent line */}
-        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
-        {/* Soft navy wash (not solid sidebar navy) */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(30,74,133,0.06)_0%,transparent_40%,rgba(196,163,90,0.05)_100%)] dark:bg-[linear-gradient(90deg,rgba(30,74,133,0.25)_0%,transparent_50%)]" />
+  const initials = useMemo(() => {
+    const name = user?.fullName?.trim() || "U";
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 1).toUpperCase();
+  }, [user?.fullName]);
 
-        <div className="relative flex h-16 items-center justify-between gap-3 px-3 sm:px-5 lg:px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
+  return (
+    <header ref={barRef} className="sticky top-0 z-[60] w-full shrink-0">
+      <div className="relative border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/95">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#C4A35A]/70 to-transparent" />
+
+        <div className="relative flex h-14 items-center justify-between gap-2 px-3 sm:h-[3.75rem] sm:gap-3 sm:px-4 lg:px-5">
+          {/* Left */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onSidebarToggle}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#1E4A85]/15 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/40 hover:bg-[#1E4A85]/5 lg:hidden dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+              className={cn(iconBtn, "lg:hidden")}
               aria-label="Toggle sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="hidden min-w-0 sm:block">
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
-                <span className="font-semibold text-[#1E4A85] dark:text-[#E8D5A3]">
-                  Admin
-                </span>
-                <ChevronRight className="h-3 w-3" />
-                <span className="capitalize">{pageTitle}</span>
-              </div>
-              <p className="mt-0.5 truncate text-[15px] font-bold tracking-tight text-[#0B1F3A] dark:text-white">
-                Control Center
-              </p>
+            <div className="min-w-0">
+              <h1 className="truncate text-[15px] font-bold tracking-tight text-[#0B1F3A] sm:text-base dark:text-white">
+                {pageTitle}
+              </h1>
+              {user?.roleName && (
+                <p className="hidden truncate text-[11px] font-medium text-slate-500 sm:block dark:text-slate-400">
+                  {user.roleName}
+                  {user.franchiseId ? ` · Franchise` : ""}
+                </p>
+              )}
             </div>
 
-            <nav className="ml-1 hidden items-center gap-1 xl:flex">
-              {menuSections.slice(0, 5).map((section) => {
+            {/* Desktop quick nav pills */}
+            <nav className="ml-1 hidden min-w-0 items-center gap-1 2xl:flex">
+              {menuSections.slice(0, 4).map((section) => {
                 if (!section.items.length) return null;
                 const isDropdown = section.items.length > 1;
                 const panelId = `menu:${section.id}` as const;
@@ -233,17 +253,19 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                           onClick={() => togglePanel(panelId)}
                           aria-expanded={isOpen}
                           className={cn(
-                            "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all",
+                            "flex max-w-[9.5rem] items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold transition",
                             active || isOpen
-                              ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-md shadow-[#1E4A85]/25"
-                              : "border-transparent text-[#1E4A85]/80 hover:border-[#1E4A85]/15 hover:bg-white hover:text-[#1E4A85] dark:text-slate-200 dark:hover:bg-white/10"
+                              ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-sm"
+                              : "border-transparent text-[#1E4A85]/75 hover:border-[#1E4A85]/12 hover:bg-[#1E4A85]/5 dark:text-slate-200 dark:hover:bg-white/10"
                           )}
                         >
-                          {Icon && <Icon className="h-3.5 w-3.5" />}
-                          <span>{section.label || firstItem.label}</span>
+                          {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                          <span className="truncate">
+                            {t(`sections.${section.id}`, section.label || firstItem.label)}
+                          </span>
                           <ChevronDown
                             className={cn(
-                              "h-3.5 w-3.5 transition-transform duration-200",
+                              "h-3 w-3 shrink-0 transition",
                               isOpen && "rotate-180"
                             )}
                           />
@@ -251,15 +273,15 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
 
                         {isOpen && (
                           <div
-                            className="absolute left-0 top-[calc(100%+0.5rem)] z-[80] min-w-[260px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                            className="absolute left-0 top-[calc(100%+0.45rem)] z-[80] min-w-[240px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
                             role="menu"
                           >
-                            <div className="border-b border-slate-100 bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-2.5 dark:border-slate-800">
-                              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#E8D5A3]">
+                            <div className="border-b border-slate-100 bg-[#1E4A85] px-3.5 py-2 dark:border-slate-800">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-[#E8D5A3]">
                                 {section.label || firstItem.label}
                               </p>
                             </div>
-                            <div className="max-h-[min(70vh,28rem)] space-y-0.5 overflow-y-auto p-1.5">
+                            <div className="max-h-[min(70vh,26rem)] space-y-0.5 overflow-y-auto p-1.5">
                               {section.items.map((item) => {
                                 const ItemIcon = item.icon;
                                 const itemActive = isItemActive(item.href);
@@ -273,7 +295,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                                       onClick={() => setOpenPanel(null)}
                                       role="menuitem"
                                       className={cn(
-                                        "flex items-center gap-3 rounded-xl px-3 py-2.5 transition",
+                                        "flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition",
                                         itemActive
                                           ? "bg-[#1E4A85]/10 text-[#1E4A85]"
                                           : "text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
@@ -282,46 +304,36 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                                       {ItemIcon && (
                                         <span
                                           className={cn(
-                                            "flex h-8 w-8 items-center justify-center rounded-lg",
+                                            "flex h-7 w-7 items-center justify-center rounded-lg",
                                             itemActive
                                               ? "bg-[#C4A35A] text-[#0B132B]"
-                                              : "bg-[#1E4A85]/8 text-[#1E4A85] dark:bg-white/10 dark:text-[#E8D5A3]"
+                                              : "bg-[#1E4A85]/8 text-[#1E4A85]"
                                           )}
                                         >
-                                          <ItemIcon className="h-4 w-4" />
+                                          <ItemIcon className="h-3.5 w-3.5" />
                                         </span>
                                       )}
-                                      <span className="flex-1 text-sm font-semibold">
-                                        {item.label}
+                                      <span className="flex-1 text-[13px] font-semibold">
+                                        {t(`menu.${item.id}`, item.label)}
                                       </span>
-                                      {item.badge && (
-                                        <span className="rounded-full bg-[#C4A35A]/20 px-2 py-0.5 text-[10px] font-bold text-[#8B6914]">
-                                          {item.badge}
-                                        </span>
-                                      )}
                                     </Link>
                                     {hasChildren && (
-                                      <div className="mb-1 ml-4 space-y-0.5 border-l border-slate-100 pl-2 dark:border-slate-800">
-                                        {item.children!.map((child) => {
-                                          const childActive = isItemActive(
-                                            child.href
-                                          );
-                                          return (
-                                            <Link
-                                              key={child.id}
-                                              href={child.href}
-                                              onClick={() => setOpenPanel(null)}
-                                              className={cn(
-                                                "block rounded-lg px-3 py-2 text-[13px] font-medium transition",
-                                                childActive
-                                                  ? "bg-[#C4A35A]/15 text-[#1E4A85]"
-                                                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5"
-                                              )}
-                                            >
-                                              {child.label}
-                                            </Link>
-                                          );
-                                        })}
+                                      <div className="mb-1 ml-3 space-y-0.5 border-l border-slate-100 pl-2 dark:border-slate-800">
+                                        {item.children!.map((child) => (
+                                          <Link
+                                            key={child.id}
+                                            href={child.href}
+                                            onClick={() => setOpenPanel(null)}
+                                            className={cn(
+                                              "block rounded-lg px-2.5 py-1.5 text-xs font-medium transition",
+                                              isItemActive(child.href)
+                                                ? "bg-[#C4A35A]/15 text-[#1E4A85]"
+                                                : "text-slate-600 hover:bg-slate-50 dark:text-slate-300"
+                                            )}
+                                          >
+                                            {t(`menu.${child.id}`, child.label)}
+                                          </Link>
+                                        ))}
                                       </div>
                                     )}
                                   </div>
@@ -335,10 +347,10 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                       <Link
                         href={firstItem.href}
                         className={cn(
-                          "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all",
+                          "flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold transition",
                           active
-                            ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-md shadow-[#1E4A85]/25"
-                            : "border-transparent text-[#1E4A85]/80 hover:border-[#1E4A85]/15 hover:bg-white hover:text-[#1E4A85] dark:text-slate-200 dark:hover:bg-white/10"
+                            ? "border-[#1E4A85]/20 bg-[#1E4A85] text-white shadow-sm"
+                            : "border-transparent text-[#1E4A85]/75 hover:border-[#1E4A85]/12 hover:bg-[#1E4A85]/5 dark:text-slate-200 dark:hover:bg-white/10"
                         )}
                       >
                         {Icon && <Icon className="h-3.5 w-3.5" />}
@@ -351,23 +363,54 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
             </nav>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <div className="relative hidden md:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          {/* Right actions */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+            {/* Desktop search */}
+            <div className="relative hidden lg:block">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
               <input
                 value={quickSearch}
                 onChange={(e) => setQuickSearch(e.target.value)}
-                placeholder="Quick find…"
-                className="h-10 w-40 rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-52 focus:border-[#C4A35A]/60 focus:ring-2 focus:ring-[#C4A35A]/20 lg:w-48 dark:border-slate-700 dark:bg-white/5 dark:text-white"
+                placeholder={t("nav.search", "Search…")}
+                className="h-9 w-36 rounded-xl border border-slate-200/90 bg-slate-50/80 py-1.5 pl-8 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-48 focus:border-[#1E4A85]/30 focus:bg-white focus:ring-2 focus:ring-[#1E4A85]/10 xl:w-44 dark:border-slate-700 dark:bg-white/5 dark:text-white"
               />
             </div>
 
-            <LanguageSwitcher variant="admin" className="hidden sm:flex" />
+            {/* Mobile/tablet search toggle */}
+            <div className="relative lg:hidden">
+              <button
+                type="button"
+                onClick={() => togglePanel("search")}
+                className={cn(
+                  iconBtn,
+                  openPanel === "search" && "border-[#1E4A85] bg-[#1E4A85] text-white"
+                )}
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              {openPanel === "search" && (
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(18rem,calc(100vw-1.25rem))] rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      ref={searchInputRef}
+                      value={quickSearch}
+                      onChange={(e) => setQuickSearch(e.target.value)}
+                      placeholder={t("nav.search", "Search…")}
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-[#1E4A85]/30 focus:ring-2 focus:ring-[#1E4A85]/10 dark:border-slate-700 dark:bg-white/5 dark:text-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <LanguageSwitcher variant="admin" className="hidden md:flex" />
 
             <button
               type="button"
               onClick={toggleTheme}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/40 hover:bg-[#C4A35A]/10 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+              className={iconBtn}
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
@@ -384,16 +427,16 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 onClick={() => togglePanel("notifications")}
                 aria-expanded={openPanel === "notifications"}
                 className={cn(
-                  "relative flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm transition",
-                  openPanel === "notifications"
-                    ? "border-[#1E4A85] bg-[#1E4A85] text-white"
-                    : "border-slate-200 bg-white text-[#1E4A85] hover:border-[#C4A35A]/40 hover:bg-[#C4A35A]/10 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+                  iconBtn,
+                  "relative",
+                  openPanel === "notifications" &&
+                    "border-[#1E4A85] bg-[#1E4A85] text-white hover:bg-[#1E4A85]"
                 )}
-                aria-label="Notifications"
+                aria-label={t("nav.notifications", "Notifications")}
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C4A35A] px-1 text-[10px] font-bold text-[#0B132B] ring-2 ring-[#F7F9FC] dark:ring-[#0F172A]">
+                  <span className="absolute -right-1 -top-1 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#C4A35A] px-1 text-[9px] font-bold text-[#0B132B] ring-2 ring-white dark:ring-[#0F172A]">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -401,15 +444,17 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
 
               {openPanel === "notifications" && (
                 <div
-                  className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                  className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(20rem,calc(100vw-1.25rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
                   role="dialog"
                   aria-label="Notifications"
                 >
-                  <div className="flex items-center justify-between bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-3 text-white">
+                  <div className="flex items-center justify-between bg-[#1E4A85] px-4 py-3 text-white">
                     <div>
-                      <h3 className="text-sm font-bold">Notifications</h3>
+                      <h3 className="text-sm font-bold">
+                        {t("nav.notifications", "Notifications")}
+                      </h3>
                       <p className="text-[11px] text-white/65">
-                        {unreadCount} unread update{unreadCount === 1 ? "" : "s"}
+                        {unreadCount} unread
                       </p>
                     </div>
                     <button
@@ -420,14 +465,14 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="max-h-[min(70vh,28rem)] overflow-y-auto p-2">
+                  <div className="max-h-[min(70vh,26rem)] overflow-y-auto p-1.5">
                     {notifLoading && !notifications.length ? (
-                      <div className="flex items-center justify-center py-12">
-                        <Loader2 className="h-7 w-7 animate-spin text-[#1E4A85]" />
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#1E4A85]" />
                       </div>
                     ) : notifications.length === 0 ? (
-                      <div className="py-12 text-center text-sm text-slate-500">
-                        No notifications yet
+                      <div className="py-10 text-center text-sm text-slate-500">
+                        {t("nav.noNotifications", "No notifications")}
                       </div>
                     ) : (
                       notifications.map((n) => (
@@ -439,8 +484,8 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                             setOpenPanel(null);
                           }}
                           className={cn(
-                            "mb-1 flex gap-3 rounded-xl p-3 transition hover:bg-slate-50 dark:hover:bg-white/5",
-                            n.unread && "bg-[#1E4A85]/[0.06]"
+                            "mb-0.5 flex gap-2.5 rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-white/5",
+                            n.unread && "bg-[#1E4A85]/[0.05]"
                           )}
                         >
                           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -472,31 +517,30 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 onClick={() => togglePanel("profile")}
                 aria-expanded={openPanel === "profile"}
                 className={cn(
-                  "flex items-center gap-2 rounded-xl border py-1.5 pl-1.5 pr-2.5 shadow-sm transition sm:pr-3",
-                  openPanel === "profile"
-                    ? "border-[#1E4A85] bg-[#1E4A85] text-white"
-                    : "border-slate-200 bg-white text-[#0B1F3A] hover:border-[#C4A35A]/40 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                  "flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white py-1 pl-1 pr-1.5 shadow-sm transition sm:pr-2.5 dark:border-white/10 dark:bg-white/5",
+                  openPanel === "profile" &&
+                    "border-[#1E4A85] bg-[#1E4A85] dark:bg-[#1E4A85]"
                 )}
                 aria-label="User menu"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#C4A35A] to-[#A8893E] text-sm font-bold text-[#0B132B] ring-2 ring-[#C4A35A]/25">
-                  {user?.fullName?.charAt(0).toUpperCase() || "U"}
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#C4A35A] to-[#A8893E] text-[11px] font-bold text-[#0B132B] sm:h-8 sm:w-8 sm:text-xs">
+                  {initials}
                 </span>
-                <div className="hidden text-left lg:block">
+                <div className="hidden min-w-0 text-left xl:block">
                   <p
                     className={cn(
-                      "max-w-[120px] truncate text-xs font-bold leading-tight",
-                      openPanel === "profile" ? "text-white" : "text-[#0B1F3A] dark:text-white"
+                      "max-w-[100px] truncate text-xs font-bold leading-tight",
+                      openPanel === "profile"
+                        ? "text-white"
+                        : "text-[#0B1F3A] dark:text-white"
                     )}
                   >
                     {user?.fullName || "User"}
                   </p>
                   <p
                     className={cn(
-                      "text-[10px]",
-                      openPanel === "profile"
-                        ? "text-[#E8D5A3]"
-                        : "text-[#C4A35A]"
+                      "max-w-[100px] truncate text-[10px]",
+                      openPanel === "profile" ? "text-[#E8D5A3]" : "text-[#C4A35A]"
                     )}
                   >
                     {user?.roleName || "User"}
@@ -504,64 +548,59 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 </div>
                 <ChevronDown
                   className={cn(
-                    "hidden h-3.5 w-3.5 transition lg:block",
-                    openPanel === "profile"
-                      ? "rotate-180 text-white/80"
-                      : "text-slate-400"
+                    "hidden h-3.5 w-3.5 xl:block",
+                    openPanel === "profile" ? "text-white/80" : "text-slate-400"
                   )}
                 />
               </button>
 
               {openPanel === "profile" && (
                 <div
-                  className="absolute right-0 top-[calc(100%+0.5rem)] z-[80] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-12px_rgba(11,31,58,0.35)] dark:border-slate-700 dark:bg-slate-900"
+                  className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
                   role="menu"
                 >
-                  <div className="bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-4 py-3.5 text-white">
+                  <div className="bg-[#1E4A85] px-4 py-3 text-white">
                     <p className="text-sm font-bold">{user?.fullName || "User"}</p>
-                    <p className="truncate text-xs text-white/65">
-                      {user?.email || ""}
-                    </p>
-                    {user?.franchiseId && (
-                      <p className="mt-1 text-[10px] text-[#E8D5A3]">
-                        Franchise #{user.franchiseId}
-                      </p>
-                    )}
+                    <p className="truncate text-xs text-white/65">{user?.email || ""}</p>
                   </div>
-                  <div className="py-1.5">
+                  <div className="space-y-0.5 p-1.5">
+                    {/* Language on mobile inside profile */}
+                    <div className="border-b border-slate-100 px-2 py-2 md:hidden dark:border-slate-800">
+                      <LanguageSwitcher variant="admin" />
+                    </div>
                     <Link
                       href="/profile"
                       onClick={() => setOpenPanel(null)}
                       role="menuitem"
-                      className="mx-1.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                      className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
                     >
                       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E4A85]/10 text-[#1E4A85]">
                         <User className="h-4 w-4" />
                       </span>
-                      Profile
+                      {t("nav.profile", "Profile")}
                     </Link>
                     <Link
                       href="/account"
                       onClick={() => setOpenPanel(null)}
                       role="menuitem"
-                      className="mx-1.5 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
+                      className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
                     >
                       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1E4A85]/10 text-[#1E4A85]">
                         <Settings className="h-4 w-4" />
                       </span>
-                      Account & Password
+                      {t("nav.settings", "Account")}
                     </Link>
                     <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                     <button
                       type="button"
                       onClick={logout}
                       role="menuitem"
-                      className="mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950/30"
                     >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950/40">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
                         <LogOut className="h-4 w-4" />
                       </span>
-                      Logout
+                      {t("nav.logout", "Logout")}
                     </button>
                   </div>
                 </div>
