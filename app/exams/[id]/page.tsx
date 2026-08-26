@@ -53,7 +53,7 @@ interface ExamDetail {
 
 export default function ExamDetailPage() {
   const params = useParams();
-  const id = String(params.id || "");
+  const id = String(params?.id || "");
   const { user } = useAuth();
   const canManage =
     Number(user?.roleId) === ROLES.SUPER_ADMIN || Number(user?.roleId) === ROLES.ADMIN;

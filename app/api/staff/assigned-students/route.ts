@@ -38,7 +38,7 @@ export async function GET() {
       id: s.id.toString(),
       fullName: s.user.fullName,
       email: s.user.email,
-      courseName: s.course.name,
+      courseName: s.course?.name ?? "—",
     }));
 
     return NextResponse.json({ success: true, data: { items } });

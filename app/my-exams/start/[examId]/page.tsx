@@ -30,7 +30,7 @@ declare global {
 export default function ExamIdentityStartPage() {
   const params = useParams();
   const router = useRouter();
-  const examId = String(params.examId || "");
+  const examId = String(params?.examId || "");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);

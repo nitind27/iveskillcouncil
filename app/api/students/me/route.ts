@@ -29,9 +29,9 @@ export async function GET() {
     }
 
     const data = {
-      courseName: student.course.name,
-      courseDescription: student.course.description,
-      durationMonths: student.course.durationMonths,
+      courseName: student.course?.name ?? "—",
+      courseDescription: student.course?.description ?? null,
+      durationMonths: student.course?.durationMonths ?? null,
       franchiseName: student.franchise.name,
       totalFee: Number(student.totalFee),
       paidFee: Number(student.paidFee),

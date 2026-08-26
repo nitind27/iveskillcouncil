@@ -58,7 +58,7 @@ function formatRemain(ms: number) {
 export default function TakeExamPage() {
   const params = useParams();
   const router = useRouter();
-  const attemptId = String(params.attemptId || "");
+  const attemptId = String(params?.attemptId || "");
   const { data, isLoading, mutate } = useSWR<AttemptPayload>(
     attemptId ? `/api/exams/attempts/${attemptId}` : null,
     fetcher,

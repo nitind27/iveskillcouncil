@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       fullName: s.user.fullName,
       email: s.user.email,
       phone: s.user.phone,
-      courseName: s.course.name,
+      courseName: s.course?.name ?? "—",
       franchiseName: s.franchise.name,
       totalFee: Number(s.totalFee),
       paidFee: Number(s.paidFee),

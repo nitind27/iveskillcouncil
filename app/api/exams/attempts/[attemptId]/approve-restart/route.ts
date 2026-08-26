@@ -54,7 +54,7 @@ export async function POST(
         id: updated.id.toString(),
         restartApprovedAt: updated.restartApprovedAt?.toISOString() ?? null,
         remainingSeconds: remaining,
-        studentName: attempt.student.user.fullName,
+        studentName: attempt.student?.user.fullName ?? "Student",
         examTitle: attempt.exam.title,
         answeredCount: attempt._count.answers,
       },

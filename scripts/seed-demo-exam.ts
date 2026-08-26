@@ -74,6 +74,7 @@ async function main() {
           create: {
             franchiseId,
             courseId,
+            studentCode: `STU-DEMO-${Date.now().toString().slice(-8)}`,
             totalFee,
             paidFee: 1000,
             admissionDate: new Date(),
@@ -111,6 +112,7 @@ async function main() {
           userId: studentUser.id,
           franchiseId,
           courseId,
+          studentCode: `STU-DEMO-${studentUser.id.toString()}`,
           totalFee,
           paidFee: 1000,
           admissionDate: new Date(),

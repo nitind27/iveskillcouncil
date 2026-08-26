@@ -58,7 +58,7 @@ function formatRemain(ms: number) {
 
 export default function WalkInTakeExamPage() {
   const params = useParams();
-  const attemptId = String(params.attemptId || "");
+  const attemptId = String(params?.attemptId || "");
   const [accessReady, setAccessReady] = useState(false);
   const [hasKey, setHasKey] = useState(false);
 

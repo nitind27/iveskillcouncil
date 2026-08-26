@@ -94,7 +94,7 @@ export async function getCertificateDisplayData(
   const trainingStart = student.admissionDate;
   const trainingEnd =
     certificate.issueDate ??
-    addMonths(student.admissionDate, student.course.durationMonths || 0);
+    addMonths(student.admissionDate, student.course?.durationMonths || 0);
 
   const franchiseAddress = [franchise.address, franchise.city, franchise.state, franchise.pincode]
     .filter(Boolean)
@@ -113,7 +113,7 @@ export async function getCertificateDisplayData(
     studentName: student.user.fullName,
     parentName: "",
     registrationNumber: `REG-${String(student.id).padStart(6, "0")}`,
-    courseName: student.course.name,
+    courseName: student.course?.name ?? "—",
     grade: gradeInfo?.grade ?? "A",
     gradeLabel: gradeInfo?.label ?? "Very Good",
     marksPercent: gradeInfo?.marks ?? (certificate.status === "ISSUED" ? 90 : null),

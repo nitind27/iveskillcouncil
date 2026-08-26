@@ -41,7 +41,7 @@ interface LinkMeta {
 export default function ExamLinkStartPage() {
   const params = useParams();
   const router = useRouter();
-  const token = String(params.token || "");
+  const token = String(params?.token || "");
 
   const { data, error, isLoading } = useSWR<LinkMeta>(
     token ? `/api/exam-link/${token}` : null,

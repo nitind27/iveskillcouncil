@@ -107,7 +107,7 @@ export async function GET(
           amount: Number(p.amount),
           paymentMode: p.paymentMode,
           status: p.status,
-          paymentDate: p.paymentDate.toISOString(),
+          paymentDate: p.paymentDate?.toISOString() ?? null,
         })),
       },
       "Student profile"

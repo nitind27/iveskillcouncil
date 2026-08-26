@@ -353,7 +353,7 @@ export async function buildDashboardReport(
     id: s.id.toString(),
     fullName: s.user.fullName,
     email: s.user.email,
-    courseName: s.course.name,
+    courseName: s.course?.name ?? "—",
     franchiseName: s.franchise.name,
     status: s.status,
     createdAt: s.createdAt.toISOString(),

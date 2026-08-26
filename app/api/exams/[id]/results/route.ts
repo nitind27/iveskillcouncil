@@ -94,7 +94,7 @@ export async function GET(
         studentEmail: a.student?.user.email ?? "—",
         enrollmentNumber: a.enrollmentNumber,
         photoUrl: a.photoUrl,
-        courseName: a.student?.course.name ?? "—",
+        courseName: a.student?.course?.name ?? "—",
         franchiseName: a.student?.franchise.name ?? "Walk-in link",
         startedAt: a.startedAt.toISOString(),
         submittedAt: a.submittedAt?.toISOString() ?? null,

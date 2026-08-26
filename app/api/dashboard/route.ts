@@ -85,8 +85,8 @@ export async function GET(request: NextRequest) {
           name: student.franchise.name,
         },
         course: {
-          name: student.course.name,
-          durationMonths: student.course.durationMonths,
+          name: student.course?.name ?? "—",
+          durationMonths: student.course?.durationMonths ?? null,
           admissionDate: student.admissionDate.toISOString().split('T')[0],
           status: student.status,
         },

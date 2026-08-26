@@ -231,6 +231,7 @@ async function main() {
         userId: studentUser.id,
         franchiseId: franchise.id,
         courseId: course.id,
+        studentCode: `STU-${studentUser.id.toString().padStart(6, "0")}`,
         totalFee: 15000.00,
         paidFee: 5000.00,
         admissionDate: new Date(),

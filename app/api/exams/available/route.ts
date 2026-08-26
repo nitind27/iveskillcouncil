@@ -21,6 +21,9 @@ export async function GET() {
       include: { course: { select: { id: true, name: true } } },
     });
     if (!student) return errorResponse("Student profile not found", 404);
+    if (!student.courseId) {
+      return successResponse({ items: [] }, "No course assigned");
+    }
 
     const now = new Date();
     const exams = await prisma.exam.findMany({
@@ -50,7 +53,7 @@ export async function GET() {
       // Skip if window ended and no attempt
       if (e.endsAt && e.endsAt < now && !e.attempts.length) continue;
 
-      let attempt = e.attempts[0] ?? null;
+      let attempt: (typeof e.attempts)[number] | null = e.attempts[0] ?? null;
       if (attempt?.status === "IN_PROGRESS") {
         await ensureAttemptNotExpired(attempt.id);
         attempt = await prisma.examAttempt.findUnique({ where: { id: attempt.id } });
@@ -66,7 +69,7 @@ export async function GET() {
         questionCount: e._count.questions,
         requireCamera: e.requireCamera,
         requireFaceDetect: e.requireFaceDetect,
-        courseName: student.course.name,
+        courseName: student.course?.name ?? "—",
         endsAt: e.endsAt?.toISOString() ?? null,
         attempt: attempt
           ? {

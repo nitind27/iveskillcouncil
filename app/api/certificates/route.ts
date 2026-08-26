@@ -22,20 +22,20 @@ function mapCertItem(c: {
   createdAt: Date;
   student: {
     id: bigint;
-    courseId: bigint;
+    courseId: bigint | null;
     user: { fullName: string; email: string };
-    course: { id: bigint; name: string };
+    course: { id: bigint; name: string } | null;
   };
   franchise: { id: bigint; name: string };
 }) {
   return {
     id: c.id.toString(),
     studentId: c.student.id.toString(),
-    courseId: c.student.courseId.toString(),
+    courseId: c.student.courseId?.toString() ?? null,
     franchiseId: c.franchise.id.toString(),
     studentName: c.student.user.fullName,
     studentEmail: c.student.user.email,
-    courseName: c.student.course.name,
+    courseName: c.student.course?.name ?? "—",
     franchiseName: c.franchise.name,
     certificateNumber: c.certificateNumber,
     status: c.status,

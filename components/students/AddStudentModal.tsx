@@ -554,7 +554,7 @@ function FilePick({
         {preview ? "Change file" : "Choose File"}
       </button>
       <input
-        ref={inputRef}
+        ref={inputRef as React.RefObject<HTMLInputElement>}
         type="file"
         accept="image/*"
         className="hidden"

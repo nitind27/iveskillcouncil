@@ -43,7 +43,7 @@ export async function POST(
     return successResponse(
       {
         ...result.data,
-        studentName: attempt.student.user.fullName,
+        studentName: attempt.student?.user.fullName ?? "Student",
         examTitle: attempt.exam.title,
       },
       "Retake allowed — student can start this exam again from My Exams"
