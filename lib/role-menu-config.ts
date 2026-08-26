@@ -13,10 +13,6 @@ import {
   Settings,
   GraduationCap,
   Award,
-  Calendar,
-  Image,
-  FileText,
-  BarChart3,
   IndianRupee,
   ClipboardCheck,
   Users,
@@ -28,6 +24,10 @@ import {
   Tag,
   HelpCircle,
   Megaphone,
+  ClipboardList,
+  BarChart3,
+  Inbox,
+  Printer,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLES } from "./permissions";
@@ -47,116 +47,260 @@ export interface RoleMenuSection {
   items: RoleMenuItem[];
 }
 
-/** Sidebar menu for SUPER_ADMIN */
+/** Sidebar menu for SUPER_ADMIN / ADMIN — grouped by domain */
 const SUPER_ADMIN_MENU: RoleMenuSection[] = [
-  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "management",
-    label: "Management",
+    id: "overview",
+    label: "Overview",
     items: [
-      { id: "manage-plans", label: "Manage Plans", icon: Package, href: "/subscription/plans" },
-      { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
-      { id: "manage-franchises", label: "Manage Franchises", icon: Building2, href: "/franchises" },
-      { id: "franchise-applications", label: "Franchise Applications", icon: FileCheck, href: "/dashboard/franchise-applications" },
-      { id: "all-students", label: "All Students", icon: GraduationCap, href: "/students" },
-      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
-      { id: "approvals", label: "Approvals", icon: FileCheck, href: "/franchises/pending" },
-      { id: "course-enquiries", label: "Course Enquiries", icon: MessageSquare, href: "/dashboard/enquiries" },
-      { id: "franchise-inquiries", label: "Franchise Inquiries", icon: Building2, href: "/dashboard/franchise-inquiries" },
-      { id: "offer-applications", label: "Offer Applications", icon: Tag, href: "/dashboard/offer-applications" },
-      { id: "support-requests", label: "Support Requests", icon: HelpCircle, href: "/dashboard/support" },
-      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
-      { id: "certificate-requests", label: "Certificate Requests", icon: Award, href: "/certificates/requests" },
-      { id: "certificates-print", label: "Print Certificates", icon: Award, href: "/certificates/print" },
-      { id: "certificates-issued", label: "Issued Certificates", icon: Award, href: "/certificates/issued" },
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
-  { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
+  {
+    id: "franchises",
+    label: "Franchises",
+    items: [
+      { id: "manage-franchises", label: "All Franchises", icon: Building2, href: "/franchises" },
+      { id: "approvals", label: "Pending Approvals", icon: FileCheck, href: "/franchises/pending" },
+      {
+        id: "franchise-applications",
+        label: "Applications",
+        icon: ClipboardList,
+        href: "/dashboard/franchise-applications",
+      },
+      {
+        id: "franchise-inquiries",
+        label: "Franchise Inquiries",
+        icon: Inbox,
+        href: "/dashboard/franchise-inquiries",
+      },
+      { id: "manage-plans", label: "Subscription Plans", icon: Package, href: "/subscription/plans" },
+    ],
+  },
+  {
+    id: "academics",
+    label: "Academics",
+    items: [
+      { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
+      { id: "all-students", label: "Students", icon: GraduationCap, href: "/students" },
+      { id: "exams", label: "Exams", icon: ClipboardList, href: "/exams" },
+    ],
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    items: [
+      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
+    ],
+  },
+  {
+    id: "certificates",
+    label: "Certificates",
+    items: [
+      {
+        id: "certificate-requests",
+        label: "Requests",
+        icon: Award,
+        href: "/certificates/requests",
+      },
+      {
+        id: "certificates-print",
+        label: "Print Certificates",
+        icon: Printer,
+        href: "/certificates/print",
+      },
+      {
+        id: "certificates-issued",
+        label: "Issued Certificates",
+        icon: FileCheck,
+        href: "/certificates/issued",
+      },
+    ],
+  },
+  {
+    id: "enquiries",
+    label: "Enquiries & Support",
+    items: [
+      {
+        id: "course-enquiries",
+        label: "Course Enquiries",
+        icon: MessageSquare,
+        href: "/dashboard/enquiries",
+      },
+      {
+        id: "offer-applications",
+        label: "Offer Applications",
+        icon: Tag,
+        href: "/dashboard/offer-applications",
+      },
+      {
+        id: "support-requests",
+        label: "Support Requests",
+        icon: HelpCircle,
+        href: "/dashboard/support",
+      },
+    ],
+  },
   {
     id: "communication",
     label: "Communication",
     items: [
+      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
       { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
     ],
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }],
   },
   {
     id: "settings",
     label: "Settings",
     items: [
-      { id: "userpanel-settings", label: "User Panel Settings", icon: Monitor, href: "/dashboard/userpanel" },
-      { id: "permissions", label: "Role Permissions", icon: Shield, href: "/dashboard/permissions" },
+      {
+        id: "userpanel-settings",
+        label: "User Panel",
+        icon: Monitor,
+        href: "/dashboard/userpanel",
+      },
+      {
+        id: "permissions",
+        label: "Role Permissions",
+        icon: Shield,
+        href: "/dashboard/permissions",
+      },
       { id: "global-settings", label: "Global Settings", icon: Settings, href: "/settings" },
     ],
   },
 ];
 
-/** Sidebar menu for ADMIN (Institute Admin) - Same as SUPER_ADMIN for full functionality */
 const ADMIN_MENU: RoleMenuSection[] = SUPER_ADMIN_MENU;
 
 /** Sidebar menu for SUB_ADMIN (Franchise Owner) */
 const SUB_ADMIN_MENU: RoleMenuSection[] = [
-  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "management",
-    label: "Management",
+    id: "overview",
+    label: "Overview",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    ],
+  },
+  {
+    id: "academics",
+    label: "Academics",
     items: [
       { id: "my-courses", label: "My Courses", icon: BookOpen, href: "/dashboard/franchise-courses" },
       { id: "my-students", label: "My Students", icon: GraduationCap, href: "/students" },
-      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance/manual" },
-      { id: "staff-management", label: "Staff Management", icon: Users, href: "/staff" },
-      { id: "certificate-requests", label: "Certificate Requests", icon: Award, href: "/certificates/requests" },
-      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
     ],
   },
-  { id: "analytics", label: "Analytics", items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }] },
+  {
+    id: "team",
+    label: "Team",
+    items: [
+      { id: "staff-management", label: "Staff", icon: Users, href: "/staff" },
+      { id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" },
+    ],
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    items: [
+      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
+    ],
+  },
+  {
+    id: "certificates",
+    label: "Certificates",
+    items: [
+      {
+        id: "certificate-requests",
+        label: "Certificate Requests",
+        icon: Award,
+        href: "/certificates/requests",
+      },
+    ],
+  },
   {
     id: "communication",
     label: "Communication",
     items: [
+      { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
       { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
     ],
   },
   {
-    id: "settings",
-    label: "Settings",
-    items: [{ id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" }],
+    id: "analytics",
+    label: "Analytics",
+    items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }],
   },
 ];
 
 /** Sidebar menu for STUDENT */
 const STUDENT_MENU: RoleMenuSection[] = [
-  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "management",
-    label: "Management",
+    id: "overview",
+    label: "Overview",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    ],
+  },
+  {
+    id: "learning",
+    label: "Learning",
     items: [
       { id: "my-course", label: "My Course", icon: BookOpen, href: "/my-course" },
-      { id: "my-fees", label: "My Fees", icon: IndianRupee, href: "/my-fees" },
+      { id: "my-exams", label: "My Exams", icon: ClipboardList, href: "/my-exams" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
-      { id: "feedback", label: "Feedback", icon: MessageSquare, href: "/feedback" },
+    ],
+  },
+  {
+    id: "fees",
+    label: "Fees",
+    items: [{ id: "my-fees", label: "My Fees", icon: IndianRupee, href: "/my-fees" }],
+  },
+  {
+    id: "certificates",
+    label: "Certificates",
+    items: [
       { id: "certificate", label: "Certificate", icon: Award, href: "/certificate" },
     ],
   },
-  { id: "analytics", label: "Analytics", items: [] },
-  { id: "settings", label: "Settings", items: [] },
+  {
+    id: "feedback",
+    label: "Feedback",
+    items: [
+      { id: "feedback", label: "Feedback", icon: MessageSquare, href: "/feedback" },
+    ],
+  },
 ];
 
 /** Sidebar menu for STAFF */
 const STAFF_MENU: RoleMenuSection[] = [
-  { id: "dashboard", label: "Dashboard", items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }] },
   {
-    id: "management",
-    label: "Management",
+    id: "overview",
+    label: "Overview",
     items: [
-      { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
-      { id: "assigned-students", label: "Assigned Students", icon: UserCheck, href: "/assigned-students" },
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
-  { id: "analytics", label: "Analytics", items: [] },
   {
-    id: "settings",
-    label: "Settings",
+    id: "work",
+    label: "My Work",
+    items: [
+      { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
+      {
+        id: "assigned-students",
+        label: "Assigned Students",
+        icon: UserCheck,
+        href: "/assigned-students",
+      },
+    ],
+  },
+  {
+    id: "payroll",
+    label: "Payroll",
     items: [{ id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" }],
   },
 ];
@@ -171,40 +315,113 @@ const ROLE_MENU_MAP: Record<number, RoleMenuSection[]> = {
 
 /**
  * Get sidebar menu sections for a role.
- * Used for role-based UI; data isolation is enforced in API layer.
+ * Empty sections are omitted.
  */
 export function getMenuForRole(roleId: number): RoleMenuSection[] {
-  return ROLE_MENU_MAP[roleId] ?? [{
-    id: "main",
-    items: [{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }],
-  }];
+  const sections =
+    ROLE_MENU_MAP[roleId] ??
+    [
+      {
+        id: "main",
+        label: "Overview",
+        items: [
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        ],
+      },
+    ];
+  return sections.filter((s) => s.items.length > 0);
 }
 
 /** Paths allowed per role (for middleware/layout). Empty array = no access. */
 export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
   [ROLES.SUPER_ADMIN]: [
-    "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications",
-    "/dashboard/franchise-applications", "/dashboard/courses",
-    "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
-    "/profile", "/account", "/chat",
+    "/dashboard",
+    "/subscription",
+    "/franchises",
+    "/settings",
+    "/dashboard/permissions",
+    "/dashboard/userpanel",
+    "/dashboard/enquiries",
+    "/dashboard/offer-applications",
+    "/dashboard/support",
+    "/dashboard/franchise-applications",
+    "/dashboard/franchise-inquiries",
+    "/dashboard/courses",
+    "/students",
+    "/certificates",
+    "/fees",
+    "/attendance",
+    "/staff",
+    "/events",
+    "/blogs",
+    "/gallery",
+    "/reports",
+    "/exams",
+    "/announcements",
+    "/profile",
+    "/account",
+    "/chat",
   ],
   [ROLES.ADMIN]: [
-    "/dashboard", "/subscription", "/franchises", "/settings", "/dashboard/permissions", "/dashboard/userpanel", "/dashboard/enquiries", "/dashboard/offer-applications", "/dashboard/support",
-    "/dashboard/franchise-applications", "/dashboard/courses",
-    "/students", "/certificates", "/fees", "/attendance", "/staff", "/events", "/blogs", "/gallery", "/reports",
-    "/profile", "/account", "/chat",
+    "/dashboard",
+    "/subscription",
+    "/franchises",
+    "/settings",
+    "/dashboard/permissions",
+    "/dashboard/userpanel",
+    "/dashboard/enquiries",
+    "/dashboard/offer-applications",
+    "/dashboard/support",
+    "/dashboard/franchise-applications",
+    "/dashboard/franchise-inquiries",
+    "/dashboard/courses",
+    "/students",
+    "/certificates",
+    "/fees",
+    "/attendance",
+    "/staff",
+    "/events",
+    "/blogs",
+    "/gallery",
+    "/reports",
+    "/exams",
+    "/announcements",
+    "/profile",
+    "/account",
+    "/chat",
   ],
   [ROLES.SUB_ADMIN]: [
-    "/dashboard", "/dashboard/franchise-courses", "/students", "/fees", "/attendance", "/staff", "/certificates", "/reports",
-    "/announcements", "/profile", "/account", "/chat",
+    "/dashboard",
+    "/dashboard/franchise-courses",
+    "/students",
+    "/fees",
+    "/attendance",
+    "/staff",
+    "/certificates",
+    "/reports",
+    "/announcements",
+    "/profile",
+    "/account",
+    "/chat",
   ],
   [ROLES.STUDENT]: [
-    "/dashboard", "/my-course", "/my-fees", "/attendance", "/feedback", "/certificate",
-    "/profile", "/account",
+    "/dashboard",
+    "/my-course",
+    "/my-fees",
+    "/attendance",
+    "/feedback",
+    "/certificate",
+    "/my-exams",
+    "/profile",
+    "/account",
   ],
   [ROLES.STAFF]: [
-    "/dashboard", "/attendance", "/assigned-students", "/staff",
-    "/profile", "/account",
+    "/dashboard",
+    "/attendance",
+    "/assigned-students",
+    "/staff",
+    "/profile",
+    "/account",
   ],
 };
 
@@ -213,19 +430,15 @@ export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   const numRoleId = Number(roleId) || 0;
   const normalizedPath = (pathname || "").replace(/\/$/, "").trim() || "/";
 
-  // SUPER_ADMIN and ADMIN have access to everything
   if (numRoleId === ROLES.SUPER_ADMIN || numRoleId === ROLES.ADMIN) return true;
-
-  // Dashboard root is allowed for every authenticated user
   if (normalizedPath === "/dashboard") return true;
 
-  // /admin is a legacy alias → same access as dashboard
   if (normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")) {
     return true;
   }
 
-  // Public/special paths — always allow
   if (normalizedPath.startsWith("/f/")) return true;
+  if (normalizedPath.startsWith("/exam-link")) return true;
   if (normalizedPath.startsWith("/api/")) return true;
   if (normalizedPath === "/403" || normalizedPath === "/404") return true;
 

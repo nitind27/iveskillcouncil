@@ -19,7 +19,6 @@ interface CourseData {
   description: string | null;
   duration: string;
   image: string;
-  fee: number;
   type: string;
   franchise: { id: string; name: string };
 }
@@ -91,13 +90,13 @@ export default function FranchiseCourseDetailPage() {
 
   const handleEnquire = () => {
     router.push(
-      `/userpanel/booking?franchiseId=${course.franchise.id}&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&fee=${course.fee}&enquire=1`
+      `/userpanel/booking?franchiseId=${course.franchise.id}&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&enquire=1`
     );
   };
 
   const handleBook = () => {
     router.push(
-      `/userpanel/booking?franchiseId=${course.franchise.id}&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&fee=${course.fee}`
+      `/userpanel/booking?franchiseId=${course.franchise.id}&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}`
     );
   };
 
@@ -134,9 +133,6 @@ export default function FranchiseCourseDetailPage() {
                 transition={{ duration: 0.6 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent md:bg-gradient-to-r md:from-transparent md:to-black/30" />
-              <span className="absolute top-4 left-4 px-3 py-1.5 rounded-lg bg-[var(--up-accent)]/90 text-white text-sm font-bold">
-                ₹{course.fee.toLocaleString("en-IN")}
-              </span>
             </div>
             <div className="md:col-span-3 p-6 md:p-10 flex flex-col justify-center">
               <span className="inline-flex items-center gap-2 text-[var(--up-accent)] text-sm font-medium mb-2">
@@ -154,9 +150,6 @@ export default function FranchiseCourseDetailPage() {
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--up-bg-muted)] text-[var(--up-text)] text-sm font-medium">
                   <FiClock className="w-4 h-4 text-[var(--up-accent)]" />
                   {course.duration}
-                </span>
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--up-accent)]/10 text-[var(--up-accent)] text-sm font-bold">
-                  ₹{course.fee.toLocaleString("en-IN")} total fee
                 </span>
               </div>
 

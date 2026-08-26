@@ -30,8 +30,18 @@ interface AuthContextType {
   loading: boolean;
   /** True while DB is unreachable — session cookies may still be valid */
   dbUnavailable: boolean;
-  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{
+    ok: boolean;
+    error?: string;
+    requiresOtp?: boolean;
+    email?: string;
+  }>;
   loginWithOtp: (email: string, otp: string) => Promise<boolean>;
+  /** Admin (Institute) only — complete login after password + email OTP */
+  verifyAdminOtp: (email: string, otp: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -173,7 +183,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (
     email: string,
     password: string
-  ): Promise<{ ok: boolean; error?: string }> => {
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    requiresOtp?: boolean;
+    email?: string;
+  }> => {
     try {
       const res = await fetchWithDbRetry(
         "/api/auth/login",
@@ -205,6 +220,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setDbUnavailable(false);
+
+      // Admin (Institute): password OK, wait for email OTP — no session yet
+      if (data.data?.requiresOtp) {
+        return {
+          ok: true,
+          requiresOtp: true,
+          email: data.data.email || email,
+        };
+      }
+
       if (data.data?.user) {
         setUser(data.data.user);
         return { ok: true };
@@ -213,6 +238,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { ok: false, error: "Login failed" };
     } catch (error) {
       console.error("Login error:", error);
+      return { ok: false, error: "Network error. Please try again." };
+    }
+  };
+
+  const verifyAdminOtp = async (
+    email: string,
+    otp: string
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetchWithDbRetry(
+        "/api/auth/verify-admin-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, otp }),
+        },
+        { retries: 4, baseDelayMs: 600 }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        return { ok: false, error: data?.error || "Invalid or expired OTP" };
+      }
+      if (data.data?.user) {
+        setDbUnavailable(false);
+        setUser(data.data.user);
+        return { ok: true };
+      }
+      return { ok: false, error: "Login failed" };
+    } catch (error) {
+      console.error("Admin OTP verify error:", error);
       return { ok: false, error: "Network error. Please try again." };
     }
   };
@@ -266,7 +322,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, dbUnavailable, login, loginWithOtp, logout, refreshUser }}
+      value={{
+        user,
+        loading,
+        dbUnavailable,
+        login,
+        loginWithOtp,
+        verifyAdminOtp,
+        logout,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

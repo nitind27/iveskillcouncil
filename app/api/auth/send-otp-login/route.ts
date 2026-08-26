@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-response";
 import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
 import { sendOtpEmail } from "@/lib/email-otp";
+import { ROLES } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +22,20 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, fullName: true, mustChangePassword: true, status: true },
+      select: { id: true, fullName: true, mustChangePassword: true, status: true, roleId: true },
     });
 
     if (!user) return errorResponse("No account found with this email", 404);
     if (user.status !== "ACTIVE") return errorResponse("Account is not active", 400);
     if (user.mustChangePassword) {
       return errorResponse("First-time setup required. Use 'First time? Set up your account' below.", 400);
+    }
+    // Admin (Institute) must use password → OTP (not OTP-only)
+    if (user.roleId === ROLES.ADMIN) {
+      return errorResponse(
+        "Admin (Institute) must sign in with email & password. An OTP will be emailed after password verification.",
+        400
+      );
     }
 
     const otp = randomBytes(3).readUIntBE(0, 3).toString().padStart(6, "0").slice(0, 6);

@@ -50,7 +50,6 @@ export async function GET(
           duration: `${c.durationMonths} Month${c.durationMonths > 1 ? "s" : ""}`,
           durationMonths: c.durationMonths,
           image: (c as { imageUrl?: string | null }).imageUrl ?? DEFAULT_IMAGES[c.type] ?? DEFAULT_IMAGES.SILVER,
-          fee: Number(fc.customFee),
           type: c.type,
         };
       });

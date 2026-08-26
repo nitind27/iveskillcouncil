@@ -36,7 +36,7 @@ type OverlayFlow = "forgot" | "firstTime" | null;
 function LoginForm() {
   const searchParams = useSearchParams();
   const { logoUrl, siteName, tagline } = useLogoConfig();
-  const { login, loginWithOtp, user, loading: authLoading, dbUnavailable } = useAuth();
+  const { login, loginWithOtp, verifyAdminOtp, user, loading: authLoading, dbUnavailable } = useAuth();
   
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [overlayFlow, setOverlayFlow] = useState<OverlayFlow>(null);
@@ -45,6 +45,11 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+
+  /** Admin (Institute) only: after password, show email OTP step */
+  const [adminOtpStep, setAdminOtpStep] = useState(false);
+  const [adminOtp, setAdminOtp] = useState("");
+  const [adminOtpError, setAdminOtpError] = useState("");
   
   // OTP flow
   const [otp, setOtp] = useState("");
@@ -88,12 +93,21 @@ function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, formLoading, redirectParam]);
 
-  // --- Password Login ---
+  // --- Password Login (Admin Institute → OTP step) ---
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
+    setAdminOtpError("");
     try {
       const result = await login(email, password);
+      if (result.ok && result.requiresOtp) {
+        if (result.email) setEmail(result.email);
+        setAdminOtp("");
+        setAdminOtpStep(true);
+        showSuccess("OTP Sent", "Check your email for the 6-digit code. Valid for 10 minutes.");
+        setFormLoading(false);
+        return;
+      }
       if (result.ok) {
         showSuccess("Login Successful", "Redirecting...");
         setTimeout(() => goAfterLogin(), 1200);
@@ -109,6 +123,60 @@ function LoginForm() {
       showError("Error", error instanceof Error ? error.message : "An unexpected error occurred.");
       setFormLoading(false);
     }
+  };
+
+  const handleAdminOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = adminOtp.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setAdminOtpError("Enter the 6-digit OTP from your email.");
+      return;
+    }
+    setFormLoading(true);
+    setAdminOtpError("");
+    try {
+      const result = await verifyAdminOtp(email.trim().toLowerCase(), code);
+      if (result.ok) {
+        showSuccess("Login Successful", "Redirecting...");
+        setTimeout(() => goAfterLogin(), 1200);
+      } else {
+        setAdminOtpError(result.error || "Invalid or expired OTP");
+        showError("Invalid OTP", result.error || "Request a new code by signing in again.");
+        setFormLoading(false);
+      }
+    } catch {
+      setAdminOtpError("Network error. Please try again.");
+      showError("Error", "Network error");
+      setFormLoading(false);
+    }
+  };
+
+  const handleAdminOtpResend = async () => {
+    if (!email.trim() || !password) {
+      showError("Resend", "Go back and enter your password again to resend OTP.");
+      return;
+    }
+    setFormLoading(true);
+    setAdminOtpError("");
+    try {
+      const result = await login(email, password);
+      if (result.ok && result.requiresOtp) {
+        setAdminOtp("");
+        showSuccess("OTP Sent", "A new code was sent to your email.");
+      } else if (!result.ok) {
+        showError("Error", result.error || "Could not resend OTP");
+      }
+    } catch {
+      showError("Error", "Network error");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const backFromAdminOtp = () => {
+    setAdminOtpStep(false);
+    setAdminOtp("");
+    setAdminOtpError("");
   };
 
   // --- OTP Login ---
@@ -412,35 +480,57 @@ function LoginForm() {
               {/* Header */}
               {!isOverlayOpen ? (
                 <>
-                  <h2 className="text-2xl font-extrabold text-white sm:text-[1.65rem]">Sign in</h2>
-                  <p className="mt-1 text-sm text-white/50">Welcome back — enter your credentials</p>
+                  {adminOtpStep ? (
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C4A35A]/15 text-[#C4A35A]">
+                        <Smartphone className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]">
+                          Admin (Institute)
+                        </p>
+                        <h2 className="mt-0.5 text-2xl font-extrabold text-white sm:text-[1.65rem]">
+                          Enter OTP
+                        </h2>
+                        <p className="mt-1 text-sm text-white/50">
+                          We sent a 6-digit code to{" "}
+                          <span className="font-medium text-white/80">{email}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-extrabold text-white sm:text-[1.65rem]">Sign in</h2>
+                      <p className="mt-1 text-sm text-white/50">Welcome back — enter your credentials</p>
 
-                  <div className="mt-6 flex rounded-xl bg-white/[0.06] p-1">
-                    <button
-                      type="button"
-                      onClick={() => { setLoginMethod("password"); setOtpSent(false); setOtp(""); setOtpError(""); }}
-                      className={cn(
-                        "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
-                        loginMethod === "password"
-                          ? "bg-white text-[#0B132B] shadow-sm"
-                          : "text-white/55 hover:text-white/85"
-                      )}
-                    >
-                      <Lock className="h-4 w-4" /> Password
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setLoginMethod("otp"); setOtpSent(false); setOtp(""); setOtpError(""); }}
-                      className={cn(
-                        "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
-                        loginMethod === "otp"
-                          ? "bg-white text-[#0B132B] shadow-sm"
-                          : "text-white/55 hover:text-white/85"
-                      )}
-                    >
-                      <Smartphone className="h-4 w-4" /> OTP
-                    </button>
-                  </div>
+                      <div className="mt-6 flex rounded-xl bg-white/[0.06] p-1">
+                        <button
+                          type="button"
+                          onClick={() => { setLoginMethod("password"); setOtpSent(false); setOtp(""); setOtpError(""); }}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
+                            loginMethod === "password"
+                              ? "bg-white text-[#0B132B] shadow-sm"
+                              : "text-white/55 hover:text-white/85"
+                          )}
+                        >
+                          <Lock className="h-4 w-4" /> Password
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setLoginMethod("otp"); setOtpSent(false); setOtp(""); setOtpError(""); }}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-all",
+                            loginMethod === "otp"
+                              ? "bg-white text-[#0B132B] shadow-sm"
+                              : "text-white/55 hover:text-white/85"
+                          )}
+                        >
+                          <Smartphone className="h-4 w-4" /> OTP
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : overlayFlow === "forgot" ? (
                 <div className="flex items-start justify-between gap-3">
@@ -495,7 +585,79 @@ function LoginForm() {
               )}
 
           <AnimatePresence mode="wait">
-            {!isOverlayOpen && loginMethod === "password" && (
+            {!isOverlayOpen && adminOtpStep && (
+              <motion.form
+                key="admin-otp"
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                onSubmit={handleAdminOtpVerify}
+                className="mt-6 space-y-5"
+              >
+                <div className="rounded-xl border border-[#C4A35A]/25 bg-[#C4A35A]/10 px-3.5 py-3 text-xs leading-relaxed text-[#E8D5A3]">
+                  Password verified. Enter the OTP emailed to your Admin (Institute) account to finish login.
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-white/55">6-digit OTP</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={adminOtp}
+                    onChange={(e) => {
+                      setAdminOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setAdminOtpError("");
+                    }}
+                    required
+                    placeholder="••••••"
+                    className="w-full rounded-xl border border-white/10 bg-white py-3.5 text-center font-mono text-2xl font-bold tracking-[0.4em] text-[#0F172A] outline-none transition-all focus:border-[#C4A35A]/50 focus:ring-2 focus:ring-[#C4A35A]/20"
+                  />
+                  {adminOtpError && <p className="text-sm text-red-400">{adminOtpError}</p>}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={formLoading || adminOtp.length !== 6}
+                  className={cn(
+                    "login-btn-gold mt-1 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-[#0B132B] transition-all",
+                    (formLoading || adminOtp.length !== 6) && "cursor-not-allowed opacity-70"
+                  )}
+                >
+                  {formLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Verifying...
+                    </>
+                  ) : (
+                    <>
+                      Verify &amp; sign in
+                      <ChevronRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={backFromAdminOtp}
+                    className="text-sm font-semibold text-white/50 hover:text-white/85"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    disabled={formLoading}
+                    onClick={handleAdminOtpResend}
+                    className="text-sm font-semibold text-[#C4A35A] hover:text-[#D4B86A] disabled:opacity-60"
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              </motion.form>
+            )}
+
+            {!isOverlayOpen && !adminOtpStep && loginMethod === "password" && (
               <motion.form
                 key="password"
                 initial={{ opacity: 0, x: -10 }}
@@ -568,7 +730,7 @@ function LoginForm() {
               </motion.form>
             )}
 
-            {loginMethod === "otp" && !isOverlayOpen && (
+            {loginMethod === "otp" && !isOverlayOpen && !adminOtpStep && (
               <motion.div key="otp" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="mt-6 space-y-5">
                 {!otpSent ? (
                   <form onSubmit={handleSendOtpLogin} className="space-y-5">
@@ -797,7 +959,7 @@ function LoginForm() {
             </motion.div>
           )}
 
-          {!isOverlayOpen && (
+          {!isOverlayOpen && !adminOtpStep && (
             <>
               <p className="mt-5 text-center text-sm text-white/45">
                 New here?{" "}

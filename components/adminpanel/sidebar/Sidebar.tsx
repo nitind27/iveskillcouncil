@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronRight,
   ChevronDown,
@@ -40,12 +40,13 @@ export default function Sidebar({
   user,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const pn = pathname || "";
   const { logoUrl, siteName } = useLogoConfig();
   const { t } = useLanguage();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const roleId = user?.roleId ?? 0;
-  const menuSectionsFiltered = getMenuForRole(roleId);
+  const menuSectionsFiltered = useMemo(() => getMenuForRole(roleId), [roleId]);
 
   useEffect(() => {
     const activePaths = new Set<string>();
@@ -59,8 +60,20 @@ export default function Sidebar({
         }
       });
     });
-    setExpandedItems(activePaths);
+    setExpandedItems((prev) => {
+      const same =
+        prev.size === activePaths.size &&
+        [...activePaths].every((id) => prev.has(id));
+      return same ? prev : activePaths;
+    });
   }, [pn, menuSectionsFiltered]);
+
+  const goTo = (href: string) => {
+    if (isMobileOpen) onMobileClose();
+    if (href && href !== "#" && href !== pn) {
+      router.push(href);
+    }
+  };
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -73,6 +86,7 @@ export default function Sidebar({
 
   const isActive = (href?: string) => {
     if (!href) return false;
+    if (href === "/dashboard") return pn === "/dashboard";
     return pn === href || pn.startsWith(href + "/");
   };
 
@@ -89,47 +103,47 @@ export default function Sidebar({
             type="button"
             onClick={() => !isCollapsed && toggleExpanded(item.id)}
             className={cn(
-              "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-              "text-white/75 hover:bg-white/10 hover:text-white",
+              "group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
+              "text-white/70 hover:bg-white/10 hover:text-white",
               active && "bg-white/10 text-white",
               isCollapsed && "justify-center px-2",
-              level > 0 && "pl-6"
+              level > 0 && "pl-5"
             )}
             title={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
           >
             {active && (
-              <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
+              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
             )}
             <span
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition",
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition",
                 active
-                  ? "bg-[#C4A35A] text-[#0B132B] shadow-md shadow-[#C4A35A]/30"
-                  : "bg-white/10 text-[#E8D5A3] group-hover:bg-white/15"
+                  ? "bg-[#C4A35A] text-[#0B132B]"
+                  : "bg-white/8 text-[#E8D5A3] group-hover:bg-white/12"
               )}
             >
-              <Icon className={cn(isCollapsed ? "h-4 w-4" : "h-3.5 w-3.5")} />
+              <Icon className="h-3.5 w-3.5" />
             </span>
             {!isCollapsed && (
               <>
-                <span className="flex-1 text-left text-[13px] font-semibold">
+                <span className="flex-1 text-left text-[12.5px] font-medium">
                   {t(`menu.${item.id}`, item.label)}
                 </span>
                 {item.badge && (
-                  <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
+                  <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[9px] font-bold text-[#0B132B]">
                     {item.badge}
                   </span>
                 )}
                 {isExpanded ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-white/50" />
+                  <ChevronDown className="h-3.5 w-3.5 text-white/45" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-white/50" />
+                  <ChevronRight className="h-3.5 w-3.5 text-white/45" />
                 )}
               </>
             )}
           </button>
           {!isCollapsed && isExpanded && (
-            <div className="mt-1 ml-4 space-y-0.5 border-l border-white/10 pl-3">
+            <div className="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-2.5">
               {item.children!.map((child) => renderMenuItem(child, level + 1))}
             </div>
           )}
@@ -141,36 +155,40 @@ export default function Sidebar({
       <Link
         key={item.id}
         href={item.href || "#"}
-        onClick={() => {
-          if (isMobileOpen) onMobileClose();
+        prefetch
+        onClick={(e) => {
+          e.preventDefault();
+          goTo(item.href || "/dashboard");
         }}
         className={cn(
-          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-          "text-white/75 hover:bg-white/10 hover:text-white",
-          active && "bg-gradient-to-r from-[#C4A35A]/25 to-transparent text-white",
+          "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
+          "text-white/70 hover:bg-white/10 hover:text-white",
+          active && "bg-[#C4A35A]/15 text-white",
           isCollapsed && "justify-center px-2",
-          level > 0 && "pl-6"
+          level > 0 && "pl-5"
         )}
         title={isCollapsed ? item.label : undefined}
       >
         {active && (
-          <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#C4A35A] shadow-[0_0_12px_rgba(196,163,90,0.6)]" />
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
         )}
         <span
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition",
             active
-              ? "bg-[#C4A35A] text-[#0B132B] shadow-md shadow-[#C4A35A]/35"
-              : "bg-white/10 text-[#E8D5A3] group-hover:bg-white/15"
+              ? "bg-[#C4A35A] text-[#0B132B] shadow-sm shadow-[#C4A35A]/30"
+              : "bg-white/[0.07] text-[#E8D5A3] group-hover:bg-white/12"
           )}
         >
-          <Icon className={cn(isCollapsed ? "h-4 w-4" : "h-3.5 w-3.5")} />
+          <Icon className="h-3.5 w-3.5" />
         </span>
         {!isCollapsed && (
           <>
-            <span className="flex-1 text-[13px] font-semibold">{t(`menu.${item.id}`, item.label)}</span>
+            <span className="flex-1 truncate text-[12.5px] font-medium">
+              {t(`menu.${item.id}`, item.label)}
+            </span>
             {item.badge && (
-              <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[10px] font-bold text-[#0B132B]">
+              <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[9px] font-bold text-[#0B132B]">
                 {item.badge}
               </span>
             )}
@@ -195,11 +213,11 @@ export default function Sidebar({
           "bg-gradient-to-b from-[#0B1F3A] via-[#122B4D] to-[#0F2744]",
           "border-r border-white/10 shadow-xl shadow-black/20",
           "transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-[4.5rem]" : "w-64",
+          isCollapsed ? "w-[4.5rem]" : "w-[17rem]",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(196,163,90,0.12),transparent_50%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(196,163,90,0.1),transparent_50%)]" />
 
         <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3">
           {!isCollapsed && (
@@ -266,27 +284,32 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="relative flex-1 space-y-5 overflow-y-auto p-3 sidebar-scrollbar">
-          {menuSectionsFiltered.map((section) => (
-            <div key={section.id} className="space-y-1">
-              {!isCollapsed && section.label && (
-                <h3 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]/80">
-                  {t(`sections.${section.id}`, section.label)}
-                </h3>
-              )}
-              {isCollapsed && (
-                <div className="mx-auto mb-2 h-px w-6 bg-white/10" />
-              )}
-              <div className="space-y-0.5">
-                {section.items.map((item) => renderMenuItem(item))}
+        <nav className="relative flex-1 overflow-y-auto px-2.5 py-3 sidebar-scrollbar">
+          <div className="space-y-4">
+            {menuSectionsFiltered.map((section, idx) => (
+              <div key={section.id}>
+                {!isCollapsed && section.label ? (
+                  <div className="mb-1.5 flex items-center gap-2 px-2.5">
+                    <h3 className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]/90">
+                      {t(`sections.${section.id}`, section.label)}
+                    </h3>
+                    <div className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
+                  </div>
+                ) : (
+                  isCollapsed &&
+                  idx > 0 && <div className="mx-auto mb-2 h-px w-7 bg-white/15" />
+                )}
+                <div className="space-y-0.5">
+                  {section.items.map((item) => renderMenuItem(item))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </nav>
 
-        <div className="relative border-t border-white/10 p-3">
+        <div className="relative shrink-0 border-t border-white/10 p-2.5">
           {!isCollapsed ? (
-            <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+            <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
               <p className="truncate text-xs font-bold text-white">
                 {user?.fullName || siteName || "IVESDC"}
               </p>

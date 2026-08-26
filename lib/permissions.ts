@@ -124,6 +124,7 @@ export const MENU_PERMISSION_MAP: Record<string, PermissionKey> = {
 export const ROUTE_PERMISSION_MAP: Record<string, PermissionKey> = {
   "/dashboard/permissions": "permissions.manage",
   "/dashboard/userpanel": "userpanel.manage",
+  "/dashboard/courses": "courses.manage",
   "/dashboard": "dashboard.view",
   "/analytics": "analytics.view",
   "/subscription/plans": "subscription.plans.view",

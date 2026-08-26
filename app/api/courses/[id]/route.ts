@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
-import { parseHighlights, serializeCourse, slugifyCourseName } from "@/lib/course-utils";
+import {
+  coursePayloadFromBody,
+  serializeCourse,
+  slugifyCourseName,
+} from "@/lib/course-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +43,13 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     }
 
     const body = await request.json();
+    const payload = coursePayloadFromBody(body);
     const data: Record<string, unknown> = {};
 
-    if (body.name != null) data.name = String(body.name).trim();
+    for (const [key, value] of Object.entries(payload)) {
+      if (value !== undefined) data[key] = value;
+    }
+
     if (body.slug !== undefined) {
       const s = body.slug ? slugifyCourseName(String(body.slug)) : null;
       if (s && s !== existing.slug) {
@@ -52,32 +60,10 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       }
       data.slug = s;
     }
-    if (body.description !== undefined) {
-      data.description = body.description ? String(body.description).trim() : null;
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ success: false, error: "No fields to update" }, { status: 400 });
     }
-    if (body.shortDescription !== undefined) {
-      data.shortDescription = body.shortDescription
-        ? String(body.shortDescription).trim()
-        : null;
-    }
-    if (body.imageUrl !== undefined) {
-      data.imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null;
-    }
-    if (body.type != null) data.type = body.type;
-    if (body.category !== undefined) {
-      data.category = body.category ? String(body.category).trim() : null;
-    }
-    if (body.level != null) data.level = body.level;
-    if (body.mode != null) data.mode = body.mode;
-    if (body.baseFee != null) data.baseFee = Number(body.baseFee);
-    if (body.durationMonths != null) data.durationMonths = Number(body.durationMonths);
-    if (body.lectures != null) data.lectures = Number(body.lectures) || 0;
-    if (body.videos != null) data.videos = Number(body.videos) || 0;
-    if (body.notes !== undefined) {
-      data.notes = body.notes ? String(body.notes).trim() : null;
-    }
-    if (body.highlights !== undefined) data.highlights = parseHighlights(body.highlights);
-    if (body.status != null) data.status = body.status;
 
     const course = await prisma.course.update({
       where: { id: courseId },
@@ -119,12 +105,12 @@ export async function DELETE(_request: NextRequest, { params }: Ctx) {
       });
       return NextResponse.json({
         success: true,
-        message: "Course deactivated (linked students/franchises exist)",
+        message: "Course has linked records — marked inactive instead of deleted.",
       });
     }
 
     await prisma.course.delete({ where: { id: courseId } });
-    return NextResponse.json({ success: true, message: "Course deleted" });
+    return NextResponse.json({ success: true, message: "Course deleted." });
   } catch (e) {
     console.error("DELETE /api/courses/[id]", e);
     return NextResponse.json({ success: false, error: "Failed to delete course" }, { status: 500 });

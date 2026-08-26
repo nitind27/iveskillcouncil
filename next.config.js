@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
+  transpilePackages: ["@mediapipe/tasks-vision"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },

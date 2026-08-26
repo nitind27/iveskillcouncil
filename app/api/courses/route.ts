@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
-import { parseHighlights, serializeCourse, slugifyCourseName } from "@/lib/course-utils";
+import {
+  coursePayloadFromBody,
+  serializeCourse,
+  slugifyCourseName,
+} from "@/lib/course-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +46,7 @@ export async function GET(request: NextRequest) {
           franchiseId: null,
           id: { notIn: assignedIds },
         },
-        orderBy: { name: "asc" },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       });
     } else {
       const where: {
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
       }
       courses = await prisma.course.findMany({
         where,
-        orderBy: { name: "asc" },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       });
     }
 
@@ -78,28 +82,43 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      name,
-      slug,
-      description,
-      shortDescription,
-      imageUrl,
-      type,
-      category,
-      level,
-      mode,
-      baseFee,
-      durationMonths,
-      lectures,
-      videos,
-      notes,
-      highlights,
-      status,
-    } = body;
+    const name = body.name;
+    const type = body.type;
+    const baseFee = body.baseFee;
+    const hasDuration =
+      body.durationMonths != null ||
+      (body.durationValue != null && body.durationUnit);
 
-    if (!name?.trim() || !type || baseFee == null || durationMonths == null) {
+    if (!name?.trim() || !type || baseFee == null || !hasDuration) {
       return NextResponse.json(
-        { success: false, error: "name, type, baseFee, durationMonths required" },
+        {
+          success: false,
+          error: "Course title, type, price and duration are required",
+        },
+        { status: 400 }
+      );
+    }
+    if (!body.description?.toString().trim()) {
+      return NextResponse.json(
+        { success: false, error: "Description is required" },
+        { status: 400 }
+      );
+    }
+    if (!body.syllabus?.toString().trim()) {
+      return NextResponse.json(
+        { success: false, error: "Syllabus is required" },
+        { status: 400 }
+      );
+    }
+    if (body.lectures == null || Number(body.lectures) < 1) {
+      return NextResponse.json(
+        { success: false, error: "Total number of lectures is required" },
+        { status: 400 }
+      );
+    }
+    if (!body.certificateType) {
+      return NextResponse.json(
+        { success: false, error: "Certificate type is required" },
         { status: 400 }
       );
     }
@@ -108,10 +127,21 @@ export async function POST(request: NextRequest) {
     const franchiseId =
       roleId === ROLES.SUB_ADMIN && user.franchiseId ? BigInt(user.franchiseId) : null;
 
-    let finalSlug = slug ? slugifyCourseName(String(slug)) : slugifyCourseName(String(name));
+    let finalSlug = body.slug
+      ? slugifyCourseName(String(body.slug))
+      : slugifyCourseName(String(name));
     if (finalSlug) {
       const taken = await prisma.course.findUnique({ where: { slug: finalSlug } });
       if (taken) finalSlug = `${finalSlug}-${Date.now().toString(36)}`;
+    }
+
+    const payload = coursePayloadFromBody(body);
+    const tags = Array.isArray(payload.tags) ? payload.tags : [];
+    if (tags.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "At least one tag is required" },
+        { status: 400 }
+      );
     }
 
     const course = await prisma.course.create({
@@ -119,20 +149,39 @@ export async function POST(request: NextRequest) {
         franchiseId,
         name: String(name).trim(),
         slug: finalSlug || null,
-        description: description ? String(description).trim() : null,
-        shortDescription: shortDescription ? String(shortDescription).trim() : null,
-        imageUrl: imageUrl ? String(imageUrl).trim() : null,
+        description: payload.description as string | null,
+        shortDescription: (payload.shortDescription as string | null) ?? null,
+        imageUrl: (payload.imageUrl as string | null) ?? null,
         type,
-        category: category ? String(category).trim() : null,
-        level: level || "BEGINNER",
-        mode: mode || "OFFLINE",
+        category: (payload.category as string | null) ?? null,
+        level: ((payload.level as string) || "BEGINNER") as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
+        mode: ((payload.mode as string) || "OFFLINE") as "OFFLINE" | "ONLINE" | "HYBRID",
         baseFee: Number(baseFee),
-        durationMonths: Number(durationMonths),
-        lectures: Number(lectures) || 0,
-        videos: Number(videos) || 0,
-        notes: notes ? String(notes).trim() : null,
-        highlights: parseHighlights(highlights),
-        status: status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+        durationMonths: Number(payload.durationMonths) || 1,
+        lectures: Number(payload.lectures) || 0,
+        videos: Number(payload.videos) || 0,
+        notes: (payload.notes as string | null) ?? null,
+        highlights: (payload.highlights as string | null) ?? null,
+        status: payload.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+        awardCategory: (payload.awardCategory as string | null) ?? null,
+        certificateType: (payload.certificateType as string | null) ?? "CERTIFICATE",
+        coursePreposition: (payload.coursePreposition as string | null) ?? "In",
+        mrp: payload.mrp as number | null | undefined,
+        displayOrder: Number(payload.displayOrder) || 0,
+        durationValue: payload.durationValue as number | undefined,
+        durationUnit: (payload.durationUnit as string | undefined) ?? "Months",
+        previewVideoUrl: (payload.previewVideoUrl as string | null) ?? null,
+        practicalMarks: payload.practicalMarks as number | null | undefined,
+        objectiveMarks: payload.objectiveMarks as number | null | undefined,
+        examFeesByPlan: payload.examFeesByPlan ?? [],
+        syllabus: (payload.syllabus as string | null) ?? null,
+        eligibility: (payload.eligibility as string | null) ?? null,
+        certificateSubject: (payload.certificateSubject as string | null) ?? null,
+        tags,
+        isPopular: Boolean(payload.isPopular),
+        isRecommended: Boolean(payload.isRecommended),
+        isMrpVisible: payload.isMrpVisible !== false,
+        hideExamResult: Boolean(payload.hideExamResult),
       },
     });
 

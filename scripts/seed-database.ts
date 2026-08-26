@@ -83,10 +83,10 @@ async function main() {
 
     // 3. Create Super Admin User
     console.log('📝 Creating super admin user...');
-    const superAdminPassword = await bcrypt.hash('admin123', 10);
+    const superAdminPassword = await bcrypt.hash('NP@@7359', 10);
     
     const superAdmin = await prisma.user.upsert({
-      where: { email: 'admin@example.com' },
+      where: { email: 'codeatinfotech@gmail.com' },
       update: {
         password: superAdminPassword,
         status: 'ACTIVE',
@@ -94,7 +94,7 @@ async function main() {
       create: {
         roleId: 1, // SUPER_ADMIN
         fullName: 'Super Admin',
-        email: 'admin@example.com',
+        email: 'codeatinfotech@gmail.com',
         password: superAdminPassword,
         status: 'ACTIVE',
       },
@@ -103,10 +103,10 @@ async function main() {
 
     // 4. Create Regular Admin User
     console.log('📝 Creating admin user...');
-    const adminPassword = await bcrypt.hash('admin123', 10);
+    const adminPassword = await bcrypt.hash('12345678', 10);
     
     const admin = await prisma.user.upsert({
-      where: { email: 'institute@example.com' },
+      where: { email: 'official.iveskillcouncil@gmail.com' },
       update: {
         password: adminPassword,
         status: 'ACTIVE',
@@ -114,7 +114,7 @@ async function main() {
       create: {
         roleId: 2, // ADMIN
         fullName: 'Institute Admin',
-        email: 'institute@example.com',
+        email: 'official.iveskillcouncil@gmail.com',
         password: adminPassword,
         status: 'ACTIVE',
       },
@@ -283,20 +283,11 @@ async function main() {
     console.log('📋 Login Credentials:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Super Admin:');
-    console.log('  Email: admin@example.com');
-    console.log('  Password: admin123');
-    console.log('\nAdmin:');
-    console.log('  Email: institute@example.com');
-    console.log('  Password: admin123');
-    console.log('\nFranchise Owner (Sub Admin):');
-    console.log('  Email: franchise@example.com');
-    console.log('  Password: franchise123');
-    console.log('\nStudent:');
-    console.log('  Email: student@example.com');
-    console.log('  Password: student123');
-    console.log('\nStaff:');
-    console.log('  Email: staff@example.com');
-    console.log('  Password: staff123');
+    console.log('  Email: codeatinfotech@gmail.com');
+    console.log('  Password: NP@@7359');
+    console.log('\nAdmin (Institute):');
+    console.log('  Email: official.iveskillcouncil@gmail.com');
+    console.log('  Password: 12345678');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {

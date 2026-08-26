@@ -63,7 +63,10 @@
     "my-fees": "મારી ફી",
     "certificates": "પ્રમાણપત્ર",
     "feedback": "પ્રતિસાદ",
-    "assigned-students": "સોંપેલા વિદ્યાર્થી"
+    "assigned-students": "સોંપેલા વિદ્યાર્થી",
+    "exams": "પરીક્ષા",
+    "my-exams": "મારી પરીક્ષાઓ",
+    "certificate": "પ્રમાણપત્ર"
   },
   "common": {
     "save": "સાચવો",

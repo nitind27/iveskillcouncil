@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import useSWR from "swr";
 import { useSearchParams } from "next/navigation";
@@ -32,17 +33,23 @@ import { fetcher } from "@/lib/fetcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
 import { AddStudentModal } from "@/components/students/AddStudentModal";
+import { AssignCourseModal } from "@/components/students/AssignCourseModal";
 import { cn } from "@/lib/utils";
+
+/** Above ChatWidget (z-400) and admin chrome so drawer is never clipped/covered. */
+const STUDENT_DRAWER_Z = 10050;
 
 interface StudentItem {
   id: string;
+  studentCode?: string;
   fullName: string;
   email: string;
   phone: string | null;
   franchiseId?: string;
   franchiseName: string;
-  courseId?: string;
-  courseName: string;
+  courseId?: string | null;
+  courseName: string | null;
+  courseAssigned?: boolean;
   totalFee: number;
   paidFee: number;
   pendingFee: number;
@@ -125,11 +132,26 @@ export default function StudentsPage() {
     useState<(typeof STATUS_FILTERS)[number]>("ALL");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selected, setSelected] = useState<StudentItem | null>(null);
+  const [assignStudent, setAssignStudent] = useState<{
+    id: string;
+    studentCode: string;
+    fullName: string;
+    franchiseId?: string;
+  } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [selected]);
 
   useEffect(() => {
     setPage(1);
@@ -429,6 +451,11 @@ export default function StudentsPage() {
                           </span>
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground">{s.fullName}</p>
+                            {s.studentCode && (
+                              <p className="mt-0.5 font-mono text-[10px] font-bold text-[#C4A35A]">
+                                {s.studentCode}
+                              </p>
+                            )}
                             <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
                               <Mail className="h-3 w-3 shrink-0" />
                               {s.email}
@@ -458,10 +485,28 @@ export default function StudentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium">
-                          <BookOpen className="h-3.5 w-3.5 text-[#C4A35A]" />
-                          {s.courseName}
-                        </span>
+                        {s.courseName ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                            <BookOpen className="h-3.5 w-3.5 text-[#C4A35A]" />
+                            {s.courseName}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAssignStudent({
+                                id: s.id,
+                                studentCode: s.studentCode || s.id,
+                                fullName: s.fullName,
+                                franchiseId: s.franchiseId,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100"
+                          >
+                            <BookOpen className="h-3 w-3" />
+                            Assign course
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-right sm:text-left">
@@ -609,147 +654,173 @@ export default function StudentsPage() {
         )}
       </div>
 
-      <AnimatePresence>
-        {selected && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelected(null)}
-              className="fixed inset-0 z-50 bg-black/45 backdrop-blur-sm"
-            />
-            <motion.aside
-              key="drawer"
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 32 }}
-              className="fixed bottom-0 right-0 top-0 z-[51] flex w-full max-w-lg flex-col overflow-hidden border-l border-[#1E4A85]/15 bg-background shadow-2xl"
-            >
-              <div className="border-b border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] px-5 py-4 text-white">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]/80">
-                      Student details
-                    </p>
-                    <h2 className="truncate text-lg font-bold">{selected.fullName}</h2>
-                    <p className="mt-0.5 truncate text-sm text-white/70">{selected.email}</p>
-                    <div className="mt-2">
-                      <StatusBadge status={selected.status} />
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(null)}
-                    className="rounded-xl bg-white/10 p-2 transition hover:bg-white/20"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    ["Phone", selected.phone || "—"],
-                    ["Admission", selected.admissionDate || "—"],
-                    ["Franchise", selected.franchiseName],
-                    ["Course", selected.courseName],
-                    ["Total fee", `₹${selected.totalFee.toLocaleString("en-IN")}`],
-                    ["Paid", `₹${selected.paidFee.toLocaleString("en-IN")}`],
-                    ["Pending", `₹${selected.pendingFee.toLocaleString("en-IN")}`],
-                    ["Status", selected.status],
-                  ].map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="rounded-xl border border-[#1E4A85]/10 bg-[#1E4A85]/[0.03] p-3"
-                    >
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {k}
-                      </p>
-                      <p className="mt-0.5 break-words text-sm font-semibold">{v}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-xl border border-[#1E4A85]/10 bg-[#1E4A85]/[0.03] p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    Address
-                  </p>
-                  <p className="text-sm font-medium">
-                    {formatAddress(selected) || "—"}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-[#C4A35A]/25 bg-[#C4A35A]/10 p-4">
-                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#8B6914]">
-                    <IndianRupee className="h-3.5 w-3.5" />
-                    Fee summary
-                  </p>
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <p className="text-2xl font-bold tabular-nums text-[#0B132B]">
-                        ₹{selected.paidFee.toLocaleString("en-IN")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        of ₹{selected.totalFee.toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={cn(
-                          "text-sm font-bold",
-                          selected.pendingFee > 0 ? "text-amber-700" : "text-emerald-700"
-                        )}
-                      >
-                        {selected.pendingFee > 0
-                          ? `₹${selected.pendingFee.toLocaleString("en-IN")} due`
-                          : "Fully paid"}
-                      </p>
-                      <p className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        Joined {selected.admissionDate || "—"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        selected.pendingFee > 0 ? "bg-amber-500" : "bg-emerald-500"
-                      )}
-                      style={{
-                        width: `${
-                          selected.totalFee > 0
-                            ? Math.min(100, (selected.paidFee / selected.totalFee) * 100)
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-[#1E4A85]/10 px-5 py-4">
-                <button
-                  type="button"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {selected && (
+              <>
+                <motion.div
+                  key="overlay"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   onClick={() => setSelected(null)}
-                  className="w-full rounded-xl bg-[#1E4A85] py-2.5 text-sm font-semibold text-white hover:bg-[#163A6B]"
+                  style={{ zIndex: STUDENT_DRAWER_Z }}
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                />
+                <motion.aside
+                  key="drawer"
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 32 }}
+                  style={{ zIndex: STUDENT_DRAWER_Z + 1 }}
+                  className="fixed inset-y-0 right-0 flex w-full max-w-lg flex-col overflow-hidden border-l border-[#1E4A85]/15 bg-background shadow-2xl"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Student details"
                 >
-                  Close
-                </button>
-              </div>
-            </motion.aside>
-          </>
+                  <div className="shrink-0 border-b border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]/80">
+                          Student details
+                        </p>
+                        <h2 className="truncate text-lg font-bold">{selected.fullName}</h2>
+                        <p className="mt-0.5 truncate text-sm text-white/70">{selected.email}</p>
+                        <div className="mt-2">
+                          <StatusBadge status={selected.status} />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(null)}
+                        className="rounded-xl bg-white/10 p-2 transition hover:bg-white/20"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {[
+                        ["Phone", selected.phone || "—"],
+                        ["Admission", selected.admissionDate || "—"],
+                        ["Franchise", selected.franchiseName],
+                        ["Student ID", selected.studentCode || "—"],
+                        ["Course", selected.courseName || "Not assigned"],
+                        ["Total fee", `₹${selected.totalFee.toLocaleString("en-IN")}`],
+                        ["Paid", `₹${selected.paidFee.toLocaleString("en-IN")}`],
+                        ["Pending", `₹${selected.pendingFee.toLocaleString("en-IN")}`],
+                        ["Status", selected.status],
+                      ].map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="rounded-xl border border-[#1E4A85]/10 bg-[#1E4A85]/[0.03] p-3"
+                        >
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            {k}
+                          </p>
+                          <p className="mt-0.5 break-words text-sm font-semibold">{v}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-xl border border-[#1E4A85]/10 bg-[#1E4A85]/[0.03] p-3">
+                      <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        Address
+                      </p>
+                      <p className="text-sm font-medium">
+                        {formatAddress(selected) || "—"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[#C4A35A]/25 bg-[#C4A35A]/10 p-4">
+                      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#8B6914]">
+                        <IndianRupee className="h-3.5 w-3.5" />
+                        Fee summary
+                      </p>
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-2xl font-bold tabular-nums text-[#0B132B]">
+                            ₹{selected.paidFee.toLocaleString("en-IN")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            of ₹{selected.totalFee.toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p
+                            className={cn(
+                              "text-sm font-bold",
+                              selected.pendingFee > 0 ? "text-amber-700" : "text-emerald-700"
+                            )}
+                          >
+                            {selected.pendingFee > 0
+                              ? `₹${selected.pendingFee.toLocaleString("en-IN")} due`
+                              : "Fully paid"}
+                          </p>
+                          <p className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            Joined {selected.admissionDate || "—"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            selected.pendingFee > 0 ? "bg-amber-500" : "bg-emerald-500"
+                          )}
+                          style={{
+                            width: `${
+                              selected.totalFee > 0
+                                ? Math.min(100, (selected.paidFee / selected.totalFee) * 100)
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 border-t border-[#1E4A85]/10 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    <button
+                      type="button"
+                      onClick={() => setSelected(null)}
+                      className="w-full rounded-xl bg-[#1E4A85] py-2.5 text-sm font-semibold text-white hover:bg-[#163A6B]"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
 
       <AddStudentModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
+        onSuccess={(payload) => {
+          mutate();
+          setAddModalOpen(false);
+          if (payload?.id) {
+            setAssignStudent({
+              id: payload.id,
+              studentCode: payload.studentCode,
+              fullName: payload.fullName,
+            });
+          }
+        }}
+      />
+      <AssignCourseModal
+        open={!!assignStudent}
+        student={assignStudent}
+        onClose={() => setAssignStudent(null)}
         onSuccess={() => mutate()}
       />
     </div>

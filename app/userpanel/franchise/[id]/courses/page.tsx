@@ -15,7 +15,6 @@ interface FranchiseCourse {
   description: string | null;
   duration: string;
   image: string;
-  fee: number;
   type: string;
 }
 
@@ -180,9 +179,6 @@ export default function FranchiseCoursesPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <span className="absolute bottom-3 left-3 px-3 py-1.5 rounded-lg bg-[var(--up-bg-card)]/95 text-sm font-medium text-[var(--up-text)]">
                           {course.duration}
-                        </span>
-                        <span className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-[var(--up-accent)]/90 text-white text-sm font-bold">
-                          ₹{course.fee.toLocaleString("en-IN")}
                         </span>
                       </div>
                       <div className="p-6">

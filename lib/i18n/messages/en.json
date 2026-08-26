@@ -63,7 +63,10 @@
     "my-fees": "My Fees",
     "certificates": "Certificates",
     "feedback": "Feedback",
-    "assigned-students": "Assigned Students"
+    "assigned-students": "Assigned Students",
+    "exams": "Exams",
+    "my-exams": "My Exams",
+    "certificate": "Certificate"
   },
   "common": {
     "save": "Save",

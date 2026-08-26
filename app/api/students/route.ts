@@ -6,6 +6,8 @@ import { ROLES } from "@/lib/permissions";
 import { hashPassword } from "@/lib/auth";
 import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import { sendStudentWelcomeEmail } from "@/lib/email";
+import { generateStudentCode } from "@/lib/student-code";
+import { saveStudentImage } from "@/lib/student-images";
 
 export const dynamic = "force-dynamic";
 
@@ -43,13 +45,18 @@ export async function GET(request: NextRequest) {
       where.courseId = BigInt(courseId);
     }
     if (search) {
-      where.user = {
-        OR: [
-          { fullName: { contains: search } },
-          { email: { contains: search } },
-          { phone: { contains: search } },
-        ],
-      };
+      where.OR = [
+        { studentCode: { contains: search } },
+        {
+          user: {
+            OR: [
+              { fullName: { contains: search } },
+              { email: { contains: search } },
+              { phone: { contains: search } },
+            ],
+          },
+        },
+      ];
     }
 
     const [students, total, statusGroups] = await Promise.all([
@@ -81,13 +88,15 @@ export async function GET(request: NextRequest) {
 
     const items = students.map((s) => ({
       id: s.id.toString(),
+      studentCode: s.studentCode,
       fullName: s.user.fullName,
       email: s.user.email,
       phone: s.user.phone,
       franchiseId: s.franchise.id.toString(),
       franchiseName: s.franchise.name,
-      courseId: s.course.id.toString(),
-      courseName: s.course.name,
+      courseId: s.course?.id.toString() ?? null,
+      courseName: s.course?.name ?? null,
+      courseAssigned: !!s.courseId,
       totalFee: Number(s.totalFee),
       paidFee: Number(s.paidFee),
       pendingFee: Number(s.totalFee) - Number(s.paidFee),
@@ -130,27 +139,42 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      fullName,
+      firstName,
+      surname,
+      relationship,
+      fatherHusbandName,
+      motherName,
       email,
       phone,
+      alternateMobile,
+      dateOfBirth,
+      gender,
       password,
+      confirmPassword,
       franchiseId,
-      courseId,
-      totalFee,
       admissionDate,
       address,
       area,
       pincode,
       city,
       state,
-      initialPayment,
-      paymentMode,
+      profileImageBase64,
+      signatureBase64,
+      showFatherOnCertificate,
+      showSurnameOnCertificate,
     } = body;
 
-    if (!fullName || !email || !franchiseId || !courseId || totalFee == null) {
-      return errorResponse("Missing required fields: fullName, email, franchiseId, courseId, totalFee", 400);
+    const first = String(firstName || "").trim();
+    const last = String(surname || "").trim();
+    const fullName = [first, last].filter(Boolean).join(" ").trim();
+
+    if (!first || !email || !franchiseId) {
+      return errorResponse("Missing required fields: firstName, email, franchiseId", 400);
     }
-    const nameR = validateName(String(fullName).trim());
+    if (password && confirmPassword && password !== confirmPassword) {
+      return errorResponse("Password and confirm password do not match", 400);
+    }
+    const nameR = validateName(first);
     const emailR = validateEmail(String(email).trim());
     const phoneR = phone ? validatePhone(String(phone).trim()) : { valid: true };
     if (!nameR.valid) return errorResponse(nameR.error!, 400);
@@ -158,7 +182,6 @@ export async function POST(request: NextRequest) {
     if (!phoneR.valid) return errorResponse(phoneR.error!, 400);
 
     const fid = BigInt(franchiseId);
-    const cid = BigInt(courseId);
 
     if (roleId === ROLES.SUB_ADMIN && user.franchiseId && BigInt(user.franchiseId) !== fid) {
       return errorResponse("Cannot add student to another franchise", 403);
@@ -169,9 +192,38 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hashPassword(password || "Student@123");
     const admission = admissionDate ? new Date(admissionDate) : new Date();
-    const totalFeeNum = Number(totalFee);
-    const initialAmount = initialPayment != null && Number(initialPayment) > 0 ? Number(initialPayment) : 0;
-    const mode = ["CASH", "UPI", "CARD", "BANK_TRANSFER"].includes(paymentMode) ? paymentMode : "CASH";
+    const studentCode = await generateStudentCode();
+
+    let profileImageUrl: string | null = null;
+    let signatureUrl: string | null = null;
+    try {
+      if (profileImageBase64) {
+        profileImageUrl = await saveStudentImage(
+          String(profileImageBase64),
+          "profile",
+          studentCode
+        );
+      }
+      if (signatureBase64) {
+        signatureUrl = await saveStudentImage(
+          String(signatureBase64),
+          "signature",
+          studentCode
+        );
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Invalid image";
+      return errorResponse(msg, 400);
+    }
+
+    const genderVal = ["MALE", "FEMALE", "OTHER"].includes(String(gender || "").toUpperCase())
+      ? String(gender).toUpperCase()
+      : null;
+    const relationVal = ["FATHER", "HUSBAND", "GUARDIAN", "OTHER"].includes(
+      String(relationship || "").toUpperCase()
+    )
+      ? String(relationship).toUpperCase()
+      : null;
 
     const newUser = await prisma.user.create({
       data: {
@@ -186,12 +238,25 @@ export async function POST(request: NextRequest) {
 
     const newStudent = await prisma.student.create({
       data: {
+        studentCode,
         userId: newUser.id,
         franchiseId: fid,
-        courseId: cid,
-        totalFee: totalFeeNum,
-        paidFee: initialAmount,
+        courseId: null,
+        totalFee: 0,
+        paidFee: 0,
         admissionDate: admission,
+        firstName: first,
+        surname: last || null,
+        relationship: relationVal,
+        fatherHusbandName: fatherHusbandName?.trim() || null,
+        motherName: motherName?.trim() || null,
+        alternateMobile: alternateMobile?.trim() || null,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        gender: genderVal,
+        profileImageUrl,
+        signatureUrl,
+        showFatherOnCertificate: showFatherOnCertificate !== false,
+        showSurnameOnCertificate: showSurnameOnCertificate !== false,
         address: address?.trim() || null,
         area: area?.trim() || null,
         pincode: pincode?.trim() || null,
@@ -200,23 +265,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (initialAmount > 0) {
-      await prisma.payment.create({
-        data: {
-          studentId: newStudent.id,
-          franchiseId: fid,
-          amount: initialAmount,
-          paymentMode: mode,
-          status: "SUCCESS",
-          paymentDate: new Date(),
-        },
-      });
-    }
-
-    const [franchise, course] = await Promise.all([
-      prisma.franchise.findUnique({ where: { id: fid }, select: { name: true } }),
-      prisma.course.findUnique({ where: { id: cid }, select: { name: true } }),
-    ]);
+    const franchise = await prisma.franchise.findUnique({
+      where: { id: fid },
+      select: { name: true },
+    });
 
     const loginUrl =
       process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
@@ -228,18 +280,17 @@ export async function POST(request: NextRequest) {
       email,
       password: password || "Student@123",
       loginUrl,
-      courseName: course?.name ?? "Course",
+      courseName: "Not assigned yet",
       franchiseName: franchise?.name ?? "Franchise",
-      totalFee: totalFeeNum,
-      paidFee: initialAmount,
-      pendingFee: totalFeeNum - initialAmount,
+      totalFee: 0,
+      paidFee: 0,
+      pendingFee: 0,
       admissionDate: admission.toISOString().split("T")[0],
       address: address?.trim() || null,
       area: area?.trim() || null,
       pincode: pincode?.trim() || null,
       city: city?.trim() || null,
       state: state?.trim() || null,
-      initialPaymentAmount: initialAmount > 0 ? initialAmount : undefined,
     });
 
     if (!emailResult.success) {
@@ -247,8 +298,13 @@ export async function POST(request: NextRequest) {
     }
 
     return successResponse(
-      { id: newUser.id.toString(), emailSent: emailResult.success },
-      "Student added successfully"
+      {
+        id: newStudent.id.toString(),
+        studentCode,
+        emailSent: emailResult.success,
+        needsCourse: true,
+      },
+      "Student added — assign a course next"
     );
   } catch (err: unknown) {
     console.error("Students POST:", err);

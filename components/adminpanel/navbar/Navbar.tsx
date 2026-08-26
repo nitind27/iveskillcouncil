@@ -30,6 +30,9 @@ import { getMenuForRole } from "@/lib/role-menu-config";
 import { fetcher } from "@/lib/fetcher";
 import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { StudentProfileDrawer } from "@/components/students/StudentProfileDrawer";
+import { ROLES } from "@/lib/permissions";
+import { Hash } from "lucide-react";
 
 interface NavbarProps {
   onSidebarToggle: () => void;
@@ -108,8 +111,42 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const pathname = usePathname() || "";
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [quickSearch, setQuickSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
   const barRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const canSearchStudents =
+    Number(user?.roleId) === ROLES.SUPER_ADMIN ||
+    Number(user?.roleId) === ROLES.ADMIN ||
+    Number(user?.roleId) === ROLES.SUB_ADMIN;
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(quickSearch.trim()), 280);
+    return () => window.clearTimeout(t);
+  }, [quickSearch]);
+
+  const { data: lookupData, isLoading: lookupLoading } = useSWR<{
+    items: Array<{
+      id: string;
+      studentCode: string;
+      fullName: string;
+      email: string;
+      courseName: string | null;
+      franchiseName: string;
+    }>;
+  }>(
+    canSearchStudents && debouncedSearch.length >= 2
+      ? `/api/students/lookup?q=${encodeURIComponent(debouncedSearch)}`
+      : null,
+    fetcher,
+    { keepPreviousData: true }
+  );
+  const lookupItems = lookupData?.items ?? [];
+  const showLookup =
+    canSearchStudents &&
+    quickSearch.trim().length >= 2 &&
+    (openPanel === "search" || quickSearch.length > 0);
 
   const menuSections = getMenuForRole(user?.roleId ?? 1);
   const pageTitle = useMemo(() => formatPageTitle(pathname), [pathname]);
@@ -205,6 +242,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   }, [user?.fullName]);
 
   return (
+    <>
     <header ref={barRef} className="sticky top-0 z-[60] w-full shrink-0">
       <div className="relative border-b border-slate-200/80 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-[#0F172A]/95">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#C4A35A]/70 to-transparent" />
@@ -365,15 +403,70 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
 
           {/* Right actions */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-            {/* Desktop search */}
+            {/* Desktop search — Student ID */}
             <div className="relative hidden lg:block">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
               <input
                 value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                placeholder={t("nav.search", "Search…")}
-                className="h-9 w-36 rounded-xl border border-slate-200/90 bg-slate-50/80 py-1.5 pl-8 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-48 focus:border-[#1E4A85]/30 focus:bg-white focus:ring-2 focus:ring-[#1E4A85]/10 xl:w-44 dark:border-slate-700 dark:bg-white/5 dark:text-white"
+                onChange={(e) => {
+                  setQuickSearch(e.target.value);
+                  setOpenPanel("search");
+                }}
+                onFocus={() => setOpenPanel("search")}
+                placeholder={
+                  canSearchStudents
+                    ? t("nav.searchStudent", "Student ID…")
+                    : t("nav.search", "Search…")
+                }
+                className="h-9 w-40 rounded-xl border border-slate-200/90 bg-slate-50/80 py-1.5 pl-8 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-56 focus:border-[#1E4A85]/30 focus:bg-white focus:ring-2 focus:ring-[#1E4A85]/10 xl:w-48 dark:border-slate-700 dark:bg-white/5 dark:text-white"
               />
+              {showLookup && openPanel === "search" && (
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(22rem,calc(100vw-1.25rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  <p className="border-b border-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#1E4A85]/70">
+                    Students
+                  </p>
+                  {lookupLoading && (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#1E4A85]" />
+                    </div>
+                  )}
+                  {!lookupLoading && !lookupItems.length && (
+                    <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                      No student found for “{debouncedSearch}”
+                    </p>
+                  )}
+                  <ul className="max-h-72 overflow-y-auto py-1">
+                    {lookupItems.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileStudentId(s.id);
+                            setOpenPanel(null);
+                            setQuickSearch("");
+                          }}
+                          className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-[#1E4A85]/5"
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/10 font-mono text-[10px] font-bold text-[#1E4A85]">
+                            <Hash className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-[#0B1F3A]">
+                              {s.fullName}
+                            </span>
+                            <span className="mt-0.5 block font-mono text-[10px] font-bold text-[#C4A35A]">
+                              {s.studentCode}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+                              {s.courseName || "No course"} · {s.franchiseName}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Mobile/tablet search toggle */}
@@ -390,17 +483,49 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 <Search className="h-4 w-4" />
               </button>
               {openPanel === "search" && (
-                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(18rem,calc(100vw-1.25rem))] rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                <div className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(20rem,calc(100vw-1.25rem))] rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     <input
                       ref={searchInputRef}
                       value={quickSearch}
                       onChange={(e) => setQuickSearch(e.target.value)}
-                      placeholder={t("nav.search", "Search…")}
+                      placeholder={
+                        canSearchStudents
+                          ? "Student ID e.g. STU-2026-…"
+                          : t("nav.search", "Search…")
+                      }
                       className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-sm outline-none focus:border-[#1E4A85]/30 focus:ring-2 focus:ring-[#1E4A85]/10 dark:border-slate-700 dark:bg-white/5 dark:text-white"
                     />
                   </div>
+                  {canSearchStudents && quickSearch.trim().length >= 2 && (
+                    <ul className="mt-2 max-h-60 overflow-y-auto border-t border-slate-100 pt-1">
+                      {lookupLoading && (
+                        <li className="flex justify-center py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-[#1E4A85]" />
+                        </li>
+                      )}
+                      {!lookupLoading &&
+                        lookupItems.map((s) => (
+                          <li key={s.id}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileStudentId(s.id);
+                                setOpenPanel(null);
+                                setQuickSearch("");
+                              }}
+                              className="w-full rounded-lg px-2 py-2 text-left hover:bg-[#1E4A85]/5"
+                            >
+                              <span className="block text-sm font-semibold">{s.fullName}</span>
+                              <span className="font-mono text-[10px] text-[#C4A35A]">
+                                {s.studentCode}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>
@@ -610,5 +735,11 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
         </div>
       </div>
     </header>
+      <StudentProfileDrawer
+        open={!!profileStudentId}
+        studentId={profileStudentId}
+        onClose={() => setProfileStudentId(null)}
+      />
+    </>
   );
 }

@@ -38,7 +38,6 @@ function BookingContent() {
   const directFranchiseId = searchParams?.get("franchiseId") || "";
   const directCourseId = searchParams?.get("courseId") || "";
   const directCourseName = searchParams?.get("courseName") || "";
-  const directFee = searchParams?.get("fee") || "";
   const directEnrolment = !!(directFranchiseId && directCourseId && directCourseName);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -198,11 +197,6 @@ function BookingContent() {
                     <p className="font-semibold text-[var(--up-text)] text-sm line-clamp-2">
                       {decodeURIComponent(directCourseName)}
                     </p>
-                    {directFee && (
-                      <p className="text-xs text-[var(--up-text-muted)]">
-                        ₹{Number(directFee).toLocaleString("en-IN")}
-                      </p>
-                    )}
                   </div>
                 </div>
               ) : (

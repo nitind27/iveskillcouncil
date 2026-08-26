@@ -4,6 +4,7 @@ import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-res
 import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import { getEffectivePermissions } from "@/lib/get-effective-permissions";
+import { ROLES } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest) {
 
     if (!user || user.mustChangePassword || user.status !== "ACTIVE") {
       return errorResponse("Invalid request", 400);
+    }
+
+    // Admin (Institute) must complete password + ADMIN_LOGIN OTP flow
+    if (user.roleId === ROLES.ADMIN) {
+      return errorResponse(
+        "Admin (Institute) must sign in with email & password, then enter the OTP sent to your email.",
+        403
+      );
     }
 
     await prisma.otpVerification.update({

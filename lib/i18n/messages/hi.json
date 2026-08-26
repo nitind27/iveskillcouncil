@@ -63,7 +63,10 @@
     "my-fees": "मेरे शुल्क",
     "certificates": "प्रमाणपत्र",
     "feedback": "प्रतिक्रिया",
-    "assigned-students": "नियुक्त छात्र"
+    "assigned-students": "नियुक्त छात्र",
+    "exams": "परीक्षा",
+    "my-exams": "मेरी परीक्षाएँ",
+    "certificate": "प्रमाणपत्र"
   },
   "common": {
     "save": "सहेजें",

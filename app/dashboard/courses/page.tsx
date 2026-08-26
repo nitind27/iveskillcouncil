@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,14 +20,17 @@ import {
   Crown,
   Medal,
   Gem,
-  ImageIcon,
   Film,
-  FileText,
-  Upload,
 } from "lucide-react";
 import { showSuccess, showError, showDeleteConfirm } from "@/lib/toast";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import {
+  CourseFormModal,
+  emptyCourseForm,
+  courseToForm,
+  type CourseFormState,
+} from "@/components/courses/CourseFormModal";
 
 interface Course {
   id: string;
@@ -48,6 +51,25 @@ interface Course {
   highlights?: string | null;
   status?: string;
   franchiseId: string | null;
+  awardCategory?: string | null;
+  certificateType?: string | null;
+  coursePreposition?: string | null;
+  mrp?: number | null;
+  displayOrder?: number;
+  durationValue?: number | null;
+  durationUnit?: string | null;
+  previewVideoUrl?: string | null;
+  practicalMarks?: number | null;
+  objectiveMarks?: number | null;
+  examFeesByPlan?: Array<{ plan: string; examFee: number }>;
+  syllabus?: string | null;
+  eligibility?: string | null;
+  certificateSubject?: string | null;
+  tags?: string[];
+  isPopular?: boolean;
+  isRecommended?: boolean;
+  isMrpVisible?: boolean;
+  hideExamResult?: boolean;
 }
 
 interface Category {
@@ -62,27 +84,6 @@ interface Category {
 }
 
 const COURSE_TYPES = ["SILVER", "GOLD", "DIAMOND"] as const;
-const COURSE_LEVELS = ["BEGINNER", "INTERMEDIATE", "ADVANCED"] as const;
-const COURSE_MODES = ["OFFLINE", "ONLINE", "HYBRID"] as const;
-
-const emptyCourseForm = () => ({
-  name: "",
-  slug: "",
-  shortDescription: "",
-  description: "",
-  imageUrl: "",
-  type: "SILVER" as (typeof COURSE_TYPES)[number],
-  category: "",
-  level: "BEGINNER" as (typeof COURSE_LEVELS)[number],
-  mode: "OFFLINE" as (typeof COURSE_MODES)[number],
-  baseFee: "",
-  durationMonths: "",
-  lectures: "",
-  videos: "",
-  notes: "",
-  highlights: "",
-  status: "ACTIVE",
-});
 
 function slugify(name: string) {
   return name
@@ -146,7 +147,7 @@ export default function SuperAdminCoursesPage() {
 
   const [courseOpen, setCourseOpen] = useState(false);
   const [editCourse, setEditCourse] = useState<Course | null>(null);
-  const [courseForm, setCourseForm] = useState(emptyCourseForm);
+  const [courseForm, setCourseForm] = useState<CourseFormState>(emptyCourseForm);
 
   const [catOpen, setCatOpen] = useState(false);
   const [editCat, setEditCat] = useState<Category | null>(null);
@@ -240,37 +241,27 @@ export default function SuperAdminCoursesPage() {
 
   const openEditCourse = (c: Course) => {
     setEditCourse(c);
-    setCourseForm({
-      name: c.name,
-      slug: c.slug || "",
-      shortDescription: c.shortDescription || "",
-      description: c.description || "",
-      imageUrl: c.imageUrl || "",
-      type: (COURSE_TYPES.includes(c.type as (typeof COURSE_TYPES)[number])
-        ? c.type
-        : "SILVER") as (typeof COURSE_TYPES)[number],
-      category: c.category || "",
-      level: (COURSE_LEVELS.includes(c.level as (typeof COURSE_LEVELS)[number])
-        ? c.level
-        : "BEGINNER") as (typeof COURSE_LEVELS)[number],
-      mode: (COURSE_MODES.includes(c.mode as (typeof COURSE_MODES)[number])
-        ? c.mode
-        : "OFFLINE") as (typeof COURSE_MODES)[number],
-      baseFee: String(c.baseFee),
-      durationMonths: String(c.durationMonths),
-      lectures: String(c.lectures ?? ""),
-      videos: String(c.videos ?? ""),
-      notes: c.notes || "",
-      highlights: c.highlights || "",
-      status: c.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
-    });
+    setCourseForm(courseToForm(c as unknown as Record<string, unknown>));
     setCourseOpen(true);
   };
 
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseForm.name.trim() || !courseForm.baseFee || !courseForm.durationMonths) {
-      showError("Validation", "Name, Fee and Duration are required");
+    const tags = courseForm.tags.map((t) => t.trim()).filter(Boolean);
+    if (!courseForm.name.trim() || !courseForm.baseFee || !courseForm.durationValue) {
+      showError("Validation", "Title, Price and Duration are required");
+      return;
+    }
+    if (!courseForm.description.trim() || !courseForm.syllabus.trim()) {
+      showError("Validation", "Description and Syllabus are required");
+      return;
+    }
+    if (!courseForm.lectures || Number(courseForm.lectures) < 1) {
+      showError("Validation", "Total lectures is required");
+      return;
+    }
+    if (tags.length === 0) {
+      showError("Validation", "At least one tag is required");
       return;
     }
     setSaving(true);
@@ -285,18 +276,40 @@ export default function SuperAdminCoursesPage() {
           name: courseForm.name.trim(),
           slug: courseForm.slug.trim() || slugify(courseForm.name),
           shortDescription: courseForm.shortDescription.trim() || null,
-          description: courseForm.description.trim() || null,
+          description: courseForm.description.trim(),
+          syllabus: courseForm.syllabus.trim(),
+          eligibility: courseForm.eligibility.trim() || null,
+          certificateSubject: courseForm.certificateSubject.trim() || null,
           imageUrl: courseForm.imageUrl.trim() || null,
+          previewVideoUrl: courseForm.previewVideoUrl.trim() || null,
           type: courseForm.type,
           category: courseForm.category || null,
+          awardCategory: courseForm.awardCategory || null,
+          certificateType: courseForm.certificateType,
+          coursePreposition: courseForm.coursePreposition || "In",
           level: courseForm.level,
           mode: courseForm.mode,
           baseFee: Number(courseForm.baseFee),
-          durationMonths: Number(courseForm.durationMonths),
+          mrp: courseForm.mrp === "" ? null : Number(courseForm.mrp),
+          displayOrder: Number(courseForm.displayOrder) || 0,
+          durationValue: Number(courseForm.durationValue),
+          durationUnit: courseForm.durationUnit,
           lectures: Number(courseForm.lectures) || 0,
-          videos: Number(courseForm.videos) || 0,
-          notes: courseForm.notes.trim() || null,
+          practicalMarks:
+            courseForm.practicalMarks === ""
+              ? null
+              : Number(courseForm.practicalMarks),
+          objectiveMarks:
+            courseForm.objectiveMarks === ""
+              ? null
+              : Number(courseForm.objectiveMarks),
+          examFeesByPlan: courseForm.examFeesByPlan,
+          tags,
           highlights: courseForm.highlights.trim() || null,
+          isPopular: courseForm.isPopular,
+          isRecommended: courseForm.isRecommended,
+          isMrpVisible: courseForm.isMrpVisible,
+          hideExamResult: courseForm.hideExamResult,
           status: courseForm.status,
         }),
       });
@@ -572,7 +585,7 @@ export default function SuperAdminCoursesPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search courses…"
+                placeholder="Search courses..."
                 className="h-10 w-full rounded-lg border border-border/70 bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15"
               />
             </div>
@@ -593,7 +606,7 @@ export default function SuperAdminCoursesPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-[#1E4A85]/12 bg-card py-20">
           <Loader2 className="h-9 w-9 animate-spin text-[#1E4A85]" />
-          <p className="mt-3 text-sm text-muted-foreground">Loading courses…</p>
+          <p className="mt-3 text-sm text-muted-foreground">Loading courses...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -862,427 +875,21 @@ export default function SuperAdminCoursesPage() {
         </AnimatePresence>
       )}
 
-      {/* Course modal */}
-      <AnimatePresence>
-        {courseOpen && (
-          <motion.div
-            key="course-modal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B132B]/50 p-4 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && setCourseOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-card shadow-2xl"
-            >
-              <div className="flex shrink-0 items-center justify-between border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.08] via-transparent to-[#C4A35A]/[0.08] px-6 py-4">
-                <div>
-                  <h3 className="font-bold text-[#1E4A85] dark:text-[#8EB6E8]">
-                    {editCourse ? "Edit Course" : "Create Course"}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Fill all details for public listing & franchise assignment
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCourseOpen(false)}
-                  className="rounded-lg p-1.5 hover:bg-muted"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
 
-              <form
-                onSubmit={handleSaveCourse}
-                className="flex min-h-0 flex-1 flex-col"
-              >
-                <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-                  {/* Basic */}
-                  <section className="space-y-3">
-                    <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      Basic info
-                    </h4>
-                    <div>
-                      <label className={labelCls}>Course name *</label>
-                      <input
-                        type="text"
-                        value={courseForm.name}
-                        onChange={(e) => {
-                          const name = e.target.value;
-                          setCourseForm((f) => ({
-                            ...f,
-                            name,
-                            slug:
-                              !editCourse && (!f.slug || f.slug === slugify(f.name))
-                                ? slugify(name)
-                                : f.slug,
-                          }));
-                        }}
-                        placeholder="e.g. Full Stack Development"
-                        className={inputCls}
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className={labelCls}>URL slug</label>
-                        <input
-                          type="text"
-                          value={courseForm.slug}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({
-                              ...f,
-                              slug: slugify(e.target.value),
-                            }))
-                          }
-                          placeholder="full-stack-development"
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Status</label>
-                        <select
-                          value={courseForm.status}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, status: e.target.value }))
-                          }
-                          className={inputCls}
-                        >
-                          <option value="ACTIVE">Active</option>
-                          <option value="INACTIVE">Inactive</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Short description</label>
-                      <input
-                        type="text"
-                        value={courseForm.shortDescription}
-                        onChange={(e) =>
-                          setCourseForm((f) => ({
-                            ...f,
-                            shortDescription: e.target.value,
-                          }))
-                        }
-                        placeholder="One-line blurb for course cards"
-                        maxLength={300}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Full description</label>
-                      <textarea
-                        value={courseForm.description}
-                        onChange={(e) =>
-                          setCourseForm((f) => ({ ...f, description: e.target.value }))
-                        }
-                        rows={3}
-                        placeholder="Detailed overview shown on course page"
-                        className={cn(inputCls, "h-auto resize-none py-2")}
-                      />
-                    </div>
-                  </section>
+      <CourseFormModal
+        open={courseOpen}
+        editId={editCourse?.id ?? null}
+        form={courseForm}
+        setForm={setCourseForm}
+        categories={categories}
+        saving={saving}
+        imageUploading={imageUploading}
+        onClose={() => setCourseOpen(false)}
+        onSubmit={handleSaveCourse}
+        onUploadImage={uploadCoverImage}
+        onClearImage={clearCoverImage}
+      />
 
-                  {/* Media */}
-                  <section className="space-y-3 border-t border-border/60 pt-4">
-                    <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      Cover image
-                    </h4>
-
-                    {courseForm.imageUrl ? (
-                      <div className="overflow-hidden rounded-xl border border-border/70">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={courseForm.imageUrl}
-                          alt="Cover preview"
-                          className="h-40 w-full object-cover"
-                        />
-                        <div className="flex items-center gap-2 border-t border-border/60 bg-muted/30 p-3">
-                          <label className="inline-flex h-9 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#1E4A85]/30 bg-card text-sm font-semibold text-[#1E4A85] transition hover:bg-[#1E4A85]/5">
-                            {imageUploading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Upload className="h-4 w-4" />
-                            )}
-                            Change file
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,image/gif"
-                              className="hidden"
-                              disabled={imageUploading}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) uploadCoverImage(file);
-                                e.target.value = "";
-                              }}
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={clearCoverImage}
-                            disabled={imageUploading}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-200 px-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <label
-                        className={cn(
-                          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#1E4A85]/25 bg-[#1E4A85]/[0.03] px-4 py-10 text-center transition hover:border-[#1E4A85]/45 hover:bg-[#1E4A85]/[0.06]",
-                          imageUploading && "pointer-events-none opacity-70"
-                        )}
-                      >
-                        {imageUploading ? (
-                          <Loader2 className="h-8 w-8 animate-spin text-[#1E4A85]" />
-                        ) : (
-                          <Upload className="h-8 w-8 text-[#1E4A85]/70" />
-                        )}
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">
-                            {imageUploading ? "Uploading…" : "Choose cover image"}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            JPG, PNG or WebP · max 5MB
-                          </p>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
-                          className="hidden"
-                          disabled={imageUploading}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) uploadCoverImage(file);
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                    )}
-                  </section>
-
-                  {/* Classification */}
-                  <section className="space-y-3 border-t border-border/60 pt-4">
-                    <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      Classification
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={labelCls}>Plan type *</label>
-                        <select
-                          value={courseForm.type}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({
-                              ...f,
-                              type: e.target.value as (typeof COURSE_TYPES)[number],
-                            }))
-                          }
-                          className={inputCls}
-                        >
-                          {COURSE_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={labelCls}>Category</label>
-                        <select
-                          value={courseForm.category}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, category: e.target.value }))
-                          }
-                          className={inputCls}
-                        >
-                          <option value="">— None —</option>
-                          {categories.map((c) => (
-                            <option key={c.id} value={c.slug}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={labelCls}>Level</label>
-                        <select
-                          value={courseForm.level}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({
-                              ...f,
-                              level: e.target.value as (typeof COURSE_LEVELS)[number],
-                            }))
-                          }
-                          className={inputCls}
-                        >
-                          {COURSE_LEVELS.map((l) => (
-                            <option key={l} value={l}>
-                              {l}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={labelCls}>Mode</label>
-                        <select
-                          value={courseForm.mode}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({
-                              ...f,
-                              mode: e.target.value as (typeof COURSE_MODES)[number],
-                            }))
-                          }
-                          className={inputCls}
-                        >
-                          {COURSE_MODES.map((m) => (
-                            <option key={m} value={m}>
-                              {m}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Pricing */}
-                  <section className="space-y-3 border-t border-border/60 pt-4">
-                    <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      Pricing & duration
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={labelCls}>Base fee (₹) *</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={courseForm.baseFee}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, baseFee: e.target.value }))
-                          }
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Duration (months) *</label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={courseForm.durationMonths}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({
-                              ...f,
-                              durationMonths: e.target.value,
-                            }))
-                          }
-                          className={inputCls}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Content stats */}
-                  <section className="space-y-3 border-t border-border/60 pt-4">
-                    <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      <Film className="h-3.5 w-3.5" />
-                      Content stats
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      <div>
-                        <label className={labelCls}>Lectures</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={courseForm.lectures}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, lectures: e.target.value }))
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelCls}>Videos</label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={courseForm.videos}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, videos: e.target.value }))
-                          }
-                          className={inputCls}
-                        />
-                      </div>
-                      <div className="col-span-2 sm:col-span-1">
-                        <label className={labelCls}>Notes label</label>
-                        <input
-                          type="text"
-                          value={courseForm.notes}
-                          onChange={(e) =>
-                            setCourseForm((f) => ({ ...f, notes: e.target.value }))
-                          }
-                          placeholder="PDF notes per module"
-                          className={inputCls}
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Highlights */}
-                  <section className="space-y-3 border-t border-border/60 pt-4">
-                    <h4 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
-                      <FileText className="h-3.5 w-3.5" />
-                      Learning highlights
-                    </h4>
-                    <div>
-                      <label className={labelCls}>One highlight per line</label>
-                      <textarea
-                        value={courseForm.highlights}
-                        onChange={(e) =>
-                          setCourseForm((f) => ({ ...f, highlights: e.target.value }))
-                        }
-                        rows={4}
-                        placeholder={"Hands-on projects\nIndustry mentorship\nPlacement support"}
-                        className={cn(inputCls, "h-auto resize-none py-2 font-normal")}
-                      />
-                    </div>
-                  </section>
-                </div>
-
-                <div className="flex shrink-0 gap-3 border-t border-border/60 bg-muted/20 px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => setCourseOpen(false)}
-                    className="h-10 flex-1 rounded-lg border border-border text-sm font-semibold hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#1E4A85] text-sm font-semibold text-white hover:bg-[#163A6B] disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    {editCourse ? "Update Course" : "Create Course"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Category modal */}
       <AnimatePresence>

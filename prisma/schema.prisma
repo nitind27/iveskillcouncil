@@ -85,6 +85,8 @@ model User {
   issuedCertificates Certificate[] @relation("CertificateIssuer")
   requestedCertificates Certificate[] @relation("CertificateRequester")
   announcements   Announcement[] @relation("AnnouncementCreator")
+  createdExams    Exam[] @relation("ExamCreator")
+  examAttempts    ExamAttempt[]
 
   @@index([roleId], map: "idx_role")
   @@index([franchiseId], map: "idx_franchise")
@@ -261,6 +263,30 @@ model Course {
   notes            String?       @db.VarChar(255)
   highlights       String?       @db.Text
   status           CourseStatus  @default(ACTIVE)
+
+  /// Advanced catalogue fields (Add Course form)
+  awardCategory      String?  @map("award_category") @db.VarChar(100)
+  certificateType    String?  @map("certificate_type") @db.VarChar(30) // CERTIFICATE | DIPLOMA
+  coursePreposition  String?  @map("course_preposition") @db.VarChar(20) // e.g. In
+  mrp                Decimal? @db.Decimal(10, 2)
+  displayOrder       Int      @default(0) @map("display_order")
+  durationValue      Int?     @map("duration_value")
+  durationUnit       String?  @map("duration_unit") @db.VarChar(20) // Days | Months | Years
+  previewVideoUrl    String?  @map("preview_video_url") @db.VarChar(500)
+  practicalMarks     Int?     @map("practical_marks")
+  objectiveMarks     Int?     @map("objective_marks")
+  /// [{ plan: "SILVER"|"GOLD"|"DIAMOND", examFee: number }]
+  examFeesByPlan     Json?    @map("exam_fees_by_plan") @db.Json
+  syllabus           String?  @db.Text
+  eligibility        String?  @db.Text
+  certificateSubject String?  @map("certificate_subject") @db.VarChar(500)
+  /// string[] tags
+  tags               Json?    @db.Json
+  isPopular          Boolean  @default(false) @map("is_popular") @db.TinyInt
+  isRecommended      Boolean  @default(false) @map("is_recommended") @db.TinyInt
+  isMrpVisible       Boolean  @default(true) @map("is_mrp_visible") @db.TinyInt
+  hideExamResult     Boolean  @default(false) @map("hide_exam_result") @db.TinyInt
+
   createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamp
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamp
 
@@ -271,6 +297,7 @@ model Course {
   @@index([franchiseId], map: "idx_course_franchise")
   @@index([category], map: "idx_course_category")
   @@index([status], map: "idx_course_status")
+  @@index([displayOrder], map: "idx_course_display_order")
   @@map("courses")
 }
 
@@ -315,12 +342,31 @@ model FranchiseCourseFee {
 
 model Student {
   id           BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  /// Public unique ID e.g. STU-2026-000042 — used in navbar search
+  studentCode  String        @unique @map("student_code") @db.VarChar(32)
   userId       BigInt        @unique @map("user_id") @db.UnsignedBigInt
   franchiseId BigInt        @map("franchise_id") @db.UnsignedBigInt
-  courseId    BigInt        @map("course_id") @db.UnsignedBigInt
-  totalFee    Decimal       @map("total_fee") @db.Decimal(10, 2)
+  /// Null until course is assigned in a separate step
+  courseId    BigInt?       @map("course_id") @db.UnsignedBigInt
+  totalFee    Decimal       @default(0.00) @map("total_fee") @db.Decimal(10, 2)
   paidFee     Decimal       @default(0.00) @map("paid_fee") @db.Decimal(10, 2)
   admissionDate DateTime     @map("admission_date") @db.Date
+
+  firstName          String?   @map("first_name") @db.VarChar(80)
+  surname            String?   @db.VarChar(80)
+  /// FATHER | HUSBAND | GUARDIAN | OTHER
+  relationship       String?   @db.VarChar(40)
+  fatherHusbandName  String?   @map("father_husband_name") @db.VarChar(150)
+  motherName         String?   @map("mother_name") @db.VarChar(150)
+  alternateMobile    String?   @map("alternate_mobile") @db.VarChar(20)
+  dateOfBirth        DateTime? @map("date_of_birth") @db.Date
+  /// MALE | FEMALE | OTHER
+  gender             String?   @db.VarChar(20)
+  profileImageUrl    String?   @map("profile_image_url") @db.VarChar(500)
+  signatureUrl       String?   @map("signature_url") @db.VarChar(500)
+  showFatherOnCertificate  Boolean @default(true) @map("show_father_on_certificate") @db.TinyInt
+  showSurnameOnCertificate Boolean @default(true) @map("show_surname_on_certificate") @db.TinyInt
+
   address     String?       @db.VarChar(500)
   area        String?       @db.VarChar(150)
   pincode     String?       @db.VarChar(20)
@@ -332,10 +378,11 @@ model Student {
 
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   franchise   Franchise     @relation(fields: [franchiseId], references: [id])
-  course      Course        @relation(fields: [courseId], references: [id])
+  course      Course?       @relation(fields: [courseId], references: [id])
   certificates Certificate[]
   feedback    Feedback[]
   payments    Payment[]
+  examAttempts ExamAttempt[]
 
   @@index([franchiseId], map: "idx_student_franchise")
   @@index([courseId], map: "idx_student_course")
@@ -699,4 +746,184 @@ model ChatTyping {
   @@unique([roomId, userId], map: "unique_typing")
   @@index([roomId], map: "idx_typing_room")
   @@map("chat_typing")
+}
+
+// ── Exam System ──────────────────────────────────────────────────────────────
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ExamQuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+enum ExamAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+  TERMINATED
+}
+
+/// ASSIGNED = franchise/student portals · LINK = walk-in public link only (hidden from franchise & students)
+enum ExamAccessMode {
+  ASSIGNED
+  LINK
+}
+
+model Exam {
+  id                 BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  title              String         @db.VarChar(200)
+  description        String?        @db.Text
+  /// Duration in minutes (e.g. 120 = 2 hours)
+  durationMinutes    Int            @map("duration_minutes")
+  passPercent        Int            @default(40) @map("pass_percent")
+  status             ExamStatus     @default(DRAFT)
+  accessMode         ExamAccessMode @default(ASSIGNED) @map("access_mode")
+  /// Public walk-in URL token (/exam-link/[token]) — only for LINK mode
+  linkToken          String?        @unique @map("link_token") @db.VarChar(64)
+  /// Institute admin activates link on site; deactivate closes new starts
+  linkActive         Boolean        @default(false) @map("link_active") @db.TinyInt
+  batchLabel         String?        @map("batch_label") @db.VarChar(150)
+  requireCamera      Boolean        @default(true) @map("require_camera") @db.TinyInt
+  requireFaceDetect  Boolean        @default(true) @map("require_face_detect") @db.TinyInt
+  maxFaceViolations  Int            @default(3) @map("max_face_violations")
+  shuffleQuestions   Boolean        @default(true) @map("shuffle_questions") @db.TinyInt
+  startsAt           DateTime?      @map("starts_at") @db.DateTime
+  endsAt             DateTime?      @map("ends_at") @db.DateTime
+  createdBy          BigInt         @map("created_by") @db.UnsignedBigInt
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamp
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamp
+
+  creator            User           @relation("ExamCreator", fields: [createdBy], references: [id])
+  targets            ExamTarget[]
+  questions          ExamQuestion[]
+  attempts           ExamAttempt[]
+
+  @@index([status], map: "idx_exam_status")
+  @@index([createdBy], map: "idx_exam_creator")
+  @@index([accessMode], map: "idx_exam_access_mode")
+  @@map("exams")
+}
+
+/// Which franchise + course (batch) this exam is for
+model ExamTarget {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  examId      BigInt   @map("exam_id") @db.UnsignedBigInt
+  franchiseId BigInt   @map("franchise_id") @db.UnsignedBigInt
+  courseId    BigInt   @map("course_id") @db.UnsignedBigInt
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, franchiseId, courseId], map: "unique_exam_target")
+  @@index([franchiseId, courseId], map: "idx_exam_target_fc")
+  @@map("exam_targets")
+}
+
+model ExamQuestion {
+  id        BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  examId    BigInt            @map("exam_id") @db.UnsignedBigInt
+  text      String           @db.Text
+  type      ExamQuestionType @default(SINGLE_CHOICE)
+  marks     Int              @default(1)
+  sortOrder Int              @default(0) @map("sort_order")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp
+
+  exam      Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options   ExamOption[]
+  answers   ExamAnswer[]
+
+  @@index([examId], map: "idx_exam_question_exam")
+  @@map("exam_questions")
+}
+
+model ExamOption {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  questionId BigInt   @map("question_id") @db.UnsignedBigInt
+  text       String   @db.VarChar(500)
+  isCorrect  Boolean  @default(false) @map("is_correct") @db.TinyInt
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  question   ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId], map: "idx_exam_option_q")
+  @@map("exam_options")
+}
+
+model ExamAttempt {
+  id             BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  examId         BigInt             @map("exam_id") @db.UnsignedBigInt
+  /// Null for walk-in (LINK) attempts — identity is enrollmentNumber
+  studentId      BigInt?           @map("student_id") @db.UnsignedBigInt
+  userId         BigInt?            @map("user_id") @db.UnsignedBigInt
+  /// Secret for walk-in take APIs (no student login)
+  accessKey      String?           @unique @map("access_key") @db.VarChar(64)
+  status         ExamAttemptStatus @default(IN_PROGRESS)
+  startedAt      DateTime          @default(now()) @map("started_at") @db.Timestamp
+  /// Hard deadline = startedAt + exam.durationMinutes
+  endsAt         DateTime          @map("ends_at") @db.DateTime
+  submittedAt    DateTime?         @map("submitted_at") @db.DateTime
+  score          Decimal?          @db.Decimal(10, 2)
+  maxScore       Decimal?          @map("max_score") @db.Decimal(10, 2)
+  percent        Decimal?          @db.Decimal(5, 2)
+  passed         Boolean?          @db.TinyInt
+  faceViolations Int               @default(0) @map("face_violations")
+  /// Student enters before start
+  enrollmentNumber String?         @map("enrollment_number") @db.VarChar(80)
+  /// Selfie / ID photo captured before start
+  photoUrl         String?         @map("photo_url") @db.VarChar(500)
+  /// Seconds remaining when proctor terminated (for resume)
+  remainingSecondsAtStop Int?      @map("remaining_seconds_at_stop")
+  /// Institute admin approved student to continue from where they left
+  restartApprovedAt DateTime?      @map("restart_approved_at") @db.DateTime
+  questionOrder  Json?             @map("question_order")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamp
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamp
+
+  exam           Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student        Student?          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user           User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers        ExamAnswer[]
+  proctorEvents  ExamProctorEvent[]
+
+  @@unique([examId, studentId], map: "unique_exam_student_attempt")
+  @@index([userId], map: "idx_attempt_user")
+  @@index([status], map: "idx_attempt_status")
+  @@index([examId, enrollmentNumber], map: "idx_attempt_exam_enrollment")
+  @@map("exam_attempts")
+}
+
+model ExamAnswer {
+  id                BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  attemptId         BigInt   @map("attempt_id") @db.UnsignedBigInt
+  questionId        BigInt   @map("question_id") @db.UnsignedBigInt
+  /// Selected option IDs as JSON string array
+  selectedOptionIds Json     @map("selected_option_ids")
+  isCorrect         Boolean? @map("is_correct") @db.TinyInt
+  marksAwarded      Decimal? @map("marks_awarded") @db.Decimal(10, 2)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  attempt           ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question          ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId], map: "unique_attempt_question")
+  @@map("exam_answers")
+}
+
+model ExamProctorEvent {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  attemptId BigInt   @map("attempt_id") @db.UnsignedBigInt
+  /// NO_FACE | MULTIPLE_FACES | TAB_HIDDEN | CAMERA_LOST | LOOKING_AWAY
+  type      String   @db.VarChar(40)
+  detail    String?  @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  attempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId], map: "idx_proctor_attempt")
+  @@map("exam_proctor_events")
 }

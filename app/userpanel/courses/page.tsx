@@ -75,7 +75,6 @@ interface Course {
   type: string;
   category: string;
   categoryData: Category | null;
-  baseFee: number;
   durationMonths: number;
 }
 
@@ -92,11 +91,6 @@ function formatTitle(title: string): string {
     return t.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
   }
   return t;
-}
-
-function formatFee(fee: number): string {
-  if (!fee || fee <= 0) return "On enquiry";
-  return `₹${fee.toLocaleString("en-IN")}`;
 }
 
 function formatDuration(months: number): string {
@@ -154,8 +148,7 @@ function CourseCard({
           {course.description?.trim() || "Industry-aligned vocational programme with practical training."}
         </p>
 
-        <div className="mb-4 flex items-center justify-between gap-3 border-t border-[#F1F5F9] pt-3">
-          <span className="text-base font-bold text-[#0F172A]">{formatFee(course.baseFee)}</span>
+        <div className="mb-4 flex items-center border-t border-[#F1F5F9] pt-3">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B]">
             <FiClock className="h-3.5 w-3.5 text-[#C4A35A]" />
             {formatDuration(course.durationMonths)}

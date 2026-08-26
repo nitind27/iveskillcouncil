@@ -23,8 +23,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  CreditCard,
 } from "lucide-react";
 import FranchiseCourseManager from "./FranchiseCourseManager";
+import { FranchiseIdCardModal } from "./FranchiseIdCardModal";
 import { cn } from "@/lib/utils";
 import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
 import { fetcherWithPagination } from "@/lib/fetcher";
@@ -101,6 +103,7 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [courseManagerOpen, setCourseManagerOpen] = useState(false);
+  const [idCardOpen, setIdCardOpen] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCredentials, setResendCredentials] = useState<{
     email: string;
@@ -207,6 +210,38 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
       // keep list row data
     } finally {
       setViewLoading(false);
+    }
+  };
+
+  const handleOpenIdCard = async (franchise: Franchise) => {
+    setSelectedFranchise(franchise);
+    setIdCardOpen(true);
+    try {
+      const res = await fetch(`/api/franchises/${franchise.id}`, { credentials: "include" });
+      const data = await res.json();
+      if (res.ok && data?.data) {
+        setSelectedFranchise({
+          ...franchise,
+          ...data.data,
+          owner: data.data.owner
+            ? {
+                id: String(data.data.owner.id),
+                name: data.data.owner.name,
+                email: data.data.owner.email,
+                phone: data.data.owner.phone,
+              }
+            : franchise.owner,
+          plan: data.data.plan
+            ? {
+                name: data.data.plan.name,
+                price: String(data.data.plan.price),
+              }
+            : franchise.plan,
+          stats: data.data.stats || franchise.stats,
+        });
+      }
+    } catch {
+      // keep list row
     }
   };
 
@@ -357,6 +392,14 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
             title="View details"
           >
             <Eye className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOpenIdCard(row)}
+            className="rounded-lg border border-border/70 p-1.5 text-muted-foreground transition hover:border-[#C4A35A]/50 hover:bg-[#C4A35A]/10 hover:text-[#8B6914]"
+            title="Release ID Card"
+          >
+            <CreditCard className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
@@ -725,6 +768,17 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
                   type="button"
                   onClick={() => {
                     setViewModalOpen(false);
+                    setIdCardOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#C4A35A]/40 bg-[#C4A35A]/15 px-4 py-2 text-sm font-semibold text-[#8B6914] hover:bg-[#C4A35A]/25"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Release ID Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewModalOpen(false);
                     setCourseManagerOpen(true);
                   }}
                   className="inline-flex items-center gap-2 rounded-lg bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white hover:bg-[#163A6B]"
@@ -784,6 +838,12 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
         franchiseId={selectedFranchise?.id ?? ""}
         franchiseName={selectedFranchise?.name ?? ""}
         onUpdated={refreshList}
+      />
+
+      <FranchiseIdCardModal
+        open={idCardOpen}
+        onClose={() => setIdCardOpen(false)}
+        franchise={selectedFranchise}
       />
 
       <Modal

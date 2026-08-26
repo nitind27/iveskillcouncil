@@ -13,7 +13,7 @@ export interface GlassModalProps {
   /** Modal title (optional). */
   title?: string;
   /** Size of the content box. */
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   /** Show close button in header. */
   showCloseButton?: boolean;
   /** Clicking backdrop closes modal. */
@@ -34,6 +34,7 @@ const sizeClasses = {
   md: "max-w-lg",
   lg: "max-w-2xl",
   xl: "max-w-4xl",
+  "2xl": "max-w-6xl",
 };
 
 export function GlassModal({

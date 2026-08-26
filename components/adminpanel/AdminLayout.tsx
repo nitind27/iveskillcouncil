@@ -39,13 +39,14 @@ export default function AdminLayout({
       return;
     }
 
-    if (loading) {
-      setAuthChecked(false);
+    // Already logged in — never flash the full-page loader again on route changes
+    if (user) {
+      setAuthChecked(true);
       return;
     }
 
-    if (user) {
-      setAuthChecked(true);
+    if (loading) {
+      setAuthChecked(false);
       return;
     }
 
@@ -102,7 +103,8 @@ export default function AdminLayout({
     router.replace("/403");
   }, [loading, user, hasAccess, pn, router]);
 
-  if ((loading || !authChecked || (dbUnavailable && !user)) && !isLoginPage && !isUserPanelPage) {
+  // Keep shell visible while tokens refresh — only block when we have no user yet
+  if (!user && (loading || !authChecked || dbUnavailable) && !isLoginPage && !isUserPanelPage) {
     return (
       <PageLoader
         variant="admin"
