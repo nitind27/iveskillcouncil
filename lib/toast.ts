@@ -1,9 +1,10 @@
 /**
  * Toast notifications using react-toastify.
- * Success/error/info/warning show as toasts; confirm dialogs use native confirm().
+ * Confirm / delete use a proper modal (ConfirmDialogHost), not window.alert.
  */
 
 import { toast } from "react-toastify";
+import { openConfirmDialog } from "@/components/common/ConfirmDialog";
 
 function formatMessage(title: string, message?: string): string {
   return message ? `${title}\n${message}` : title;
@@ -33,24 +34,38 @@ export function showWarning(title: string, message?: string): Promise<{ isConfir
   return Promise.resolve({ isConfirmed: true });
 }
 
-/** Delete/action confirmation using native confirm. */
+/** Delete confirmation modal (danger style). */
 export function showDeleteConfirm(
   title: string = "Are you sure?",
   message: string = "You won't be able to revert this!"
 ): Promise<{ isConfirmed: boolean }> {
-  const text = message ? `${title}\n\n${message}` : title;
-  const isConfirmed = typeof window !== "undefined" && window.confirm(text);
-  return Promise.resolve({ isConfirmed: !!isConfirmed });
+  if (typeof window === "undefined") {
+    return Promise.resolve({ isConfirmed: false });
+  }
+  return openConfirmDialog({
+    title,
+    message,
+    variant: "danger",
+    confirmLabel: "Delete",
+    cancelLabel: "Cancel",
+  });
 }
 
-/** Generic confirm dialog. */
+/** Generic confirm modal. */
 export function showConfirm(
   title: string,
   message?: string
 ): Promise<{ isConfirmed: boolean }> {
-  const text = message ? `${title}\n\n${message}` : title;
-  const isConfirmed = typeof window !== "undefined" && window.confirm(text);
-  return Promise.resolve({ isConfirmed: !!isConfirmed });
+  if (typeof window === "undefined") {
+    return Promise.resolve({ isConfirmed: false });
+  }
+  return openConfirmDialog({
+    title,
+    message,
+    variant: "default",
+    confirmLabel: "Confirm",
+    cancelLabel: "Cancel",
+  });
 }
 
 export { toast };

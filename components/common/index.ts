@@ -25,6 +25,13 @@ export {
   type ModalProps,
 } from "./Modal";
 
+export {
+  ConfirmDialogHost,
+  openConfirmDialog,
+  type ConfirmOptions,
+  type ConfirmVariant,
+} from "./ConfirmDialog";
+
 // Glass Modal (user panel / dark glass style with framer-motion)
 export { GlassModal, type GlassModalProps } from "./GlassModal";
 

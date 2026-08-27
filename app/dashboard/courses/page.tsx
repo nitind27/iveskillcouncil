@@ -302,7 +302,7 @@ export default function SuperAdminCoursesPage() {
 
   const handleDeleteCourse = async (id: string, name: string) => {
     const ok = await showDeleteConfirm(`Delete "${name}"?`, "This cannot be undone.");
-    if (!ok) return;
+    if (!ok.isConfirmed) return;
     try {
       const res = await fetch(`/api/courses/${id}`, {
         method: "DELETE",

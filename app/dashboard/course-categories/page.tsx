@@ -187,7 +187,7 @@ export default function CourseCategoriesPage() {
         ? `${used} course(s) use this category. Reassign them first.`
         : "This cannot be undone."
     );
-    if (!ok) return;
+    if (!ok.isConfirmed) return;
     try {
       const res = await fetch(`/api/admin/course-categories/${cat.id}`, {
         method: "DELETE",

@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import AppShell from "@/components/AppShell";
 import ToastProvider from "@/components/common/ToastProvider";
+import { ConfirmDialogHost } from "@/components/common/ConfirmDialog";
 import SWRProvider from "@/components/SWRProvider";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${inter.variable} ${notoDevanagari.variable} ${notoGujarati.variable} ${inter.className} font-sans antialiased`}
       >
         <ToastProvider />
+        <ConfirmDialogHost />
         <ThemeProvider>
           <AuthProvider>
             <LanguageProvider>
