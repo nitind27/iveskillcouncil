@@ -195,7 +195,12 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
       const code = json.data?.studentCode as string;
       const fullName = [form.firstName.trim(), form.surname.trim()].filter(Boolean).join(" ");
       setCreatedCode(code);
-      await showSuccess("Student added", `ID ${code} created. Assign a course next.`);
+      await showSuccess(
+        "Student added",
+        json.data?.emailSent
+          ? `ID ${code} created. Account details emailed to ${form.email.trim()}. Assign a course next.`
+          : `ID ${code} created. Assign a course next.`
+      );
       onSuccess?.({
         id: String(json.data?.id),
         studentCode: code,
@@ -221,7 +226,7 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
             {createdCode}
           </p>
           <p className="text-sm text-muted-foreground">
-            Details saved. Next step: assign a course.
+            Account details have been emailed to the student. Next step: assign a course.
           </p>
           <button
             type="button"

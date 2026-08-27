@@ -91,10 +91,10 @@ export function AssignCourseModal({
         await showError("Error", json.error || "Failed");
         return;
       }
-      await showSuccess(
-        "Course assigned",
-        `${student.fullName} enrolled in ${json.data?.courseName || "course"}`
-      );
+      const bits = [`${student.fullName} enrolled in ${json.data?.courseName || "course"}`];
+      if (json.data?.emailSent) bits.push("course details emailed");
+      if (json.data?.receiptEmailSent) bits.push("fee receipt emailed");
+      await showSuccess("Course assigned", bits.join(" · "));
       onSuccess?.();
       onClose();
     } finally {

@@ -286,6 +286,8 @@ export async function POST(request: NextRequest) {
       paidFee: 0,
       pendingFee: 0,
       admissionDate: admission.toISOString().split("T")[0],
+      studentCode,
+      phone: phone || null,
       address: address?.trim() || null,
       area: area?.trim() || null,
       pincode: pincode?.trim() || null,

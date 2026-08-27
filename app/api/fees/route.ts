@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
+import { sendFeeReceiptEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -210,7 +211,11 @@ export async function POST(request: NextRequest) {
 
     const student = await prisma.student.findUnique({
       where: { id: sid },
-      include: { franchise: true },
+      include: {
+        franchise: { select: { name: true } },
+        course: { select: { name: true } },
+        user: { select: { fullName: true, email: true } },
+      },
     });
     if (!student) return errorResponse("Student not found", 404);
 
@@ -226,27 +231,66 @@ export async function POST(request: NextRequest) {
       return errorResponse(`Amount exceeds pending fee (₹${(totalFee - currentPaid).toLocaleString("en-IN")})`, 400);
     }
 
-    await prisma.$transaction([
+    const paymentDate = new Date();
+    const newPaidFee = currentPaid + amountNum;
+    const pendingFee = Math.max(0, totalFee - newPaidFee);
+    const txnRef = transactionReference?.trim() || null;
+
+    const [, payment] = await prisma.$transaction([
+      prisma.student.update({
+        where: { id: sid },
+        data: { paidFee: { increment: amountNum } },
+      }),
       prisma.payment.create({
         data: {
           studentId: sid,
           franchiseId: student.franchiseId,
           amount: amountNum,
           paymentMode: mode,
-          transactionReference: transactionReference?.trim() || null,
+          transactionReference: txnRef,
           status: "SUCCESS",
-          paymentDate: new Date(),
+          paymentDate,
         },
-      }),
-      prisma.student.update({
-        where: { id: sid },
-        data: { paidFee: { increment: amountNum } },
       }),
     ]);
 
+    const receiptNo = `RCP-${payment.id.toString().padStart(6, "0")}`;
+    let receiptEmailSent = false;
+    const studentEmail = student.user?.email;
+    if (studentEmail) {
+      const receiptResult = await sendFeeReceiptEmail(studentEmail, {
+        fullName: student.user.fullName,
+        studentCode: student.studentCode,
+        email: studentEmail,
+        franchiseName: student.franchise?.name ?? "Franchise",
+        courseName: student.course?.name ?? "Course",
+        receiptNo,
+        paymentDate: paymentDate.toISOString().split("T")[0],
+        amountPaid: amountNum,
+        paymentMode: mode,
+        transactionReference: txnRef,
+        totalFee,
+        paidFee: newPaidFee,
+        pendingFee,
+      });
+      receiptEmailSent = receiptResult.success;
+      if (!receiptResult.success) {
+        console.warn("Fee receipt email failed:", receiptResult.error);
+      }
+    }
+
     return successResponse(
-      { studentId: studentId, amount: amountNum, newPaidFee: currentPaid + amountNum },
-      "Payment recorded successfully"
+      {
+        studentId: studentId,
+        amount: amountNum,
+        newPaidFee,
+        pendingFee,
+        receiptNo,
+        receiptEmailSent,
+      },
+      receiptEmailSent
+        ? "Payment recorded — receipt emailed to student"
+        : "Payment recorded successfully"
     );
   } catch (err) {
     console.error("Fees POST:", err);

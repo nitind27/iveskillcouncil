@@ -794,7 +794,12 @@ export default function FeesPage() {
                 showError("Error", json.error || "Failed to record payment");
                 return;
               }
-              showSuccess("Success", "Payment recorded successfully");
+              showSuccess(
+                "Success",
+                json.data?.receiptEmailSent
+                  ? `Payment recorded. Receipt ${json.data.receiptNo || ""} emailed to student.`
+                  : json.message || "Payment recorded successfully"
+              );
               setAddPaymentOpen(false);
               setAddForm({
                 studentId: "",

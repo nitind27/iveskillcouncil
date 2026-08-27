@@ -3,8 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
+import { sendFeeReceiptEmail, sendStudentWelcomeEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
+
+function buildLoginUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/login`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/login`;
+  }
+  return "/login";
+}
 
 /**
  * POST /api/students/[id]/assign-course
@@ -26,7 +37,10 @@ export async function POST(
     const { id } = await params;
     const student = await prisma.student.findUnique({
       where: { id: BigInt(id) },
-      include: { user: { select: { fullName: true } } },
+      include: {
+        user: { select: { fullName: true, email: true, phone: true } },
+        franchise: { select: { name: true } },
+      },
     });
     if (!student) return errorResponse("Student not found", 404);
 
@@ -71,6 +85,9 @@ export async function POST(
     }
 
     const paidFee = Number(student.paidFee) + initialPayment;
+    const pendingFee = Math.max(0, totalFee - paidFee);
+    const paymentDate = new Date();
+    let paymentId: bigint | null = null;
 
     await prisma.student.update({
       where: { id: student.id },
@@ -82,16 +99,75 @@ export async function POST(
     });
 
     if (initialPayment > 0) {
-      await prisma.payment.create({
+      const payment = await prisma.payment.create({
         data: {
           studentId: student.id,
           franchiseId: student.franchiseId,
           amount: initialPayment,
           paymentMode,
           status: "SUCCESS",
-          paymentDate: new Date(),
+          paymentDate,
         },
       });
+      paymentId = payment.id;
+    }
+
+    const courseName = feeRow.course.name;
+    const franchiseName = student.franchise?.name ?? "Franchise";
+    const studentEmail = student.user.email;
+    let emailSent = false;
+    let receiptEmailSent = false;
+
+    // Course + fee summary email (reuse welcome template without password when already created)
+    if (studentEmail) {
+      const enrollResult = await sendStudentWelcomeEmail(studentEmail, {
+        fullName: student.user.fullName,
+        email: studentEmail,
+        loginUrl: buildLoginUrl(),
+        courseName,
+        franchiseName,
+        totalFee,
+        paidFee,
+        pendingFee,
+        admissionDate: student.admissionDate
+          ? student.admissionDate.toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        studentCode: student.studentCode,
+        phone: student.user.phone,
+        address: student.address,
+        area: student.area,
+        pincode: student.pincode,
+        city: student.city,
+        state: student.state,
+        initialPaymentAmount: initialPayment > 0 ? initialPayment : undefined,
+        courseUpdateOnly: true,
+      });
+      emailSent = enrollResult.success;
+      if (!enrollResult.success) {
+        console.warn("Course assign email failed:", enrollResult.error);
+      }
+    }
+
+    if (initialPayment > 0 && paymentId && studentEmail) {
+      const receiptNo = `RCP-${paymentId.toString().padStart(6, "0")}`;
+      const receiptResult = await sendFeeReceiptEmail(studentEmail, {
+        fullName: student.user.fullName,
+        studentCode: student.studentCode,
+        email: studentEmail,
+        franchiseName,
+        courseName,
+        receiptNo,
+        paymentDate: paymentDate.toISOString().split("T")[0],
+        amountPaid: initialPayment,
+        paymentMode,
+        totalFee,
+        paidFee,
+        pendingFee,
+      });
+      receiptEmailSent = receiptResult.success;
+      if (!receiptResult.success) {
+        console.warn("Initial fee receipt email failed:", receiptResult.error);
+      }
     }
 
     return successResponse(
@@ -100,9 +176,12 @@ export async function POST(
         studentCode: student.studentCode,
         fullName: student.user.fullName,
         courseId,
-        courseName: feeRow.course.name,
+        courseName,
         totalFee,
         paidFee,
+        pendingFee,
+        emailSent,
+        receiptEmailSent,
       },
       "Course assigned successfully"
     );
