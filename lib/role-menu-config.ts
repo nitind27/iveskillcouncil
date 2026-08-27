@@ -47,61 +47,61 @@ export interface RoleMenuSection {
   items: RoleMenuItem[];
 }
 
-/** Sidebar menu for SUPER_ADMIN / ADMIN — grouped by domain */
+/** Sidebar menu for SUPER_ADMIN / ADMIN — ordered by daily work flow */
 const SUPER_ADMIN_MENU: RoleMenuSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "1. Overview",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
   {
-    id: "franchises",
-    label: "Franchises",
+    id: "course-setup",
+    label: "2. Course Setup",
     items: [
-      { id: "manage-franchises", label: "All Franchises", icon: Building2, href: "/franchises" },
-      { id: "approvals", label: "Pending Approvals", icon: FileCheck, href: "/franchises/pending" },
-      {
-        id: "franchise-applications",
-        label: "Applications",
-        icon: ClipboardList,
-        href: "/dashboard/franchise-applications",
-      },
-      {
-        id: "franchise-inquiries",
-        label: "Franchise Inquiries",
-        icon: Inbox,
-        href: "/dashboard/franchise-inquiries",
-      },
-      { id: "manage-plans", label: "Subscription Plans", icon: Package, href: "/subscription/plans" },
-    ],
-  },
-  {
-    id: "academics",
-    label: "Academics",
-    items: [
-      { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
       {
         id: "course-categories",
         label: "Course Categories",
         icon: Tag,
         href: "/dashboard/course-categories",
       },
-      { id: "all-students", label: "Students", icon: GraduationCap, href: "/students" },
-      { id: "exams", label: "Exams", icon: ClipboardList, href: "/exams" },
+      { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
     ],
   },
   {
-    id: "finance",
-    label: "Finance",
+    id: "franchise-network",
+    label: "3. Franchise Network",
     items: [
+      { id: "manage-plans", label: "Subscription Plans", icon: Package, href: "/subscription/plans" },
+      {
+        id: "franchise-inquiries",
+        label: "Franchise Inquiries",
+        icon: Inbox,
+        href: "/dashboard/franchise-inquiries",
+      },
+      {
+        id: "franchise-applications",
+        label: "Applications",
+        icon: ClipboardList,
+        href: "/dashboard/franchise-applications",
+      },
+      { id: "approvals", label: "Pending Approvals", icon: FileCheck, href: "/franchises/pending" },
+      { id: "manage-franchises", label: "All Franchises", icon: Building2, href: "/franchises" },
+    ],
+  },
+  {
+    id: "students-ops",
+    label: "4. Students & Learning",
+    items: [
+      { id: "all-students", label: "Students", icon: GraduationCap, href: "/students" },
+      { id: "exams", label: "Exams", icon: ClipboardList, href: "/exams" },
       { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
     ],
   },
   {
     id: "certificates",
-    label: "Certificates",
+    label: "5. Certificates",
     items: [
       {
         id: "certificate-requests",
@@ -124,8 +124,8 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
     ],
   },
   {
-    id: "enquiries",
-    label: "Enquiries & Support",
+    id: "leads-support",
+    label: "6. Leads & Support",
     items: [
       {
         id: "course-enquiries",
@@ -149,7 +149,7 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
   },
   {
     id: "communication",
-    label: "Communication",
+    label: "7. Communication",
     items: [
       { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
       { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
@@ -157,12 +157,12 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
   },
   {
     id: "analytics",
-    label: "Analytics",
+    label: "8. Reports",
     items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }],
   },
   {
     id: "settings",
-    label: "Settings",
+    label: "9. System",
     items: [
       {
         id: "userpanel-settings",
@@ -183,42 +183,36 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
 
 const ADMIN_MENU: RoleMenuSection[] = SUPER_ADMIN_MENU;
 
-/** Sidebar menu for SUB_ADMIN (Franchise Owner) */
+/** Sidebar menu for SUB_ADMIN (Franchise Owner) — centre work flow */
 const SUB_ADMIN_MENU: RoleMenuSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "1. Overview",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
   {
-    id: "academics",
-    label: "Academics",
+    id: "centre-academics",
+    label: "2. My Centre",
     items: [
       { id: "my-courses", label: "My Courses", icon: BookOpen, href: "/dashboard/franchise-courses" },
       { id: "my-students", label: "My Students", icon: GraduationCap, href: "/students" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance/manual" },
+      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
     ],
   },
   {
     id: "team",
-    label: "Team",
+    label: "3. Team",
     items: [
       { id: "staff-management", label: "Staff", icon: Users, href: "/staff" },
       { id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" },
     ],
   },
   {
-    id: "finance",
-    label: "Finance",
-    items: [
-      { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
-    ],
-  },
-  {
     id: "certificates",
-    label: "Certificates",
+    label: "4. Certificates",
     items: [
       {
         id: "certificate-requests",
@@ -230,7 +224,7 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
   },
   {
     id: "communication",
-    label: "Communication",
+    label: "5. Communication",
     items: [
       { id: "announcements", label: "Announcements", icon: Megaphone, href: "/announcements" },
       { id: "chat", label: "Chat", icon: MessageSquare, href: "/chat" },
@@ -238,23 +232,23 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
   },
   {
     id: "analytics",
-    label: "Analytics",
+    label: "6. Reports",
     items: [{ id: "reports", label: "Reports", icon: BarChart3, href: "/reports" }],
   },
 ];
 
-/** Sidebar menu for STUDENT */
+/** Sidebar menu for STUDENT — learning journey */
 const STUDENT_MENU: RoleMenuSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "1. Overview",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
   {
     id: "learning",
-    label: "Learning",
+    label: "2. My Learning",
     items: [
       { id: "my-course", label: "My Course", icon: BookOpen, href: "/my-course" },
       { id: "my-exams", label: "My Exams", icon: ClipboardList, href: "/my-exams" },
@@ -262,38 +256,34 @@ const STUDENT_MENU: RoleMenuSection[] = [
     ],
   },
   {
-    id: "fees",
-    label: "Fees",
-    items: [{ id: "my-fees", label: "My Fees", icon: IndianRupee, href: "/my-fees" }],
-  },
-  {
-    id: "certificates",
-    label: "Certificates",
+    id: "fees-cert",
+    label: "3. Fees & Certificate",
     items: [
+      { id: "my-fees", label: "My Fees", icon: IndianRupee, href: "/my-fees" },
       { id: "certificate", label: "Certificate", icon: Award, href: "/certificate" },
     ],
   },
   {
     id: "feedback",
-    label: "Feedback",
+    label: "4. Feedback",
     items: [
       { id: "feedback", label: "Feedback", icon: MessageSquare, href: "/feedback" },
     ],
   },
 ];
 
-/** Sidebar menu for STAFF */
+/** Sidebar menu for STAFF — daily work */
 const STAFF_MENU: RoleMenuSection[] = [
   {
     id: "overview",
-    label: "Overview",
+    label: "1. Overview",
     items: [
       { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
     ],
   },
   {
     id: "work",
-    label: "My Work",
+    label: "2. My Work",
     items: [
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance" },
       {
@@ -306,7 +296,7 @@ const STAFF_MENU: RoleMenuSection[] = [
   },
   {
     id: "payroll",
-    label: "Payroll",
+    label: "3. Payroll",
     items: [{ id: "salary", label: "Salary", icon: Wallet, href: "/staff/salary" }],
   },
 ];
