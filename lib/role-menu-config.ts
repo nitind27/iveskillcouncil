@@ -82,6 +82,12 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
     label: "Academics",
     items: [
       { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
+      {
+        id: "course-categories",
+        label: "Course Categories",
+        icon: Tag,
+        href: "/dashboard/course-categories",
+      },
       { id: "all-students", label: "Students", icon: GraduationCap, href: "/students" },
       { id: "exams", label: "Exams", icon: ClipboardList, href: "/exams" },
     ],
@@ -347,6 +353,7 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
     "/dashboard/franchise-applications",
     "/dashboard/franchise-inquiries",
     "/dashboard/courses",
+    "/dashboard/course-categories",
     "/students",
     "/certificates",
     "/fees",
@@ -375,6 +382,7 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
     "/dashboard/franchise-applications",
     "/dashboard/franchise-inquiries",
     "/dashboard/courses",
+    "/dashboard/course-categories",
     "/students",
     "/certificates",
     "/fees",

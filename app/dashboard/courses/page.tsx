@@ -9,8 +9,6 @@ import {
   Trash2,
   Edit2,
   Tag,
-  X,
-  Check,
   RefreshCw,
   Search,
   Clock,
@@ -31,6 +29,7 @@ import {
   courseToForm,
   type CourseFormState,
 } from "@/components/courses/CourseFormModal";
+import { isRichTextEmpty, stripHtml } from "@/components/common/RichTextEditor";
 
 interface Course {
   id: string;
@@ -83,8 +82,6 @@ interface Category {
   status: string;
 }
 
-const COURSE_TYPES = ["SILVER", "GOLD", "DIAMOND"] as const;
-
 function slugify(name: string) {
   return name
     .trim()
@@ -95,18 +92,6 @@ function slugify(name: string) {
     .replace(/^-|-$/g, "")
     .slice(0, 150);
 }
-
-const COLOR_OPTIONS = [
-  { value: "blue", label: "Blue", cls: "bg-[#1E4A85]" },
-  { value: "green", label: "Green", cls: "bg-emerald-500" },
-  { value: "pink", label: "Pink", cls: "bg-rose-500" },
-  { value: "orange", label: "Orange", cls: "bg-orange-500" },
-  { value: "violet", label: "Violet", cls: "bg-indigo-500" },
-  { value: "amber", label: "Amber", cls: "bg-[#C4A35A]" },
-  { value: "emerald", label: "Emerald", cls: "bg-teal-500" },
-  { value: "cyan", label: "Cyan", cls: "bg-cyan-600" },
-  { value: "gray", label: "Gray", cls: "bg-slate-500" },
-];
 
 const TYPE_STYLE: Record<
   string,
@@ -129,11 +114,6 @@ const TYPE_STYLE: Record<
   },
 };
 
-const inputCls =
-  "h-10 w-full rounded-lg border border-border/70 bg-card px-3 text-sm font-medium outline-none transition focus:border-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/15";
-const labelCls =
-  "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground";
-
 export default function SuperAdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -141,23 +121,12 @@ export default function SuperAdminCoursesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"courses" | "categories">("courses");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const [courseOpen, setCourseOpen] = useState(false);
   const [editCourse, setEditCourse] = useState<Course | null>(null);
   const [courseForm, setCourseForm] = useState<CourseFormState>(emptyCourseForm);
-
-  const [catOpen, setCatOpen] = useState(false);
-  const [editCat, setEditCat] = useState<Category | null>(null);
-  const [catForm, setCatForm] = useState({
-    name: "",
-    description: "",
-    icon: "",
-    colorClass: "blue",
-    sortOrder: "99",
-  });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -252,7 +221,7 @@ export default function SuperAdminCoursesPage() {
       showError("Validation", "Title, Price and Duration are required");
       return;
     }
-    if (!courseForm.description.trim() || !courseForm.syllabus.trim()) {
+    if (isRichTextEmpty(courseForm.description) || isRichTextEmpty(courseForm.syllabus)) {
       showError("Validation", "Description and Syllabus are required");
       return;
     }
@@ -351,95 +320,6 @@ export default function SuperAdminCoursesPage() {
     }
   };
 
-  const openCreateCat = () => {
-    setEditCat(null);
-    setCatForm({
-      name: "",
-      description: "",
-      icon: "",
-      colorClass: "blue",
-      sortOrder: "99",
-    });
-    setCatOpen(true);
-  };
-
-  const openEditCat = (cat: Category) => {
-    setEditCat(cat);
-    setCatForm({
-      name: cat.name,
-      description: cat.description || "",
-      icon: cat.icon || "",
-      colorClass: cat.colorClass || "blue",
-      sortOrder: String(cat.sortOrder),
-    });
-    setCatOpen(true);
-  };
-
-  const handleSaveCat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!catForm.name.trim()) {
-      showError("Validation", "Name is required");
-      return;
-    }
-    setSaving(true);
-    try {
-      const url = editCat
-        ? `/api/admin/course-categories/${editCat.id}`
-        : "/api/admin/course-categories";
-      const method = editCat ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          name: catForm.name.trim(),
-          description: catForm.description.trim() || null,
-          icon: catForm.icon.trim() || null,
-          colorClass: catForm.colorClass,
-          sortOrder: Number(catForm.sortOrder) || 99,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showError("Error", data?.error || "Failed");
-        return;
-      }
-      showSuccess(
-        editCat ? "Updated" : "Created",
-        editCat ? "Category updated." : "Category created."
-      );
-      setCatOpen(false);
-      loadData();
-    } catch {
-      showError("Error", "Network error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDeleteCat = async (cat: Category) => {
-    const ok = await showDeleteConfirm(
-      `Delete "${cat.name}"?`,
-      "All courses in this category must be reassigned first."
-    );
-    if (!ok) return;
-    try {
-      const res = await fetch(`/api/admin/course-categories/${cat.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showError("Error", data?.error || "Failed");
-        return;
-      }
-      showSuccess("Deleted", "Category deleted.");
-      loadData();
-    } catch {
-      showError("Error", "Network error");
-    }
-  };
-
   const globalCourses = useMemo(
     () => courses.filter((c) => !c.franchiseId),
     [courses]
@@ -516,6 +396,13 @@ export default function SuperAdminCoursesPage() {
                 </p>
               </div>
             </div>
+            <Link
+              href="/dashboard/course-categories"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/20"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              Categories ({categories.length})
+            </Link>
             <button
               type="button"
               onClick={loadData}
@@ -526,11 +413,11 @@ export default function SuperAdminCoursesPage() {
             </button>
             <button
               type="button"
-              onClick={activeTab === "courses" ? openCreateCourse : openCreateCat}
+              onClick={openCreateCourse}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B132B] transition hover:brightness-110"
             >
               <Plus className="h-3.5 w-3.5" />
-              {activeTab === "courses" ? "Add Course" : "Add Category"}
+              Add Course
             </button>
           </div>
         </div>
@@ -556,29 +443,13 @@ export default function SuperAdminCoursesPage() {
         </div>
       )}
 
-      {/* Tabs + filters */}
+      {/* Filters */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="inline-flex w-fit gap-1 rounded-xl border border-[#1E4A85]/12 bg-[#1E4A85]/[0.04] p-1">
-          {(["courses", "categories"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-semibold capitalize transition",
-                activeTab === tab
-                  ? "bg-[#1E4A85] text-white shadow-sm"
-                  : "text-muted-foreground hover:text-[#1E4A85]"
-              )}
-            >
-              {tab === "courses"
-                ? `Courses (${globalCourses.length})`
-                : `Categories (${categories.length})`}
-            </button>
-          ))}
-        </div>
+        <p className="text-sm font-semibold text-[#1E4A85]">
+          Courses ({globalCourses.length})
+        </p>
 
-        {activeTab === "courses" && !loading && (
+        {!loading && (
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -610,8 +481,7 @@ export default function SuperAdminCoursesPage() {
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {activeTab === "courses" && (
-            <motion.div
+          <motion.div
               key="courses"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -645,7 +515,7 @@ export default function SuperAdminCoursesPage() {
                     const cat = c.category ? catMap[c.category] : null;
                     const style = TYPE_STYLE[c.type] || TYPE_STYLE.SILVER;
                     const TypeIcon = style.Icon;
-                    const blurb = c.shortDescription || c.description;
+                    const blurb = c.shortDescription || stripHtml(c.description || "");
                     return (
                       <motion.article
                         key={c.id}
@@ -770,118 +640,15 @@ export default function SuperAdminCoursesPage() {
                 </div>
               )}
             </motion.div>
-          )}
-
-          {activeTab === "categories" && (
-            <motion.div
-              key="categories"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              {categories.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#C4A35A]/40 bg-[#C4A35A]/[0.05] px-6 py-14 text-center">
-                  <Layers className="mx-auto h-11 w-11 text-[#C4A35A]" />
-                  <p className="mt-3 font-semibold text-foreground">No categories yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Add categories to organise courses on the public page.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={openCreateCat}
-                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#163A6B]"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Category
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {categories.map((cat, i) => {
-                    const courseCount = globalCourses.filter(
-                      (c) => c.category === cat.slug
-                    ).length;
-                    const colorDot = COLOR_OPTIONS.find((c) => c.value === cat.colorClass);
-                    return (
-                      <motion.article
-                        key={cat.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-card p-5 shadow-sm transition hover:border-[#1E4A85]/35 hover:shadow-md"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={cn(
-                                "flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm",
-                                colorDot?.cls || "bg-[#1E4A85]"
-                              )}
-                            >
-                              <Tag className="h-4 w-4" />
-                            </span>
-                            <div>
-                              <h3 className="text-sm font-bold text-foreground">{cat.name}</h3>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                /{cat.slug}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openEditCat(cat)}
-                              className="rounded-lg border border-border/70 p-1.5 text-muted-foreground transition hover:border-[#1E4A85]/40 hover:bg-[#1E4A85]/5 hover:text-[#1E4A85]"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCat(cat)}
-                              className="rounded-lg border border-border/70 p-1.5 text-muted-foreground transition hover:border-red-300 hover:bg-red-50 hover:text-red-600"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        {cat.description && (
-                          <p className="text-xs text-muted-foreground">{cat.description}</p>
-                        )}
-                        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-                          <span className="rounded-full bg-[#1E4A85]/10 px-2 py-0.5 text-[10px] font-semibold text-[#1E4A85]">
-                            {courseCount} course{courseCount !== 1 ? "s" : ""}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            Order {cat.sortOrder}
-                          </span>
-                          <span
-                            className={cn(
-                              "ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold",
-                              cat.status === "ACTIVE"
-                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                                : "bg-muted text-muted-foreground"
-                            )}
-                          >
-                            {cat.status}
-                          </span>
-                        </div>
-                      </motion.article>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
         </AnimatePresence>
       )}
-
 
       <CourseFormModal
         open={courseOpen}
         editId={editCourse?.id ?? null}
         form={courseForm}
         setForm={setCourseForm}
-        categories={categories}
+        categories={categories.filter((c) => c.status === "ACTIVE")}
         saving={saving}
         imageUploading={imageUploading}
         onClose={() => setCourseOpen(false)}
@@ -889,136 +656,6 @@ export default function SuperAdminCoursesPage() {
         onUploadImage={uploadCoverImage}
         onClearImage={clearCoverImage}
       />
-
-
-      {/* Category modal */}
-      <AnimatePresence>
-        {catOpen && (
-          <motion.div
-            key="cat-modal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B132B]/50 p-4 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && setCatOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              className="w-full max-w-md rounded-2xl border border-[#1E4A85]/15 bg-card shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-[#1E4A85]/10 bg-gradient-to-r from-[#1E4A85]/[0.06] to-transparent px-6 py-4">
-                <h3 className="font-bold text-[#1E4A85] dark:text-[#8EB6E8]">
-                  {editCat ? "Edit Category" : "Create Category"}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setCatOpen(false)}
-                  className="rounded-lg p-1.5 hover:bg-muted"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <form onSubmit={handleSaveCat} className="space-y-4 p-6">
-                <div>
-                  <label className={labelCls}>Category name *</label>
-                  <input
-                    type="text"
-                    value={catForm.name}
-                    onChange={(e) => setCatForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="e.g. Computer"
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Description</label>
-                  <input
-                    type="text"
-                    value={catForm.description}
-                    onChange={(e) =>
-                      setCatForm((f) => ({ ...f, description: e.target.value }))
-                    }
-                    placeholder="Short description"
-                    className={inputCls}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Icon name</label>
-                    <input
-                      type="text"
-                      value={catForm.icon}
-                      onChange={(e) => setCatForm((f) => ({ ...f, icon: e.target.value }))}
-                      placeholder="FiMonitor"
-                      className={inputCls}
-                    />
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      react-icons name (optional)
-                    </p>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Sort order</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={catForm.sortOrder}
-                      onChange={(e) =>
-                        setCatForm((f) => ({ ...f, sortOrder: e.target.value }))
-                      }
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className={labelCls}>Color</label>
-                  <div className="mt-1.5 flex flex-wrap gap-2">
-                    {COLOR_OPTIONS.map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        onClick={() =>
-                          setCatForm((f) => ({ ...f, colorClass: c.value }))
-                        }
-                        className={cn(
-                          "h-7 w-7 rounded-full ring-2 ring-offset-2 transition-all",
-                          c.cls,
-                          catForm.colorClass === c.value
-                            ? "scale-110 ring-[#1E4A85]"
-                            : "ring-transparent"
-                        )}
-                        title={c.label}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setCatOpen(false)}
-                    className="h-10 flex-1 rounded-lg border border-border text-sm font-semibold hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#1E4A85] text-sm font-semibold text-white hover:bg-[#163A6B] disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    {editCat ? "Update" : "Create"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

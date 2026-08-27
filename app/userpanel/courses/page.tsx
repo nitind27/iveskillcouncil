@@ -145,7 +145,11 @@ function CourseCard({
           {formatTitle(course.name)}
         </h3>
         <p className="mb-4 line-clamp-2 flex-1 text-sm leading-relaxed text-[#64748B]">
-          {course.description?.trim() || "Industry-aligned vocational programme with practical training."}
+          {(course.description || "")
+            .replace(/<[^>]*>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim() ||
+            "Industry-aligned vocational programme with practical training."}
         </p>
 
         <div className="mb-4 flex items-center border-t border-[#F1F5F9] pt-3">

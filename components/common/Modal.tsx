@@ -97,7 +97,8 @@ export function Modal({
   const modalContent = (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center p-4",
+        // Above admin navbar (z-[60]) / sidebar (z-50)
+        "fixed inset-0 z-[9999] flex justify-center overflow-y-auto overscroll-contain p-4 pt-6 sm:items-center sm:py-8",
         overlayClassName
       )}
       role="dialog"
@@ -110,27 +111,28 @@ export function Modal({
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-modal-backdrop-in"
         aria-hidden="true"
+        onClick={closeOnOverlayClick ? onClose : undefined}
       />
 
       {/* Modal - smooth top-to-bottom fade + glow (Bootstrap-style, no Bootstrap) */}
       <div
         ref={modalRef}
         className={cn(
-          "relative w-full bg-gray-100 dark:bg-gray-800 rounded-xl",
+          "relative my-auto w-full bg-gray-100 dark:bg-gray-800 rounded-xl",
           "border border-gray-200/80 dark:border-gray-700/80",
           "modal-glow",
           "ring-1 ring-black/5 dark:ring-white/10",
           "animate-modal-content-in",
           sizeClasses[size],
-          "max-h-[90vh] flex flex-col",
+          "max-h-[min(90vh,calc(100dvh-3rem))] flex flex-col",
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex-1">
+          <div className="flex shrink-0 items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-1 min-w-0 pr-2">
               {title && (
                 <h2
                   id="modal-title"
@@ -151,7 +153,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-4 p-2 rounded-lg hover:bg-muted transition-colors"
+                className="ml-4 p-2 rounded-lg hover:bg-muted transition-colors shrink-0"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
@@ -161,7 +163,7 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
           {children}
         </div>
       </div>
@@ -285,7 +287,7 @@ export function BottomSheet({
 
   const content = (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[9999] flex items-end justify-center"
       role="dialog"
       aria-modal="true"
       onClick={handleOverlayClick}

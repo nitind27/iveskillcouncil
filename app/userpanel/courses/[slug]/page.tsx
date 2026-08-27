@@ -102,9 +102,14 @@ export default function CourseDetailPage() {
               <h1 className="text-2xl md:text-4xl font-bold text-[var(--up-text)] mb-4">
                 {course.title}
               </h1>
-              <p className="text-[var(--up-text-muted)] mb-6">
-                {course.description || "Comprehensive program with hands-on projects and support."}
-              </p>
+              <div
+                className="prose prose-sm mb-6 max-w-none text-[var(--up-text-muted)] prose-headings:text-[var(--up-text)] prose-a:text-[var(--up-accent)]"
+                dangerouslySetInnerHTML={{
+                  __html:
+                    course.description ||
+                    "<p>Comprehensive program with hands-on projects and support.</p>",
+                }}
+              />
 
               <div className="flex flex-wrap gap-4 mb-8">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--up-bg-muted)] text-[var(--up-text)] text-sm font-medium">

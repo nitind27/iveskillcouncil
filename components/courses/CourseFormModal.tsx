@@ -29,6 +29,8 @@ import {
   type ExamFeeByPlan,
 } from "@/lib/course-utils";
 import { showError } from "@/lib/toast";
+import RichTextEditor, { isRichTextEmpty } from "@/components/common/RichTextEditor";
+import Link from "next/link";
 
 export type CourseCategoryOption = {
   id: number;
@@ -404,7 +406,16 @@ export function CourseFormModal({
                       </select>
                     </div>
                     <div>
-                      <label className={labelCls}>Course Category</label>
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <label className={labelCls}>Course Category</label>
+                        <Link
+                          href="/dashboard/course-categories"
+                          className="text-[10px] font-bold uppercase tracking-wide text-[#1E4A85] hover:text-[#C4A35A]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Manage categories
+                        </Link>
+                      </div>
                       <select
                         value={form.category}
                         onChange={(e) =>
@@ -419,6 +430,11 @@ export function CourseFormModal({
                           </option>
                         ))}
                       </select>
+                      {categories.length === 0 && (
+                        <p className={helpCls}>
+                          No categories yet — add them on the Course Categories page.
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -747,27 +763,35 @@ export function CourseFormModal({
                   </h4>
                   <div>
                     <label className={labelCls}>Description *</label>
-                    <textarea
+                    <RichTextEditor
                       value={form.description}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, description: e.target.value }))
+                      onChange={(description) =>
+                        setForm((f) => ({ ...f, description }))
                       }
-                      rows={4}
-                      required
-                      className={cn(inputCls, "h-auto resize-y py-2")}
+                      placeholder="Course overview, outcomes, and key highlights…"
+                      minHeight={200}
                     />
+                    {isRichTextEmpty(form.description) && (
+                      <p className="mt-1 text-xs text-amber-600">
+                        Description is required.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Syllabus *</label>
-                    <textarea
+                    <RichTextEditor
                       value={form.syllabus}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, syllabus: e.target.value }))
+                      onChange={(syllabus) =>
+                        setForm((f) => ({ ...f, syllabus }))
                       }
-                      rows={4}
-                      required
-                      className={cn(inputCls, "h-auto resize-y py-2")}
+                      placeholder="Modules, topics, week-by-week plan…"
+                      minHeight={220}
                     />
+                    {isRichTextEmpty(form.syllabus) && (
+                      <p className="mt-1 text-xs text-amber-600">
+                        Syllabus is required.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Eligibility</label>

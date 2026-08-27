@@ -10,6 +10,16 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function isHtmlEmpty(value: unknown): boolean {
+  if (value == null) return true;
+  const text = String(value)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length === 0;
+}
+
 /** GET: List courses. For sub-admin: global + own franchise. assignable=1: only global not yet in franchise. */
 export async function GET(request: NextRequest) {
   try {
@@ -98,13 +108,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!body.description?.toString().trim()) {
+    if (isHtmlEmpty(body.description)) {
       return NextResponse.json(
         { success: false, error: "Description is required" },
         { status: 400 }
       );
     }
-    if (!body.syllabus?.toString().trim()) {
+    if (isHtmlEmpty(body.syllabus)) {
       return NextResponse.json(
         { success: false, error: "Syllabus is required" },
         { status: 400 }
