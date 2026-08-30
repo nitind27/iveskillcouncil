@@ -216,6 +216,8 @@ type Props = {
   onSubmit: (e: FormEvent) => void;
   onUploadImage: (file: File) => void;
   onClearImage: () => void;
+  /** Sub-admin / franchise owner: hide link to admin-only category management */
+  showCategoryAdminLink?: boolean;
 };
 
 export function CourseFormModal({
@@ -230,6 +232,7 @@ export function CourseFormModal({
   onSubmit,
   onUploadImage,
   onClearImage,
+  showCategoryAdminLink = true,
 }: Props) {
   const [examPlan, setExamPlan] = useState("SILVER");
   const [examFee, setExamFee] = useState("");
@@ -408,13 +411,15 @@ export function CourseFormModal({
                     <div>
                       <div className="mb-1 flex items-center justify-between gap-2">
                         <label className={labelCls}>Course Category</label>
-                        <Link
-                          href="/dashboard/course-categories"
-                          className="text-[10px] font-bold uppercase tracking-wide text-[#1E4A85] hover:text-[#C4A35A]"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Manage categories
-                        </Link>
+                        {showCategoryAdminLink && (
+                          <Link
+                            href="/dashboard/course-categories"
+                            className="text-[10px] font-bold uppercase tracking-wide text-[#1E4A85] hover:text-[#C4A35A]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Manage categories
+                          </Link>
+                        )}
                       </div>
                       <select
                         value={form.category}

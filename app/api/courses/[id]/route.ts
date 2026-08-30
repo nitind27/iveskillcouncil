@@ -24,6 +24,39 @@ async function canManageCourse(
   return false;
 }
 
+/** GET /api/courses/[id] — course detail for edit (admin or owning franchise) */
+export async function GET(_request: NextRequest, { params }: Ctx) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const courseId = BigInt(id);
+    const existing = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "Course not found" }, { status: 404 });
+    }
+
+    const roleId = Number(user.roleId);
+    const isAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+    const isOwner =
+      roleId === ROLES.SUB_ADMIN &&
+      user.franchiseId &&
+      existing.franchiseId?.toString() === String(user.franchiseId);
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    return NextResponse.json({ success: true, data: serializeCourse(existing) });
+  } catch (e) {
+    console.error("GET /api/courses/[id]", e);
+    return NextResponse.json({ success: false, error: "Failed to fetch course" }, { status: 500 });
+  }
+}
+
 /** PATCH /api/courses/[id] */
 export async function PATCH(request: NextRequest, { params }: Ctx) {
   try {

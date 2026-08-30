@@ -26,6 +26,9 @@ import {
   ExternalLink,
   AlertTriangle,
   ImageIcon,
+  IndianRupee,
+  Copy,
+  Link2,
 } from "lucide-react";
 import { showSuccess, showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -205,6 +208,12 @@ export default function FranchiseApplicationsPage() {
   const [saving, setSaving] = useState(false);
   const [docPreview, setDocPreview] = useState<Doc | null>(null);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+  const [paymentOrders, setPaymentOrders] = useState<
+    Array<{ orderId: string; amount: number; status: string; splitApplied: boolean; createdAt: string }>
+  >([]);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [creatingPayment, setCreatingPayment] = useState(false);
+  const [feeAmount, setFeeAmount] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
@@ -285,13 +294,18 @@ export default function FranchiseApplicationsPage() {
     setSelected({ ...app, documents: normalizeDocuments(app.documents) });
     setNotes(app.adminNotes || "");
     setBrokenImages({});
+    setPaymentLink(null);
+    setFeeAmount("");
     setDetailLoading(true);
     try {
-      const res = await fetch(`/api/admin/franchise-applications/${app.id}`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok && data?.data) {
+      const [detailRes, payRes] = await Promise.all([
+        fetch(`/api/admin/franchise-applications/${app.id}`, { credentials: "include" }),
+        fetch(`/api/admin/franchise-sale/create-order?applicationId=${app.id}`, {
+          credentials: "include",
+        }),
+      ]);
+      const data = await detailRes.json();
+      if (detailRes.ok && data?.data) {
         const full = {
           ...data.data,
           documents: normalizeDocuments(data.data.documents),
@@ -299,10 +313,72 @@ export default function FranchiseApplicationsPage() {
         setSelected(full);
         setNotes(full.adminNotes || "");
       }
+      const payJson = await payRes.json();
+      if (payRes.ok && payJson.data?.orders) {
+        setPaymentOrders(payJson.data.orders);
+        const pending = payJson.data.orders.find((o: { status: string }) => o.status === "PENDING");
+        if (pending) {
+          const base = typeof window !== "undefined" ? window.location.origin : "";
+          setPaymentLink(`${base}/userpanel/franchise-payment/pay?order_id=${pending.orderId}`);
+        }
+      } else {
+        setPaymentOrders([]);
+      }
     } catch {
       // keep list snapshot
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const createPaymentLink = async () => {
+    if (!selected) return;
+    if (!selected.planId) {
+      showError("Plan required", "Applicant ne plan select nahi kiya. Pehle plan assign karein.");
+      return;
+    }
+    setCreatingPayment(true);
+    try {
+      const res = await fetch("/api/admin/franchise-sale/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          applicationId: selected.id,
+          planId: selected.planId,
+          amount: feeAmount ? Number(feeAmount) : undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        showError("Payment link failed", json.error || "Could not create link");
+        return;
+      }
+      setPaymentLink(json.data.paymentUrl);
+      showSuccess(
+        "Payment link ready",
+        "Franchise owner ko yeh link bhejein — fee institute owner ke account mein jayegi."
+      );
+      const payRes = await fetch(
+        `/api/admin/franchise-sale/create-order?applicationId=${selected.id}`,
+        { credentials: "include" }
+      );
+      const payJson = await payRes.json();
+      if (payRes.ok) setPaymentOrders(payJson.data?.orders || []);
+    } catch {
+      showError("Error", "Network error");
+    } finally {
+      setCreatingPayment(false);
+    }
+  };
+
+  const copyPaymentLink = async () => {
+    if (!paymentLink) return;
+    try {
+      await navigator.clipboard.writeText(paymentLink);
+      showSuccess("Copied", "Payment link copied");
+    } catch {
+      showError("Copy failed", paymentLink);
     }
   };
 
@@ -901,6 +977,84 @@ export default function FranchiseApplicationsPage() {
                       No document files found in this application.
                     </p>
                   )}
+                </section>
+
+                <section className="rounded-2xl border border-[#C4A35A]/30 bg-gradient-to-br from-[#C4A35A]/10 to-[#1E4A85]/5 p-4">
+                  <h3 className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#1E4A85]">
+                    <IndianRupee className="h-3.5 w-3.5" />
+                    Franchise fee — owner ko payment
+                  </h3>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Institute admin franchise owner se fee collect kare. Payment ke baad paisa{" "}
+                    <strong>institute owner ke bank account</strong> mein Cashfree Easy Split se settle hoga.
+                  </p>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Custom amount (optional)"
+                      value={feeAmount}
+                      onChange={(e) => setFeeAmount(e.target.value)}
+                      className="min-w-[140px] flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={creatingPayment || selected.status === "REJECTED"}
+                      onClick={createPaymentLink}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {creatingPayment ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Link2 className="h-4 w-4" />
+                      )}
+                      Payment link banao
+                    </button>
+                  </div>
+                  {paymentLink && (
+                    <div className="mb-3 flex gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                      <p className="flex-1 break-all font-mono text-[11px] text-emerald-900">{paymentLink}</p>
+                      <button
+                        type="button"
+                        onClick={copyPaymentLink}
+                        className="shrink-0 rounded-lg border border-emerald-300 p-2 text-emerald-800 hover:bg-emerald-100"
+                        title="Copy link"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  {paymentOrders.length > 0 && (
+                    <ul className="space-y-1.5 text-xs">
+                      {paymentOrders.map((o) => (
+                        <li
+                          key={o.orderId}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-white/80 px-2.5 py-1.5"
+                        >
+                          <span className="font-mono text-[10px]">{o.orderId}</span>
+                          <span className="font-semibold">₹{o.amount.toLocaleString("en-IN")}</span>
+                          <span
+                            className={cn(
+                              "rounded px-1.5 py-0.5 text-[10px] font-bold",
+                              o.status === "PAID"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : o.status === "PENDING"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : "bg-red-100 text-red-700"
+                            )}
+                          >
+                            {o.status}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Link
+                    href="/subscription/easy-split"
+                    className="mt-2 inline-block text-[11px] font-semibold text-[#1E4A85] hover:underline"
+                  >
+                    Owner bank account configure karein →
+                  </Link>
                 </section>
 
                 <section>

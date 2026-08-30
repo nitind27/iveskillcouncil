@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyCashfreeOrder } from "@/lib/cashfree";
+import { applyFranchiseOrderSplit, onFranchiseOrderPaid } from "@/lib/franchise-split";
 import { successResponse, errorResponse } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +60,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (newStatus === "PAID") {
+      const splitWasConfigured = order.splitStatus === "CONFIGURED_AT_ORDER";
+      if (splitWasConfigured) {
+        await prisma.franchiseOrder.update({
+          where: { orderId: order.orderId },
+          data: { splitApplied: true, splitStatus: "SPLIT_AT_ORDER" },
+        });
+      } else if (!order.splitApplied) {
+        await applyFranchiseOrderSplit(order.orderId);
+      }
+      await onFranchiseOrderPaid(order.orderId);
+    }
+
+    const refreshed = await prisma.franchiseOrder.findUnique({ where: { orderId: order.orderId } });
+
     return successResponse(
       {
         status:   newStatus,
@@ -68,6 +84,8 @@ export async function POST(request: NextRequest) {
         fullName: order.fullName,
         email:    order.email,
         phone:    order.phone,
+        easySplitApplied: refreshed?.splitApplied ?? false,
+        splitStatus: refreshed?.splitStatus ?? null,
       },
       `Payment ${newStatus.toLowerCase()}`
     );

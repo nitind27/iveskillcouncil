@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import path from "path";
 import { promises as fs } from "fs";
-import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
+import { getCurrentUser } from "@/lib/api-auth";
+import { ROLES } from "@/lib/permissions";
 import {
   errorResponse,
   forbiddenResponse,
@@ -30,8 +31,16 @@ async function safeUnlink(filePath: string) {
 /** POST /api/admin/course-image — upload course cover (file only) */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireSuperAdminOrAdmin();
+    const user = await getCurrentUser();
     if (!user) return forbiddenResponse();
+    const roleId = Number(user.roleId);
+    if (
+      roleId !== ROLES.SUPER_ADMIN &&
+      roleId !== ROLES.ADMIN &&
+      roleId !== ROLES.SUB_ADMIN
+    ) {
+      return forbiddenResponse();
+    }
 
     const form = await request.formData();
     const file = form.get("file");

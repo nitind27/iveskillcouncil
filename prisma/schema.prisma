@@ -112,6 +112,7 @@ model SubscriptionPlan {
   planPermissions PlanPermission[]
   franchiseOrders FranchiseOrder[]
   franchiseApplications FranchiseApplication[]
+  planSplitConfig   PlanSplitConfig?
 
   @@map("subscription_plans")
 }
@@ -221,6 +222,7 @@ model FranchiseApplication {
 
   franchise         Franchise?
   plan              SubscriptionPlan? @relation(fields: [planId], references: [id])
+  franchiseOrders   FranchiseOrder[]
 
   @@index([email], map: "idx_app_email")
   @@index([status], map: "idx_app_status")
@@ -630,13 +632,20 @@ model FranchiseOrder {
   state           String?           @db.VarChar(100)
   address         String?           @db.VarChar(500)
   message         String?           @db.Text
+  splitApplied    Boolean           @default(false) @map("split_applied") @db.TinyInt
+  splitStatus     String?           @map("split_status") @db.VarChar(50)
+  splitConfigSnapshot Json?         @map("split_config_snapshot") @db.Json
+  applicationId   BigInt?           @map("application_id") @db.UnsignedBigInt
+  createdByAdmin  BigInt?           @map("created_by_admin") @db.UnsignedBigInt
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamp
   updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamp
 
   plan            SubscriptionPlan  @relation(fields: [planId], references: [id])
+  application     FranchiseApplication? @relation(fields: [applicationId], references: [id])
 
   @@index([email], map: "idx_fo_email")
   @@index([status], map: "idx_fo_status")
+  @@index([applicationId], map: "idx_fo_application")
   @@map("franchise_orders")
 }
 
@@ -645,6 +654,48 @@ enum FranchiseOrderStatus {
   PAID
   FAILED
   EXPIRED
+}
+
+/// Predefined bank accounts for Cashfree Easy Split (max 3 slots)
+model SplitBeneficiary {
+  id                Int                    @id @default(autoincrement()) @db.UnsignedTinyInt
+  slot              Int                    @unique @db.UnsignedTinyInt
+  label             String                 @db.VarChar(100)
+  accountHolderName String                 @map("account_holder_name") @db.VarChar(150)
+  bankName          String?                @map("bank_name") @db.VarChar(100)
+  bankAccountNumber String                 @map("bank_account_number") @db.VarChar(50)
+  bankIfsc          String                 @map("bank_ifsc") @db.VarChar(20)
+  panNumber         String?                @map("pan_number") @db.VarChar(20)
+  email             String?                @db.VarChar(150)
+  phone             String?                @db.VarChar(20)
+  cashfreeVendorId  String?                @unique @map("cashfree_vendor_id") @db.VarChar(100)
+  vendorStatus      String?                @map("vendor_status") @db.VarChar(50)
+  status            SplitBeneficiaryStatus @default(ACTIVE)
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime               @updatedAt @map("updated_at") @db.Timestamp
+
+  @@map("split_beneficiaries")
+}
+
+enum SplitBeneficiaryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Per-plan franchise price split percentages (must sum to 100%)
+model PlanSplitConfig {
+  id              Int      @id @default(autoincrement()) @db.UnsignedTinyInt
+  planId          Int      @unique @map("plan_id") @db.UnsignedTinyInt
+  beneficiary1Pct Decimal @map("beneficiary_1_pct") @db.Decimal(5, 2)
+  beneficiary2Pct Decimal @map("beneficiary_2_pct") @db.Decimal(5, 2)
+  beneficiary3Pct Decimal @map("beneficiary_3_pct") @db.Decimal(5, 2)
+  isActive        Boolean  @default(true) @map("is_active") @db.TinyInt
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("plan_split_configs")
 }
 
 model SupportRequest {
