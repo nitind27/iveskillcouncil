@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -15,8 +15,14 @@ import {
   Loader2,
   GraduationCap,
   User,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { ROLES } from "@/lib/permissions";
+import { EditStudentModal } from "@/components/students/EditStudentModal";
+import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
 
 /** Above ChatWidget (z-400) so profile never sits under the FAB. */
 const PROFILE_DRAWER_Z = 10050;
@@ -40,6 +46,7 @@ export interface StudentProfileData {
   showFatherOnCertificate?: boolean;
   showSurnameOnCertificate?: boolean;
   status: string;
+  franchiseId?: string;
   franchiseName: string;
   courseName: string | null;
   courseAssigned: boolean;
@@ -70,6 +77,8 @@ interface StudentProfileDrawerProps {
     studentCode: string;
     fullName: string;
   }) => void;
+  onStudentUpdated?: (studentId: string) => void;
+  onStudentDeleted?: (studentId: string) => void;
 }
 
 export function StudentProfileDrawer({
@@ -77,27 +86,41 @@ export function StudentProfileDrawer({
   open,
   onClose,
   onAssignCourse,
+  onStudentUpdated,
+  onStudentDeleted,
 }: StudentProfileDrawerProps) {
+  const { user } = useAuth();
+  const roleId = Number(user?.roleId) ?? 0;
+  const canManage =
+    roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN || roleId === ROLES.SUB_ADMIN;
+
   const [data, setData] = useState<StudentProfileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchProfile = useCallback(() => {
+    if (!studentId) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/students/${studentId}/profile`, { credentials: "include" })
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) throw new Error(json.error || "Failed to load profile");
+        setData(json.data as StudentProfileData);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed"))
+      .finally(() => setLoading(false));
+  }, [studentId]);
 
   useEffect(() => {
     if (!open || !studentId) {
       setData(null);
       return;
     }
-    setLoading(true);
-    setError(null);
-    fetch(`/api/students/${studentId}/profile`, { credentials: "include" })
-      .then(async (r) => {
-        const json = await r.json();
-        if (!r.ok) throw new Error(json.error || "Failed");
-        setData(json.data as StudentProfileData);
-      })
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed"))
-      .finally(() => setLoading(false));
-  }, [open, studentId]);
+    fetchProfile();
+  }, [open, studentId, fetchProfile]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +130,38 @@ export function StudentProfileDrawer({
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  const handleDelete = async () => {
+    if (!data || !studentId) return;
+    const res = await showDeleteConfirm(
+      `Delete Student: ${data.fullName}?`,
+      `Are you sure you want to delete student ${data.studentCode ? `[${data.studentCode}] ` : ""}${data.fullName}? This will permanently remove their enrollment, fee records, attendance, and all associated details.`
+    );
+    if (!res.isConfirmed) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        await showError("Delete Failed", json.error || "Could not delete student");
+        return;
+      }
+      await showSuccess(
+        "Student Deleted",
+        `Student ${data.fullName} has been deleted successfully.`
+      );
+      onStudentDeleted?.(studentId);
+      onClose();
+    } catch {
+      await showError("Error", "Failed to delete student. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -130,14 +185,14 @@ export function StudentProfileDrawer({
         onClick={onClose}
       />
       <aside className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-white shadow-2xl animate-in slide-in-from-right duration-300">
-        <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#1E4A85] via-[#163a6b] to-[#0B1F3A] px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white">
+        {/* Header */}
+        <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#1E4A85] via-[#163a6b] to-[#0B1F3A] px-5 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] text-white">
           <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#C4A35A]/20" />
           <div className="pointer-events-none absolute bottom-0 left-10 h-20 w-20 rounded-full bg-white/5" />
           <div className="relative flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-lg font-bold ring-2 ring-[#C4A35A]/50">
                 {data?.profileImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={data.profileImageUrl}
                     alt=""
@@ -147,11 +202,11 @@ export function StudentProfileDrawer({
                   initials
                 )}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#C4A35A]">
                   Student profile
                 </p>
-                <h2 className="text-xl font-bold leading-tight">
+                <h2 className="truncate text-lg font-bold leading-tight">
                   {loading ? "Loading…" : data?.fullName || "Student"}
                 </h2>
                 {data && (
@@ -172,6 +227,34 @@ export function StudentProfileDrawer({
           </div>
         </div>
 
+        {/* Action bar for Admins */}
+        {data && canManage && (
+          <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-5 py-2.5">
+            <button
+              type="button"
+              onClick={() => setEditModalOpen(true)}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit Student
+            </button>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={handleDelete}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white py-2 text-xs font-bold text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+            >
+              {deleting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+              Delete Student
+            </button>
+          </div>
+        )}
+
+        {/* Scrollable details */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {loading && (
             <div className="flex justify-center py-16">
@@ -238,26 +321,27 @@ export function StudentProfileDrawer({
                   text={
                     [data.address, data.area, data.city, data.state, data.pincode]
                       .filter(Boolean)
-                      .join(", ") || "—"
+                      .join(", ") || "No address on file"
                   }
                 />
               </Section>
 
               {data.payments.length > 0 && (
-                <Section title="Recent payments">
-                  <ul className="space-y-2">
+                <Section title="Recent Payments">
+                  <ul className="divide-y divide-slate-100 text-xs">
                     {data.payments.map((p) => (
                       <li
                         key={p.id}
-                        className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
+                        className="flex items-center justify-between py-1.5 first:pt-0 last:pb-0"
                       >
-                        <span className="font-medium text-slate-700">
-                          {new Date(p.paymentDate).toLocaleDateString("en-IN")} ·{" "}
-                          {p.paymentMode}
+                        <span className="text-slate-600">
+                          {p.paymentDate
+                            ? new Date(p.paymentDate).toLocaleDateString("en-IN")
+                            : "—"}{" "}
+                          ({p.paymentMode})
                         </span>
-                        <span className="inline-flex items-center gap-0.5 font-bold text-[#1E4A85]">
-                          <IndianRupee className="h-3 w-3" />
-                          {p.amount.toLocaleString("en-IN")}
+                        <span className="font-semibold text-emerald-700">
+                          ₹{p.amount.toLocaleString("en-IN")}
                         </span>
                       </li>
                     ))}
@@ -285,6 +369,19 @@ export function StudentProfileDrawer({
           )}
         </div>
       </aside>
+
+      {/* Embedded Edit Modal */}
+      {studentId && (
+        <EditStudentModal
+          studentId={studentId}
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onSuccess={() => {
+            fetchProfile();
+            onStudentUpdated?.(studentId);
+          }}
+        />
+      )}
     </div>
   );
 
@@ -319,10 +416,17 @@ function Row({
       <Icon
         className={cn(
           "mt-0.5 h-4 w-4 shrink-0",
-          highlight ? "text-amber-600" : "text-[#C4A35A]"
+          highlight ? "text-amber-500" : "text-[#1E4A85]"
         )}
       />
-      <span className={cn(highlight && "font-semibold text-amber-800")}>{text}</span>
+      <span
+        className={cn(
+          "break-words text-slate-700",
+          highlight && "font-semibold text-amber-700"
+        )}
+      >
+        {text}
+      </span>
     </div>
   );
 }
@@ -330,23 +434,24 @@ function Row({
 function Stat({
   label,
   value,
-  tone,
+  tone = "default",
 }: {
   label: string;
   value: string;
-  tone?: "emerald" | "amber";
+  tone?: "default" | "emerald" | "amber";
 }) {
+  const toneClass = {
+    default: "text-[#0B1F3A]",
+    emerald: "text-emerald-700",
+    amber: "text-amber-700",
+  }[tone];
+
   return (
-    <div
-      className={cn(
-        "rounded-xl border px-2 py-2.5 text-center",
-        tone === "emerald" && "border-emerald-200 bg-emerald-50",
-        tone === "amber" && "border-amber-200 bg-amber-50",
-        !tone && "border-[#1E4A85]/15 bg-[#1E4A85]/5"
-      )}
-    >
-      <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-0.5 text-xs font-bold text-[#0B1F3A]">{value}</p>
+    <div className="rounded-2xl border border-[#1E4A85]/10 bg-[#1E4A85]/[0.03] p-2.5 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        {label}
+      </p>
+      <p className={cn("text-sm font-bold tabular-nums", toneClass)}>{value}</p>
     </div>
   );
 }

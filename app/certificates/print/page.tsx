@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Award, Loader2, Printer, RefreshCw, Building2, BookOpen } from "lucide-react";
+import { Award, Eye, Loader2, Printer, RefreshCw, Building2, BookOpen } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { canPrintCertificates } from "@/lib/certificate-access";
 import { BulkCertificatePrint } from "@/components/certificates/BulkCertificatePrint";
+import { CertificateTemplatePreviewModal } from "@/components/certificates/CertificateTemplatePreview";
 
 export default function CertificatePrintCenterPage() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function CertificatePrintCenterPage() {
   const [franchiseId, setFranchiseId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [bulkPrintOpen, setBulkPrintOpen] = useState(false);
+  const [templatePreviewOpen, setTemplatePreviewOpen] = useState(false);
   const [issuedCount, setIssuedCount] = useState<number | null>(null);
   const [countLoading, setCountLoading] = useState(false);
 
@@ -109,13 +111,23 @@ export default function CertificatePrintCenterPage() {
               dispatch
             </p>
           </div>
-          <Link
-            href="/certificates/issued"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
-          >
-            <Award className="h-3.5 w-3.5" />
-            Issued list
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTemplatePreviewOpen(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#C4A35A]/40 bg-[#C4A35A]/15 px-3 text-xs font-semibold text-[#F5E6C8] backdrop-blur-sm transition hover:bg-[#C4A35A]/25"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Preview template
+            </button>
+            <Link
+              href="/certificates/issued"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+            >
+              <Award className="h-3.5 w-3.5" />
+              Issued list
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -199,6 +211,14 @@ export default function CertificatePrintCenterPage() {
             </button>
             <button
               type="button"
+              onClick={() => setTemplatePreviewOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#1E4A85]/25 bg-white px-4 py-3 text-sm font-semibold text-[#1E4A85] transition hover:bg-[#1E4A85]/5"
+            >
+              <Eye className="h-4 w-4" />
+              Preview template
+            </button>
+            <button
+              type="button"
               onClick={loadCount}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-3 text-sm font-semibold hover:bg-muted/50"
             >
@@ -214,6 +234,11 @@ export default function CertificatePrintCenterPage() {
         onClose={() => setBulkPrintOpen(false)}
         franchiseId={franchiseId || undefined}
         courseId={courseId || undefined}
+      />
+
+      <CertificateTemplatePreviewModal
+        open={templatePreviewOpen}
+        onClose={() => setTemplatePreviewOpen(false)}
       />
     </div>
   );

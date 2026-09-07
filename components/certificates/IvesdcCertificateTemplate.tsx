@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import QRCode from "qrcode";
 import type { CertificateDisplayData } from "@/lib/certificate-display";
 import {
   CERT_IMAGE,
-  FORM_PANEL,
+  CERT_STATIC,
   buildAchievementText,
-  pct,
+  buildCertificateQrPayload,
 } from "./certificate-layout";
 
 export type CertificateFieldKey = keyof Omit<
@@ -21,36 +23,111 @@ interface Props {
   onFieldChange?: (field: CertificateFieldKey, value: string | number | null) => void;
 }
 
-function Line({
+const sans: CSSProperties = { fontFamily: "Arial, Helvetica, sans-serif" };
+const serif: CSSProperties = { fontFamily: "Georgia, 'Times New Roman', Times, serif" };
+
+function FieldLine({
   label,
   value,
-  wide,
   field,
   editable,
   onFieldChange,
+  className = "",
 }: {
   label: string;
   value: string;
-  wide?: boolean;
   field?: CertificateFieldKey;
   editable?: boolean;
   onFieldChange?: Props["onFieldChange"];
+  className?: string;
 }) {
   return (
-    <div className={`flex items-baseline gap-1 ${wide ? "w-full" : ""}`}>
-      <span className="shrink-0 font-semibold text-[#1a2744]">{label}</span>
+    <div className={`flex w-full min-w-0 items-end gap-1 ${className}`}>
+      <span className="shrink-0 pb-0.5 text-[10px] font-bold text-[#1a2b4a]" style={sans}>
+        {label}
+      </span>
       {editable && field && onFieldChange ? (
         <input
           type="text"
           value={value}
           onChange={(e) => onFieldChange(field, e.target.value)}
-          className="min-w-0 flex-1 border-0 border-b border-[#1a2744] bg-transparent px-0.5 pb-0.5 text-[11px] font-medium text-[#1a2744] outline-none focus:border-[#C4A35A]"
+          className="min-w-0 flex-1 border-0 border-b border-[#1a2b4a] bg-transparent pb-0.5 text-[10.5px] font-semibold text-[#0f1f3d] outline-none"
+          style={sans}
         />
       ) : (
-        <span className="min-w-0 flex-1 border-b border-[#1a2744] px-0.5 pb-0.5 text-[11px] font-medium text-[#1a2744]">
+        <span
+          className="min-w-0 flex-1 border-b border-[#1a2b4a] pb-0.5 text-[10.5px] font-semibold text-[#0f1f3d]"
+          style={sans}
+        >
           {value || "\u00A0"}
         </span>
       )}
+    </div>
+  );
+}
+
+function InlineValue({
+  value,
+  field,
+  editable,
+  onFieldChange,
+  width = 78,
+}: {
+  value: string;
+  field?: CertificateFieldKey;
+  editable?: boolean;
+  onFieldChange?: Props["onFieldChange"];
+  width?: number;
+}) {
+  if (editable && field && onFieldChange) {
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onFieldChange(field, e.target.value)}
+        className="border-0 border-b border-[#1a2b4a] bg-transparent text-center text-[10.5px] font-semibold outline-none"
+        style={{ ...sans, width }}
+      />
+    );
+  }
+  return (
+    <span
+      className="inline-block border-b border-[#1a2b4a] px-1 pb-0.5 text-center text-[10.5px] font-semibold"
+      style={{ ...sans, minWidth: width }}
+    >
+      {value || "\u00A0"}
+    </span>
+  );
+}
+
+function CapIcon() {
+  return (
+    <svg width="20" height="16" viewBox="0 0 22 18" aria-hidden className="shrink-0">
+      <path d="M11 1 L21 6 L11 11 L1 6 Z" fill="#1a2b4a" />
+      <path
+        d="M4 7.5 V12.5 C4 14.5 11 16 11 16 C11 16 18 14.5 18 12.5 V7.5"
+        fill="none"
+        stroke="#8B6914"
+        strokeWidth="1.2"
+      />
+      <rect x="9.5" y="0.2" width="3" height="2.2" rx="0.3" fill="#1a2b4a" />
+      <circle cx="19.5" cy="6.2" r="1.1" fill="#C41E3A" />
+    </svg>
+  );
+}
+
+function Section({
+  children,
+  className = "",
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div className={className} style={style}>
+      {children}
     </div>
   );
 }
@@ -62,15 +139,35 @@ export default function IvesdcCertificateTemplate({
   printId = "ivesdc-certificate",
   onFieldChange,
 }: Props) {
-  const { width: W, height: H, src } = CERT_IMAGE;
+  const { width: W, height: H, src, logoSrc } = CERT_IMAGE;
   const achievement = buildAchievementText(data.courseName, data.grade, data.marksPercent);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
-  const panelStyle = {
-    top: pct(FORM_PANEL.top, H),
-    left: pct(FORM_PANEL.left, W),
-    width: pct(FORM_PANEL.width, W),
-    height: pct(FORM_PANEL.height, H),
-  };
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(buildCertificateQrPayload(data), {
+      width: 160,
+      margin: 1,
+      color: { dark: "#0F2A4A", light: "#FFFFFF" },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    data.certificateNumber,
+    data.studentName,
+    data.courseName,
+    data.grade,
+    data.marksPercent,
+    data.issueDate,
+    data.atcName,
+  ]);
 
   return (
     <div
@@ -81,192 +178,275 @@ export default function IvesdcCertificateTemplate({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
-        alt="IVESDC Certificate"
+        alt=""
         width={W}
         height={H}
-        className="absolute inset-0 h-full w-full select-none object-fill"
+        className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
         draggable={false}
       />
 
-      {/* Form body — covers sample text on template, renders dynamic data */}
       <div
-        className="absolute z-[1] overflow-hidden bg-white px-3 py-2"
+        className="absolute z-[1] box-border overflow-hidden"
         style={{
-          ...panelStyle,
-          fontFamily: "Arial, Helvetica, sans-serif",
-          fontSize: 11,
-          lineHeight: 1.45,
-          color: "#1a2744",
+          top: 48,
+          left: 48,
+          right: 48,
+          bottom: 40,
+          ...serif,
+          color: "#0f1f3d",
         }}
       >
-        {/* Row 1 */}
-        <div className="mb-1.5 flex justify-between gap-3">
-          <Line
-            label="Sr. No.:"
-            value={data.serialNumber}
-            field="serialNumber"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-          <Line
-            label="Certificate No.:"
-            value={data.certificateNumber}
-            field="certificateNumber"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-        </div>
-
-        {/* Row 2 */}
-        <div className="mb-1">
-          <Line
-            label="ATC Code:"
-            value={data.atcCode}
-            wide
-            field="atcCode"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-        </div>
-
-        {/* Row 3 */}
-        <div className="mb-1.5">
-          <Line
-            label="Authorised Training Centre (ATC) Name:"
-            value={data.atcName}
-            wide
-            field="atcName"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-        </div>
-
-        <p className="mb-1 font-semibold">This is to certify that:</p>
-
-        {/* Student details */}
-        <div className="mb-1 space-y-1">
-          <Line
-            label="Name:"
-            value={data.studentName}
-            wide
-            field="studentName"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-          <Line
-            label="D/S/O:"
-            value={data.parentName}
-            wide
-            field="parentName"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-          <Line
-            label="Student Registration No.:"
-            value={data.registrationNumber}
-            wide
-            field="registrationNumber"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-        </div>
-
-        {/* Achievement */}
-        <p className="my-2 text-center text-[10.5px] font-medium leading-snug">
-          {editable && onFieldChange ? (
-            <span className="block space-y-1">
-              <span>Has successfully completed the Course on </span>
-              <input
-                type="text"
-                value={data.courseName}
-                onChange={(e) => onFieldChange("courseName", e.target.value)}
-                className="mx-1 inline-block min-w-[120px] border-0 border-b border-[#1a2744] bg-transparent text-center font-semibold outline-none"
-              />
-              <span> and obtained Grade </span>
-              <input
-                type="text"
-                value={data.grade}
-                onChange={(e) => onFieldChange("grade", e.target.value)}
-                className="mx-0.5 inline-block w-10 border-0 border-b border-[#1a2744] bg-transparent text-center outline-none"
-              />
-              <span> (</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={data.marksPercent ?? ""}
-                onChange={(e) =>
-                  onFieldChange(
-                    "marksPercent",
-                    e.target.value === "" ? null : Number(e.target.value)
-                  )
-                }
-                className="inline-block w-10 border-0 border-b border-[#1a2744] bg-transparent text-center outline-none"
-              />
-              <span>% Marks).</span>
-            </span>
-          ) : (
-            achievement
-          )}
-        </p>
-
-        {/* Dates row */}
-        <div className="mb-1 flex flex-wrap items-baseline gap-x-1 gap-y-1">
-          <span className="shrink-0 font-semibold">Training Period:</span>
-          {editable && onFieldChange ? (
-            <>
-              <input
-                type="text"
-                value={data.trainingStart}
-                onChange={(e) => onFieldChange("trainingStart", e.target.value)}
-                className="w-[72px] border-0 border-b border-[#1a2744] bg-transparent text-center text-[11px] outline-none"
-              />
-              <span className="font-semibold">to</span>
-              <input
-                type="text"
-                value={data.trainingEnd}
-                onChange={(e) => onFieldChange("trainingEnd", e.target.value)}
-                className="w-[72px] border-0 border-b border-[#1a2744] bg-transparent text-center text-[11px] outline-none"
-              />
-            </>
-          ) : (
-            <span className="border-b border-[#1a2744] px-1 pb-0.5 text-[11px]">
-              {data.trainingStart} to {data.trainingEnd}
-            </span>
-          )}
-          <span className="ml-auto shrink-0 font-semibold">Date of Issue:</span>
-          {editable && onFieldChange ? (
-            <input
-              type="text"
-              value={data.issueDate}
-              onChange={(e) => onFieldChange("issueDate", e.target.value)}
-              className="w-[88px] border-0 border-b border-[#1a2744] bg-transparent text-[11px] outline-none"
+        <div className="flex h-full flex-col">
+          {/* ===== HEADER ===== */}
+          <Section className="shrink-0 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoSrc}
+              alt="IVESDC"
+              className="mx-auto h-[44px] w-auto object-contain"
+              draggable={false}
             />
-          ) : (
-            <span className="border-b border-[#1a2744] px-1 pb-0.5 text-[11px]">
-              {data.issueDate}
-            </span>
-          )}
-        </div>
+            <h1
+              className="mt-1 text-[12px] font-black leading-[1.15] tracking-[0.02em] text-[#1E4A85]"
+              style={sans}
+            >
+              {CERT_STATIC.orgName}
+            </h1>
+            <div className="mx-auto mt-1 max-w-[96%] space-y-px text-[7px] leading-[1.25] text-[#1a2b4a]" style={sans}>
+              {CERT_STATIC.accreditation.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          </Section>
 
-        {/* Centre rows */}
-        <div className="space-y-1">
-          <Line
-            label="Training Centre:"
-            value={data.trainingCentre}
-            wide
-            field="trainingCentre"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
-          <Line
-            label="Training Centre Name:"
-            value={data.trainingCentreName}
-            wide
-            field="trainingCentreName"
-            editable={editable}
-            onFieldChange={onFieldChange}
-          />
+          {/* ===== TITLE ===== */}
+          <Section className="mt-2.5 mb-2 flex shrink-0 items-center justify-center gap-2.5">
+            <CapIcon />
+            <h2 className="text-[24px] font-black tracking-[0.12em] text-black">CERTIFICATE</h2>
+            <CapIcon />
+          </Section>
+
+          {/* ===== FORM FIELDS ===== */}
+          <Section className="shrink-0 space-y-[7px]">
+            <div className="flex gap-6">
+              <FieldLine
+                label="Sr. No.:"
+                value={data.serialNumber}
+                field="serialNumber"
+                editable={editable}
+                onFieldChange={onFieldChange}
+                className="flex-1"
+              />
+              <FieldLine
+                label="Certificate No.:"
+                value={data.certificateNumber}
+                field="certificateNumber"
+                editable={editable}
+                onFieldChange={onFieldChange}
+                className="flex-[1.2]"
+              />
+            </div>
+
+            <FieldLine
+              label="ATC Code:"
+              value={data.atcCode}
+              field="atcCode"
+              editable={editable}
+              onFieldChange={onFieldChange}
+            />
+            <FieldLine
+              label="Authorised Training Centre (ATC) Name:"
+              value={data.atcName}
+              field="atcName"
+              editable={editable}
+              onFieldChange={onFieldChange}
+            />
+
+            <p className="pt-1 text-[10.5px] font-bold" style={sans}>
+              This is to certify that:
+            </p>
+
+            <FieldLine
+              label="Name:"
+              value={data.studentName}
+              field="studentName"
+              editable={editable}
+              onFieldChange={onFieldChange}
+            />
+            <FieldLine
+              label="D/S/O:"
+              value={data.parentName}
+              field="parentName"
+              editable={editable}
+              onFieldChange={onFieldChange}
+            />
+            <FieldLine
+              label="Student Registration No.:"
+              value={data.registrationNumber}
+              field="registrationNumber"
+              editable={editable}
+              onFieldChange={onFieldChange}
+            />
+          </Section>
+
+          {/* ===== ACHIEVEMENT ===== */}
+          <Section className="my-2.5 shrink-0 px-1 text-center text-[10px] font-semibold leading-snug" style={sans}>
+            {editable && onFieldChange ? (
+              <span>
+                Has successfully completed the Course on{" "}
+                <input
+                  type="text"
+                  value={data.courseName}
+                  onChange={(e) => onFieldChange("courseName", e.target.value)}
+                  className="mx-0.5 inline-block min-w-[100px] border-0 border-b border-[#1a2b4a] bg-transparent text-center font-bold outline-none"
+                />{" "}
+                and obtained Grade{" "}
+                <input
+                  type="text"
+                  value={data.grade}
+                  onChange={(e) => onFieldChange("grade", e.target.value)}
+                  className="mx-0.5 inline-block w-8 border-0 border-b border-[#1a2b4a] bg-transparent text-center outline-none"
+                />{" "}
+                (
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={data.marksPercent ?? ""}
+                  onChange={(e) =>
+                    onFieldChange(
+                      "marksPercent",
+                      e.target.value === "" ? null : Number(e.target.value)
+                    )
+                  }
+                  className="inline-block w-8 border-0 border-b border-[#1a2b4a] bg-transparent text-center outline-none"
+                />
+                % Marks).
+              </span>
+            ) : (
+              achievement
+            )}
+          </Section>
+
+          {/* ===== TRAINING + QR (side by side like original) ===== */}
+          <Section className="shrink-0">
+            <div className="flex gap-4">
+              <div className="min-w-0 flex-1 space-y-[7px]">
+                <div className="flex flex-wrap items-end gap-x-1.5 gap-y-1" style={sans}>
+                  <span className="text-[10px] font-bold">Training Period:</span>
+                  <InlineValue
+                    value={data.trainingStart}
+                    field="trainingStart"
+                    editable={editable}
+                    onFieldChange={onFieldChange}
+                  />
+                  <span className="text-[10px] font-bold">to</span>
+                  <InlineValue
+                    value={data.trainingEnd}
+                    field="trainingEnd"
+                    editable={editable}
+                    onFieldChange={onFieldChange}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-end gap-x-1.5" style={sans}>
+                  <span className="text-[10px] font-bold">Date of Issue:</span>
+                  <InlineValue
+                    value={data.issueDate}
+                    field="issueDate"
+                    editable={editable}
+                    onFieldChange={onFieldChange}
+                    width={96}
+                  />
+                </div>
+
+                <FieldLine
+                  label="Training Centre:"
+                  value={data.trainingCentre}
+                  field="trainingCentre"
+                  editable={editable}
+                  onFieldChange={onFieldChange}
+                />
+                <FieldLine
+                  label="Training Centre Name:"
+                  value={data.trainingCentreName}
+                  field="trainingCentreName"
+                  editable={editable}
+                  onFieldChange={onFieldChange}
+                />
+              </div>
+
+              {/* QR column — original right side */}
+              <div className="flex w-[96px] shrink-0 flex-col items-center">
+                <div className="flex h-[88px] w-[88px] items-center justify-center border border-[#1a2b4a] bg-white p-1">
+                  {qrDataUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrDataUrl} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-[8px] text-slate-400" style={sans}>
+                      QR Code
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-center text-[6.5px] font-semibold leading-tight text-[#1a2b4a]" style={sans}>
+                  Scan QR Code
+                  <br />
+                  For Verification
+                </p>
+              </div>
+            </div>
+          </Section>
+
+          {/* ===== OFFICE ADDRESS (full width) ===== */}
+          <Section className="mt-3 shrink-0">
+            <p className="text-[7px] leading-[1.35] text-[#334155]" style={sans}>
+              {CERT_STATIC.officeAddress}
+            </p>
+          </Section>
+
+          {/* ===== SIGNATORY + STAMP ===== */}
+          <Section className="mt-3 flex shrink-0 items-end justify-between gap-4">
+            <p className="pb-1 text-[9px] font-bold uppercase tracking-wide text-[#1a2b4a]" style={sans}>
+              {CERT_STATIC.signatory}
+            </p>
+            <div className="flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#1a2b4a]">
+              <span className="text-[9px] font-semibold text-[#64748b]" style={sans}>
+                Stamp
+              </span>
+            </div>
+          </Section>
+
+          {/* spacer pushes footer down without crushing middle */}
+          <div className="min-h-[8px] flex-1" />
+
+          {/* ===== FOOTER ===== */}
+          <footer className="shrink-0 text-center" style={sans}>
+            <div className="mb-1.5 flex items-center gap-2">
+              <div className="h-px flex-1 bg-[#1E4A85]/45" />
+              <p className="text-[7.5px] font-bold uppercase tracking-wider text-[#1E4A85]">
+                {CERT_STATIC.affiliationsTitle}
+              </p>
+              <div className="h-px flex-1 bg-[#1E4A85]/45" />
+            </div>
+
+            <div className="mb-1.5 flex flex-wrap items-center justify-center gap-x-2.5 text-[7px] font-semibold text-[#334155]">
+              <span>Make in India</span>
+              <span>·</span>
+              <span>Skill India</span>
+              <span>·</span>
+              <span>Ministry of Corporate Affairs</span>
+              <span>·</span>
+              <span>MSME</span>
+              <span>·</span>
+              <span>IAF</span>
+              <span>·</span>
+              <span>QRO</span>
+            </div>
+
+            <p className="text-[7px] text-[#1a2b4a]">{CERT_STATIC.contact}</p>
+            <p className="mt-0.5 text-[6.5px] leading-snug text-[#475569]">{CERT_STATIC.gradeSystem}</p>
+            <p className="mt-1 text-[6px] text-[#64748b]">{CERT_STATIC.registeredOffice}</p>
+          </footer>
         </div>
       </div>
 
@@ -284,7 +464,7 @@ export default function IvesdcCertificateTemplate({
       <style jsx global>{`
         @media print {
           @page {
-            size: 724px 1024px;
+            size: ${W}px ${H}px;
             margin: 0;
           }
           html,
@@ -306,8 +486,8 @@ export default function IvesdcCertificateTemplate({
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 724px !important;
-            height: 1024px !important;
+            width: ${W}px !important;
+            height: ${H}px !important;
             box-shadow: none !important;
             margin: 0 !important;
           }

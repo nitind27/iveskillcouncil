@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Printer, X } from "lucide-react";
 import type { CertificateDisplayData } from "@/lib/certificate-display";
 import IvesdcCertificateTemplate from "./IvesdcCertificateTemplate";
+import { CERT_IMAGE } from "./certificate-layout";
 import { showError } from "@/lib/toast";
 
 interface BulkCertificatePrintProps {
@@ -112,7 +113,7 @@ export function BulkCertificatePrint({
       <style jsx global>{`
         @media print {
           @page {
-            size: 724px 1024px;
+            size: ${CERT_IMAGE.width}px ${CERT_IMAGE.height}px;
             margin: 0;
           }
           html,
@@ -140,8 +141,8 @@ export function BulkCertificatePrint({
             page-break-after: auto;
           }
           [id^="ivesdc-cert-"] {
-            width: 724px !important;
-            height: 1024px !important;
+            width: ${CERT_IMAGE.width}px !important;
+            height: ${CERT_IMAGE.height}px !important;
             box-shadow: none !important;
             margin: 0 auto !important;
           }
