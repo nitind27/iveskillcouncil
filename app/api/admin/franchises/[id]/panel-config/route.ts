@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdminOrAdmin } from "@/lib/api-auth";
 import { successResponse, errorResponse, forbiddenResponse, notFoundResponse } from "@/lib/api-response";
+import { resolveFranchiseCreateSlug } from "@/lib/franchise-slug";
+import { validateFranchiseSlugInput } from "@/lib/franchise-path";
 
 export const dynamic = "force-dynamic";
 
@@ -42,18 +44,17 @@ export async function PATCH(
     const f = await prisma.franchise.findUnique({ where: { id: BigInt(id) } });
     if (!f) return notFoundResponse();
 
-    // Validate slug uniqueness
+    // Validate slug uniqueness and reserved names
     if (slug) {
-      const safeSlug = String(slug).trim().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80);
-      const conflict = await prisma.franchise.findFirst({
-        where: { slug: safeSlug, id: { not: BigInt(id) } },
-      });
-      if (conflict) return errorResponse("This URL slug is already taken by another franchise.", 409);
+      const checked = validateFranchiseSlugInput(String(slug));
+      if (!checked.valid) return errorResponse(checked.error, 400);
+      const resolved = await resolveFranchiseCreateSlug(checked.slug, f.name, BigInt(id));
+      if ("error" in resolved) return errorResponse(resolved.error, 409);
 
       const updated = await prisma.franchise.update({
         where: { id: BigInt(id) },
         data: {
-          slug: safeSlug,
+          slug: resolved.slug,
           ...(panelConfig !== undefined && { panelConfig: panelConfig as object }),
         },
       });

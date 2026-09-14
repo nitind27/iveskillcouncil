@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     let franchiseId: string | null = searchParams.get('franchiseId') || null;
-    if (user.roleId === ROLES.SUB_ADMIN && user.franchiseId) {
+    if ((user.roleId === ROLES.SUB_ADMIN || user.roleId === ROLES.STAFF) && user.franchiseId) {
       franchiseId = user.franchiseId;
     }
 

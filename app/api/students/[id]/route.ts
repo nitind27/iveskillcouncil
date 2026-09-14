@@ -381,20 +381,30 @@ export async function PATCH(
       return [uStudent, uUser];
     });
 
+    const saved = updatedStudent ?? student;
     return successResponse(
       {
-        id,
-        studentCode: student.studentCode,
+        id: String(id),
+        studentCode: saved.studentCode,
         fullName: updatedUser?.fullName || student.user.fullName,
         email: updatedUser?.email || student.user.email,
-        student: updatedStudent,
+        franchiseId: saved.franchiseId.toString(),
+        franchiseName: updatedStudent?.franchise?.name,
+        courseId: saved.courseId?.toString() ?? null,
+        courseName: updatedStudent?.course?.name ?? null,
+        firstName: saved.firstName || "",
+        surname: saved.surname || "",
+        status: saved.status,
+        totalFee: Number(saved.totalFee),
+        paidFee: Number(saved.paidFee),
       },
       "Student updated successfully"
     );
   } catch (err) {
     console.error("Students PATCH error:", err);
     const msg = err instanceof Error ? err.message : "Failed to update student";
-    return errorResponse(msg, 500);
+    const isSerialize = /bigint|serialize/i.test(msg);
+    return errorResponse(isSerialize ? "Failed to update student" : msg, 500);
   }
 }
 

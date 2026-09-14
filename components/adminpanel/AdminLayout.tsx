@@ -14,6 +14,16 @@ const ChatWidget = dynamic(() => import("@/components/chat/ChatWidget"), {
 });
 import { canRoleAccessPath } from "@/lib/role-menu-config";
 import { ROLES } from "@/lib/permissions";
+import {
+  canAccessFranchiseAdminPath,
+  franchiseAppHref,
+  franchiseDashboardPath,
+  isFranchiseAdminPath,
+  isFranchisePublicSitePath,
+  shouldPrefixFranchiseApp,
+  stripFranchiseAppPrefix,
+} from "@/lib/franchise-path";
+import { NotFound404 } from "@/components/common/error";
 
 export default function AdminLayout({
   children,
@@ -29,12 +39,19 @@ export default function AdminLayout({
   const [authChecked, setAuthChecked] = useState(false);
 
   const isLoginPage = pn === "/login";
+  const appPath = isFranchiseAdminPath(pn) ? stripFranchiseAppPrefix(pn) : pn;
+  const franchiseSlug = user?.franchise?.slug || null;
+  const franchiseHome = franchiseDashboardPath(franchiseSlug);
+  const prefixApp = !!(user && shouldPrefixFranchiseApp(user.roleId, franchiseSlug));
   // User panel (courses, booking, Enquire Now) is public — no login required
   const isUserPanelPage = pn === "/" || pn === "/userpanel" || pn.startsWith("/userpanel/");
+  const isCertificateStudioPage = appPath.startsWith("/certificates/templates");
+  const isFranchisePortalPage = pn === "/f" || pn.startsWith("/f/") || isFranchisePublicSitePath(pn);
+  const isPublicPage = isLoginPage || isUserPanelPage || isCertificateStudioPage || isFranchisePortalPage;
 
   // Confirm session (with refresh) before hard-redirecting to login
   useEffect(() => {
-    if (isLoginPage || isUserPanelPage) {
+    if (isPublicPage) {
       setAuthChecked(true);
       return;
     }
@@ -61,50 +78,67 @@ export default function AdminLayout({
     return () => {
       cancelled = true;
     };
-  }, [loading, user, isLoginPage, isUserPanelPage, refreshUser]);
+  }, [loading, user, isPublicPage, refreshUser]);
 
   useEffect(() => {
     // Don't force logout redirect while DB/proxy is temporarily down
-    if (!authChecked || loading || user || isLoginPage || isUserPanelPage || dbUnavailable) return;
-    const safeRedirect = pn === "/403" || pn === "/401" ? "/dashboard" : pn;
+    if (!authChecked || loading || user || isPublicPage || dbUnavailable) return;
+    const safeRedirect = pn === "/403" || pn === "/401" ? franchiseHome : pn;
     const redirectUrl = `/login?redirect=${encodeURIComponent(safeRedirect)}`;
     window.location.href = redirectUrl;
-  }, [authChecked, loading, user, pn, isLoginPage, isUserPanelPage, dbUnavailable]);
+  }, [authChecked, loading, user, pn, isPublicPage, dbUnavailable, franchiseHome]);
 
   const roleId = Number(user?.roleId) || 0;
-  const pathNormalized = pn.replace(/\/$/, "").trim() || "/";
   const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+  const ownsThisFranchiseAdmin =
+    !isFranchiseAdminPath(pn) ||
+    (!!user && canAccessFranchiseAdminPath(pn, roleId, user.franchise?.slug));
   const hasAccess =
     !user // not yet loaded — don't block
-    || isSuperAdminOrAdmin
-    || pathNormalized === "/dashboard"
-    || pathNormalized === "/admin"
-    || pathNormalized.startsWith("/admin/")
-    || canRoleAccessPath(roleId, pn);
+    || (isSuperAdminOrAdmin && !isFranchiseAdminPath(pn))
+    || (ownsThisFranchiseAdmin && (
+      appPath === "/dashboard"
+      || appPath === "/admin"
+      || appPath.startsWith("/admin/")
+      || canRoleAccessPath(roleId, pn)
+    ));
+
+  // Franchise users stay on /{slug}/dashboard (same UI, franchise URL)
+  useEffect(() => {
+    if (loading || !user || !prefixApp || !franchiseSlug) return;
+    if (isPublicPage || pn === "/403") return;
+    if (isFranchiseAdminPath(pn)) return;
+    if (appPath === "/admin" || appPath.startsWith("/admin/")) {
+      router.replace(franchiseHome);
+      return;
+    }
+    router.replace(franchiseAppHref(pn, franchiseSlug));
+  }, [loading, user, prefixApp, franchiseSlug, pn, appPath, isPublicPage, franchiseHome, router]);
 
   // /admin → dashboard (alias used by user panel login links)
   useEffect(() => {
-    if (!loading && user && (pn === "/admin" || pn.startsWith("/admin/"))) {
-      router.replace("/dashboard");
+    if (!loading && user && (appPath === "/admin" || appPath.startsWith("/admin/"))) {
+      router.replace(prefixApp ? franchiseHome : "/dashboard");
     }
-  }, [loading, user, pn, router]);
+  }, [loading, user, appPath, router, prefixApp, franchiseHome]);
 
   // If user is logged in but landed on /403, send them to dashboard
   useEffect(() => {
     if (!loading && user && pn === "/403") {
-      router.replace("/dashboard");
+      router.replace(prefixApp ? franchiseHome : "/dashboard");
     }
-  }, [loading, user, pn, router]);
+  }, [loading, user, pn, router, prefixApp, franchiseHome]);
 
   useEffect(() => {
     // Wait until auth is fully resolved AND user is present before checking access
     if (loading || !user || hasAccess) return;
-    if (pn === "/403") return;
+    if (pn === "/403" || pn === "/404") return;
+    if (isFranchiseAdminPath(pn) && !ownsThisFranchiseAdmin) return;
     router.replace("/403");
-  }, [loading, user, hasAccess, pn, router]);
+  }, [loading, user, hasAccess, pn, router, ownsThisFranchiseAdmin]);
 
   // Keep shell visible while tokens refresh — only block when we have no user yet
-  if (!user && (loading || !authChecked || dbUnavailable) && !isLoginPage && !isUserPanelPage) {
+  if (!user && (loading || !authChecked || dbUnavailable) && !isPublicPage) {
     return (
       <PageLoader
         variant="admin"
@@ -113,16 +147,20 @@ export default function AdminLayout({
     );
   }
 
-  if (isLoginPage || isUserPanelPage) {
+  if (isPublicPage) {
     return <>{children}</>;
   }
 
-  if (pathname === "/403") {
+  if (pathname === "/403" || pathname === "/404") {
     return <>{children}</>;
   }
 
   if (!user) {
     return null;
+  }
+
+  if (isFranchiseAdminPath(pn) && !ownsThisFranchiseAdmin) {
+    return <NotFound404 />;
   }
 
   // Only block render if user is loaded AND confirmed no access

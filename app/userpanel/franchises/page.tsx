@@ -18,6 +18,8 @@ const DEFAULT_IMAGES = [
 interface FranchiseItem {
   id: string;
   name: string;
+  slug?: string | null;
+  portalPath?: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
@@ -175,7 +177,7 @@ export default function UserPanelFranchisesPage() {
                       </div>
                       <div className="mt-4 flex gap-2">
                         <Link
-                          href={`/userpanel/franchise/${f.id}/courses`}
+                          href={f.slug ? `/${f.slug}` : `/userpanel/franchise/${f.id}/courses`}
                           className="flex-1"
                         >
                           <motion.span
@@ -183,7 +185,7 @@ export default function UserPanelFranchisesPage() {
                             whileTap={{ scale: 0.98 }}
                             className="block w-full py-3 rounded-xl bg-[var(--up-accent)] text-white font-semibold flex items-center justify-center gap-2 hover:bg-[var(--up-accent-hover)] transition-colors"
                           >
-                            View Courses
+                            {f.slug ? "Visit Centre" : "View Courses"}
                             <FiExternalLink className="w-4 h-4" />
                           </motion.span>
                         </Link>

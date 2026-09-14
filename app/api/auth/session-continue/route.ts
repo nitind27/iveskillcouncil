@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { verifyRefreshToken, generateAccessToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { ACCESS_TOKEN_MAX_AGE, getAuthCookieOptions } from "@/lib/auth-cookies";
+import { sanitizeFranchiseSlug } from "@/lib/franchise-path";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
         roleId: true,
         franchiseId: true,
         status: true,
+        franchise: { select: { slug: true } },
       },
     });
 
@@ -58,6 +60,7 @@ export async function GET(request: NextRequest) {
       userId: userData.id.toString(),
       roleId: userData.roleId,
       franchiseId: userData.franchiseId?.toString(),
+      franchiseSlug: userData.franchise?.slug ? sanitizeFranchiseSlug(userData.franchise.slug) : undefined,
       email: userData.email,
     });
 

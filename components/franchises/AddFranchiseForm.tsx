@@ -36,6 +36,7 @@ import {
 } from "@/lib/validation";
 import { usePincodeLookup } from "@/hooks/usePincodeLookup";
 import { cn } from "@/lib/utils";
+import { sanitizeFranchiseSlug, validateFranchiseSlugInput } from "@/lib/franchise-path";
 
 const MAX_DOC_BYTES = 5 * 1024 * 1024;
 const ALLOWED_DOC_TYPES = new Set([
@@ -129,6 +130,7 @@ interface Credentials {
   email: string;
   password?: string;
   loginUrl: string;
+  portalUrl?: string;
   firstTimeSetup?: boolean;
 }
 
@@ -157,10 +159,13 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState<string | null>(null);
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [portalOrigin, setPortalOrigin] = useState("");
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [form, setForm] = useState({
     name: "",
+    slug: "",
     legalName: "",
     businessType: "INDIVIDUAL",
     ownerName: "",
@@ -227,6 +232,10 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
     loadPlans().finally(() => setLoadingPlans(false));
   }, [loadPlans]);
 
+  useEffect(() => {
+    setPortalOrigin(window.location.origin);
+  }, []);
+
   const { fetchByPincode, loading: pincodeLoading, error: pincodeError, clearError: clearPincodeError } =
     usePincodeLookup((data) =>
       setForm((prev) => ({
@@ -268,7 +277,13 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
     if (name === "bankAccountNumber") next = value.replace(/\D/g, "").slice(0, 18);
     if (name === "msmeNumber") next = value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 26);
     if (name === "pincode") next = value.replace(/\D/g, "").slice(0, 6);
-    setForm((prev) => ({ ...prev, [name]: next }));
+    setForm((prev) => {
+      const nextForm = { ...prev, [name]: next };
+      if (name === "name" && !slugTouched) {
+        nextForm.slug = sanitizeFranchiseSlug(next);
+      }
+      return nextForm;
+    });
     if (name === "pincode") clearPincodeError();
     clearFieldError(name);
     setFormError("");
@@ -279,6 +294,10 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
     switch (name) {
       case "name":
         return validateFranchiseName(v);
+      case "slug": {
+        const checked = validateFranchiseSlugInput(v || form.slug || form.name);
+        return checked.valid ? { valid: true } : { valid: false, error: checked.error };
+      }
       case "ownerName":
         return validateName(v);
       case "ownerEmail":
@@ -388,6 +407,16 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
 
     if (step === 0) {
       fail("name", validateFranchiseName(form.name));
+      if (form.slug.trim()) {
+        const slugCheck = validateFranchiseSlugInput(form.slug);
+        if (!slugCheck.valid) errors.slug = slugCheck.error;
+      } else if (form.name.trim()) {
+        const auto = sanitizeFranchiseSlug(form.name);
+        const slugCheck = validateFranchiseSlugInput(auto || "franchise");
+        if (!slugCheck.valid) errors.slug = slugCheck.error;
+      } else {
+        errors.slug = "Portal URL name is required";
+      }
       fail("ownerName", validateName(form.ownerName));
       fail("ownerEmail", validateEmail(form.ownerEmail));
       fail("ownerPhone", validatePhone(form.ownerPhone));
@@ -434,6 +463,10 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
 
     if (step === 4) {
       fail("name", validateFranchiseName(form.name));
+      if (form.slug.trim()) {
+        const slugCheck = validateFranchiseSlugInput(form.slug);
+        if (!slugCheck.valid) errors.slug = slugCheck.error;
+      }
       fail("ownerName", validateName(form.ownerName));
       fail("ownerEmail", validateEmail(form.ownerEmail));
       fail("ownerPhone", validatePhone(form.ownerPhone));
@@ -492,6 +525,7 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
         credentials: "include",
         body: JSON.stringify({
           name: form.name.trim(),
+          slug: form.slug.trim() || undefined,
           legalName: form.legalName.trim() || undefined,
           businessType: form.businessType,
           ownerName: form.ownerName.trim(),
@@ -577,6 +611,9 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
               ? [{ key: "password", label: "Password", value: credentials.password }]
               : []),
             { key: "url", label: "Login URL", value: credentials.loginUrl },
+            ...(credentials.portalUrl
+              ? [{ key: "portal", label: "Franchise portal URL", value: credentials.portalUrl }]
+              : []),
           ].map((row) => (
             <div key={row.key}>
               <label className="text-xs font-medium text-muted-foreground">{row.label}</label>
@@ -689,6 +726,35 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
               <label className={labelClass}>Franchise / Institute Name *</label>
               <input type="text" name="name" value={form.name} onChange={handleChange} onBlur={handleBlur} className={cn(inputClass, fieldBorder(!!fieldErrors.name))} placeholder="e.g. IVESDC Mumbai Centre" />
               <FieldError message={fieldErrors.name} />
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelClass}>Franchise portal URL *</label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="shrink-0 text-xs font-medium text-slate-500 sm:text-sm">
+                  {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/
+                </span>
+                <input
+                  type="text"
+                  name="slug"
+                  value={form.slug}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    setForm((prev) => ({ ...prev, slug: sanitizeFranchiseSlug(e.target.value) }));
+                    clearFieldError("slug");
+                    setFormError("");
+                  }}
+                  onBlur={handleBlur}
+                  className={cn(inputClass, fieldBorder(!!fieldErrors.slug))}
+                  placeholder="eklavyaeducationhub"
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Visitors open this franchise at{" "}
+                <strong>
+                  {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/{form.slug || "your-name"}
+                </strong>
+              </p>
+              <FieldError message={fieldErrors.slug} />
             </div>
             <div>
               <label className={labelClass}>Owner Full Name *</label>
@@ -966,6 +1032,7 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               ["Franchise", form.name],
+              ["Portal URL", form.slug ? `${(portalOrigin || "").replace(/\/$/, "")}/${form.slug}` : "Auto from name"],
               ["Legal name", form.legalName || "—"],
               ["Business type", BUSINESS_TYPES.find((t) => t.value === form.businessType)?.label || form.businessType],
               ["Owner", form.ownerName],

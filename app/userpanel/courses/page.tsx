@@ -21,6 +21,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { SectionLoader } from "@/components/common/PageLoader";
+import { useFranchiseSiteSlug, useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   FiMonitor: <FiMonitor className="h-4 w-4" />,
@@ -116,6 +117,7 @@ function CourseCard({
 }) {
   const [imgSrc, setImgSrc] = useState(categoryImage(imageSlug, imageName));
   const catName = course.categoryData?.name || imageName;
+  const up = useUserPanelHref();
 
   return (
     <motion.article
@@ -160,7 +162,7 @@ function CourseCard({
         </div>
 
         <Link
-          href="/userpanel/franchises"
+          href={up("/userpanel/franchises")}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E4A85] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#163A6B]"
         >
           Enroll Course
@@ -177,9 +179,14 @@ export default function UserPanelCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeSlug, setActive] = useState("ALL");
+  const franchiseSlug = useFranchiseSiteSlug();
+  const up = useUserPanelHref();
 
   useEffect(() => {
-    fetch("/api/courses/public")
+    const url = franchiseSlug
+      ? `/api/courses/public?franchiseSlug=${encodeURIComponent(franchiseSlug)}`
+      : "/api/courses/public";
+    fetch(url)
       .then((r) => r.json())
       .then((res) => {
         if (res.success) {
@@ -188,7 +195,7 @@ export default function UserPanelCoursesPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [franchiseSlug]);
 
   const presentCategories = useMemo(() => {
     const slugs = new Set(courses.map((c) => c.category));
@@ -343,7 +350,7 @@ export default function UserPanelCoursesPage() {
                 <FiBookOpen className="mx-auto mb-4 h-12 w-12 text-[#CBD5E1]" />
                 <h2 className="mb-2 text-xl font-bold text-[#0F172A]">No courses yet</h2>
                 <p className="mb-6 text-[#64748B]">Courses appear here when added in the admin panel.</p>
-                <Link href="/userpanel/franchises" className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-6 py-3 font-semibold text-white hover:bg-[#163A6B]">
+                <Link href={up("/userpanel/franchises")} className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-6 py-3 font-semibold text-white hover:bg-[#163A6B]">
                   Browse Branches <FiArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -449,7 +456,7 @@ export default function UserPanelCoursesPage() {
               <p className="mt-1 text-lg font-bold text-white">Find a franchise branch and enrol today.</p>
             </div>
             <Link
-              href="/userpanel/franchises"
+              href={up("/userpanel/franchises")}
               className="inline-flex items-center gap-2 rounded-xl bg-[#C4A35A] px-6 py-3 text-sm font-bold text-[#0F172A] transition-colors hover:bg-[#A88B48] hover:text-white"
             >
               Browse Branches

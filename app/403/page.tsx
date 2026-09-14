@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { ErrorPage } from "@/components/common/error";
 import { useAuth } from "@/contexts/AuthContext";
+import { franchiseDashboardPath } from "@/lib/franchise-path";
 
 export default function ForbiddenPage() {
   const { user } = useAuth();
+  const dashboardHref = franchiseDashboardPath(user?.franchise?.slug);
 
   return (
     <div className="space-y-6">
@@ -21,7 +23,7 @@ export default function ForbiddenPage() {
       {user && (
         <div className="-mt-32 flex justify-center pb-12">
           <Link
-            href="/dashboard"
+            href={dashboardHref}
             className="rounded-xl bg-[#1E4A85] px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-[#163A6B]"
           >
             Go to Dashboard

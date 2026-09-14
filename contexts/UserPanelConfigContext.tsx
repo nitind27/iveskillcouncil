@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { defaultConfig } from "@/config/userpanel.config";
-import type { UserPanelConfig } from "@/config/userpanel.config";
+import type { CourseItem, UserPanelConfig } from "@/config/userpanel.config";
+import { useFranchiseSiteSlug } from "@/hooks/useUserPanelBasePath";
 
 const SESSION_CACHE_KEY = "up_config_v4";
 
@@ -48,26 +49,55 @@ export function UserPanelConfigProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const franchiseSlug = useFranchiseSiteSlug();
   const [config, setConfig] = useState<UserPanelConfig>(defaultConfig);
 
   useEffect(() => {
-    const cached = readSessionCache();
-    if (cached) setConfig(cached);
+    if (franchiseSlug) {
+      setConfig(defaultConfig);
+    } else {
+      const cached = readSessionCache();
+      if (cached) setConfig(cached);
+    }
 
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 8000);
 
     fetch("/api/userpanel-config", { signal: controller.signal })
       .then((r) => r.json())
-      .then((res) => {
+      .then(async (res) => {
         if (!res?.data) return;
-        const next = mergeConfig(res.data);
-        setConfig(next);
-        try {
-          sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(res.data));
-        } catch {
-          // ignore quota / private mode
+        let next = mergeConfig(res.data);
+        if (franchiseSlug) {
+          try {
+            const fr = await fetch(`/api/franchise-panel/${franchiseSlug}`, { signal: controller.signal });
+            const frJson = await fr.json();
+            const items: CourseItem[] = Array.isArray(frJson?.data?.courses)
+              ? frJson.data.courses.map((c: { id: string; title: string; duration: string; image: string; slug: string; description: string | null }) => ({
+                  id: c.id,
+                  title: c.title,
+                  duration: c.duration,
+                  image: c.image,
+                  slug: c.slug,
+                  description: c.description || undefined,
+                  enabled: true,
+                }))
+              : [];
+            next = {
+              ...next,
+              courses: { ...next.courses, items },
+            };
+          } catch {
+            // keep global config if franchise overlay fails
+          }
+        } else {
+          try {
+            sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(res.data));
+          } catch {
+            // ignore quota / private mode
+          }
         }
+        setConfig(next);
       })
       .catch(() => {})
       .finally(() => window.clearTimeout(timeout));
@@ -76,7 +106,7 @@ export function UserPanelConfigProvider({
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, []);
+  }, [franchiseSlug]);
 
   return (
     <UserPanelConfigContext.Provider value={config}>

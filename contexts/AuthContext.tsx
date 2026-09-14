@@ -21,6 +21,7 @@ interface User {
     name: string;
     status: string;
     state?: string | null;
+    slug?: string | null;
   } | null;
   permissions?: string[];
 }
@@ -38,6 +39,7 @@ interface AuthContextType {
     error?: string;
     requiresOtp?: boolean;
     email?: string;
+    user?: User | null;
   }>;
   loginWithOtp: (email: string, otp: string) => Promise<boolean>;
   /** Admin (Institute) only — complete login after password + email OTP */
@@ -232,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data.data?.user) {
         setUser(data.data.user);
-        return { ok: true };
+        return { ok: true, user: data.data.user };
       }
 
       return { ok: false, error: "Login failed" };

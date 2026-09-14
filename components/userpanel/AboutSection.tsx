@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import { cn } from "@/lib/utils";
+import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 function aboutButtonHref(href: string): string {
   if (href.startsWith("#")) return `/userpanel${href}`;
@@ -210,6 +211,7 @@ function OwnerShowcase() {
 
 export default function AboutSection({ config }: AboutSectionProps) {
   const { about, site } = config;
+  const up = useUserPanelHref();
   const heading = site?.name
     ? `About ${site.name}`
     : about.title || "About Our Institute";
@@ -282,13 +284,13 @@ export default function AboutSection({ config }: AboutSectionProps) {
             </div>
 
             <div className="flex flex-wrap gap-3 pt-1">
-              <Link href={aboutButtonHref(about.buttonHref)}>
+              <Link href={up(aboutButtonHref(about.buttonHref))}>
                 <span className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-[#163A6B]">
                   {about.buttonLabel}
                   <FiArrowRight className="h-4 w-4" />
                 </span>
               </Link>
-              <Link href="/userpanel/courses">
+              <Link href={up("/userpanel/courses")}>
                 <span className="inline-flex items-center gap-2 rounded-xl border border-[#1E4A85] bg-white px-6 py-3 text-sm font-bold text-[#1E4A85] transition-colors hover:bg-[#EEF2F7]">
                   View Courses
                   <FiArrowRight className="h-4 w-4" />

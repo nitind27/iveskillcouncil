@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiSend, FiArrowRight, FiCheckCircle, FiMail } from "react-icons/fi";
+import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 const perks = [
   "Course updates",
@@ -15,6 +16,7 @@ const perks = [
 export default function CTAStrip() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const up = useUserPanelHref();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,14 +70,14 @@ export default function CTAStrip() {
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/userpanel/courses"
+                  href={up("/userpanel/courses")}
                   className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#1E4A85] shadow-lg transition-colors hover:bg-[#EEF2F7]"
                 >
                   Browse Courses
                   <FiArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="/userpanel/franchise-plans"
+                  href={up("/userpanel/franchise-plans")}
                   className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/12"
                 >
                   Franchise Plans

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -37,6 +37,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { logoUrl, siteName, tagline } = useLogoConfig();
   const { login, loginWithOtp, verifyAdminOtp, user, loading: authLoading, dbUnavailable } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
   
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [overlayFlow, setOverlayFlow] = useState<OverlayFlow>(null);
@@ -80,9 +82,14 @@ function LoginForm() {
   const redirectParam = searchParams?.get("redirect") ?? "";
   const redirect = getRedirectUrl();
 
-  const goAfterLogin = (loggedInUser?: { roleId: number } | null) => {
-    const roleId = loggedInUser?.roleId ?? user?.roleId ?? 0;
-    const target = resolvePostLoginRedirect(redirectParam || "/dashboard", Number(roleId));
+  const goAfterLogin = (loggedInUser?: {
+    roleId: number;
+    franchise?: { slug?: string | null } | null;
+  } | null) => {
+    const session = loggedInUser ?? userRef.current;
+    const roleId = session?.roleId ?? 0;
+    const slug = session?.franchise?.slug ?? null;
+    const target = resolvePostLoginRedirect(redirectParam || "/dashboard", Number(roleId), slug);
     window.location.replace(target);
   };
 
@@ -110,7 +117,7 @@ function LoginForm() {
       }
       if (result.ok) {
         showSuccess("Login Successful", "Redirecting...");
-        setTimeout(() => goAfterLogin(), 1200);
+        setTimeout(() => goAfterLogin(result.user), 1200);
       } else {
         const isDb = result.error?.toLowerCase().includes("database");
         showError(

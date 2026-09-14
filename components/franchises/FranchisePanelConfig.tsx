@@ -31,6 +31,7 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
   const [loading,    setLoading]    = useState(true);
   const [saving,     setSaving]     = useState(false);
   const [uploading,  setUploading]  = useState<string | null>(null);
+  const [portalOrigin, setPortalOrigin] = useState("");
 
   useEffect(() => {
     fetch(`/api/admin/franchises/${franchiseId}/panel-config`, { credentials: "include" })
@@ -43,6 +44,10 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
       })
       .finally(() => setLoading(false));
   }, [franchiseId]);
+
+  useEffect(() => {
+    setPortalOrigin(window.location.origin.replace(/\/$/, ""));
+  }, []);
 
   const uploadAsset = async (assetType: string, file: File) => {
     setUploading(assetType);
@@ -61,7 +66,7 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
 
   const save = async () => {
     if (!slug.trim()) { showError("Validation", "URL slug is required"); return; }
-    const safeSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 80);
+    const safeSlug = slug.trim().toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 80);
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/franchises/${franchiseId}/panel-config`, {
@@ -80,7 +85,7 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  const portalUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL || ""}/f/${slug}` : null;
+  const portalUrl = slug ? `${portalOrigin || process.env.NEXT_PUBLIC_APP_URL || ""}/${slug}` : null;
 
   return (
     <div className="space-y-6">
@@ -100,16 +105,18 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
       <div>
         <label className={labelCls}>Portal URL Slug <span className="text-red-500">*</span></label>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">/f/</span>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/
+          </span>
           <input
             type="text"
             value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-            placeholder="nitin-institute"
+            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
+            placeholder="eklavyaeducationhub"
             className={inputCls}
           />
         </div>
-        {slug && <p className="text-xs text-muted-foreground mt-1">Portal URL: <strong>/f/{slug}</strong></p>}
+        {slug && <p className="text-xs text-muted-foreground mt-1">Portal URL: <strong>/{slug}</strong></p>}
       </div>
 
       {/* Logo */}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiArrowRight, FiClock, FiBookOpen } from "react-icons/fi";
 import type { CourseItem, UserPanelConfig } from "@/config/userpanel.config";
+import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 function getSlug(c: CourseItem): string {
   return c.slug || c.id;
@@ -25,7 +26,7 @@ function formatTitle(title: string): string {
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80";
 
-function CourseCard({ course, index }: { course: CourseItem; index: number }) {
+function CourseCard({ course, index, href }: { course: CourseItem; index: number; href: string }) {
   const [src, setSrc] = useState(course.image || FALLBACK_IMAGE);
 
   return (
@@ -62,7 +63,7 @@ function CourseCard({ course, index }: { course: CourseItem; index: number }) {
           <p className="mb-4 text-sm text-[#94A3B8]">Industry-aligned vocational programme.</p>
         )}
         <Link
-          href={`/userpanel/courses/${getSlug(course)}`}
+          href={href}
           className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#1E4A85] bg-white py-2.5 text-sm font-semibold text-[#1E4A85] transition-colors hover:bg-[#1E4A85] hover:text-white"
         >
           View Details
@@ -79,6 +80,7 @@ interface CoursesSectionProps {
 
 export default function CoursesSection({ config }: CoursesSectionProps) {
   const { courses } = config;
+  const up = useUserPanelHref();
   const items = (courses?.items || []).filter((c) => c.enabled !== false).slice(0, 4);
   if (items.length === 0) return null;
 
@@ -106,7 +108,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((course, i) => (
-            <CourseCard key={course.id} course={course} index={i} />
+            <CourseCard key={course.id} course={course} index={i} href={up(`/userpanel/courses/${getSlug(course)}`)} />
           ))}
         </div>
 
@@ -117,7 +119,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
           className="mt-12 text-center"
         >
           <Link
-            href="/userpanel/courses"
+            href={up("/userpanel/courses")}
             className="inline-flex items-center gap-2 rounded-lg bg-[#1E4A85] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#163A6B]"
           >
             Browse all courses

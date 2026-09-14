@@ -24,8 +24,10 @@ import {
   ChevronsLeft,
   ChevronsRight,
   CreditCard,
+  Globe,
 } from "lucide-react";
 import FranchiseCourseManager from "./FranchiseCourseManager";
+import FranchisePanelConfig from "./FranchisePanelConfig";
 import { FranchiseIdCardModal } from "./FranchiseIdCardModal";
 import { cn } from "@/lib/utils";
 import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
@@ -42,6 +44,8 @@ interface FranchiseDoc {
 interface Franchise {
   id: string;
   name: string;
+  slug?: string | null;
+  portalPath?: string | null;
   owner: {
     id: string;
     name: string;
@@ -315,6 +319,16 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
                 {[row.city, row.state].filter(Boolean).join(", ")}
               </p>
             )}
+            {row.slug && (
+              <a
+                href={`/${row.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[#1E4A85] hover:underline"
+              >
+                /{row.slug}
+              </a>
+            )}
           </div>
         </div>
       ),
@@ -393,6 +407,17 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
           >
             <Eye className="h-3.5 w-3.5" />
           </button>
+          {row.slug && (
+            <a
+              href={`/${row.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-border/70 p-1.5 text-muted-foreground transition hover:border-[#1E4A85]/40 hover:bg-[#1E4A85]/5 hover:text-[#1E4A85]"
+              title="Open franchise portal"
+            >
+              <Globe className="h-3.5 w-3.5" />
+            </a>
+          )}
           <button
             type="button"
             onClick={() => handleOpenIdCard(row)}
@@ -595,8 +620,7 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
           setViewModalOpen(false);
           setSelectedFranchise(null);
         }}
-        size="lg"
-        title="Franchise Details"
+        size="xl"
       >
         {selectedFranchise && (
           <ModalBody>
@@ -762,6 +786,13 @@ export default function FranchiseTable({ onStatsChange }: FranchiseTableProps) {
                     </div>
                   </div>
                 )}
+
+              <div className="rounded-xl border border-[#1E4A85]/12 bg-white p-4">
+                <FranchisePanelConfig
+                  franchiseId={selectedFranchise.id}
+                  franchiseName={selectedFranchise.name}
+                />
+              </div>
 
               <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
                 <button

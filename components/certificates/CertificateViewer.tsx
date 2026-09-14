@@ -10,7 +10,10 @@ interface Props {
 
 export default function CertificateViewer({ data }: Props) {
   const handlePrint = () => {
-    window.print();
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    setTimeout(() => {
+      window.print();
+    }, 60);
   };
 
   return (

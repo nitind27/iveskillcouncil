@@ -24,6 +24,8 @@ import {
   validateRequiredText,
   validateSubscriptionDates,
 } from '@/lib/validation';
+import { resolveFranchiseCreateSlug } from '@/lib/franchise-slug';
+import { franchisePortalUrl } from '@/lib/franchise-path';
 
 function validateFranchiseCreatePayload(body: Record<string, unknown>): string | null {
   const name = String(body.name || '');
@@ -145,6 +147,7 @@ export async function GET(request: NextRequest) {
         { state: { contains: search } },
         { owner: { email: { contains: search } } },
         { owner: { fullName: { contains: search } } },
+        { slug: { contains: search } },
       ];
     }
 
@@ -183,6 +186,8 @@ export async function GET(request: NextRequest) {
     const formattedFranchises = franchises.map((franchise) => ({
       id: franchise.id.toString(),
       name: franchise.name,
+      slug: franchise.slug,
+      portalPath: franchise.slug ? `/${franchise.slug}` : null,
       owner: {
         id: franchise.owner.id.toString(),
         name: franchise.owner.fullName,
@@ -267,6 +272,7 @@ export async function POST(request: NextRequest) {
       bankAccountNumber,
       bankIfsc,
       documents,
+      slug: requestedSlug,
     } = body;
 
     const kycData = {
@@ -311,6 +317,11 @@ export async function POST(request: NextRequest) {
 
       const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
 
+      const slugResult = await resolveFranchiseCreateSlug(requestedSlug, name);
+      if ("error" in slugResult) {
+        return errorResponse(slugResult.error, 400);
+      }
+
       // Use raw SQL to create owner with must_change_password (works when Prisma client is out of sync)
       await prisma.$executeRaw`
         INSERT INTO users (role_id, full_name, email, phone, password, must_change_password, status, created_at, updated_at)
@@ -324,6 +335,7 @@ export async function POST(request: NextRequest) {
       const franchise = await prisma.franchise.create({
         data: {
           name,
+          slug: slugResult.slug,
           ownerId,
           planId,
           subscriptionStart: new Date(subscriptionStart),
@@ -346,9 +358,9 @@ export async function POST(request: NextRequest) {
         data: { franchiseId: franchise.id },
       });
 
-      const loginUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
-        ? `${process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`}/login`
-        : 'https://example.com/login';
+      const appBase = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+      const loginUrl = appBase ? `${appBase.replace(/\/$/, '')}/login` : 'https://example.com/login';
+      const portalUrl = franchisePortalUrl(slugResult.slug, appBase);
 
       const appName = process.env.APP_NAME || 'Franchise Institute';
       const subStart = subscriptionStart ? new Date(subscriptionStart).toLocaleDateString() : '';
@@ -409,11 +421,14 @@ export async function POST(request: NextRequest) {
           },
           plan: { name: franchise.plan.name, price: franchise.plan.price.toString() },
           status: franchise.status,
+          slug: franchise.slug,
+          portalUrl,
           emailSent: emailResult.success,
           emailError: emailResult.error,
           credentials: {
             email: owner.email,
             loginUrl,
+            portalUrl,
             firstTimeSetup: true,
           },
         },
@@ -425,9 +440,15 @@ export async function POST(request: NextRequest) {
       return errorResponse('Missing required fields', 400);
     }
 
+    const existingOwnerSlug = await resolveFranchiseCreateSlug(requestedSlug, name);
+    if ("error" in existingOwnerSlug) {
+      return errorResponse(existingOwnerSlug.error, 400);
+    }
+
     const franchise = await prisma.franchise.create({
       data: {
         name,
+        slug: existingOwnerSlug.slug,
         ownerId: BigInt(ownerId),
         planId,
         subscriptionStart: new Date(subscriptionStart),
@@ -452,6 +473,8 @@ export async function POST(request: NextRequest) {
       {
         id: franchise.id.toString(),
         name: franchise.name,
+        slug: franchise.slug,
+        portalPath: franchise.slug ? `/${franchise.slug}` : null,
         owner: {
           id: franchise.owner.id.toString(),
           name: franchise.owner.fullName,

@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-response";
 import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
-import { hashPassword } from "@/lib/auth";
+import { hashPassword, serializeAuthFranchise } from "@/lib/auth";
+import { sanitizeFranchiseSlug } from "@/lib/franchise-path";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import { getEffectivePermissions } from "@/lib/get-effective-permissions";
 
@@ -45,7 +46,12 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { role: true },
+      include: {
+        role: true,
+        franchise: {
+          select: { id: true, name: true, status: true, state: true, slug: true },
+        },
+      },
     });
 
     if (!user || !user.mustChangePassword) {
@@ -70,6 +76,7 @@ export async function POST(request: NextRequest) {
       userId: user.id.toString(),
       roleId: user.roleId,
       franchiseId: user.franchiseId?.toString(),
+      franchiseSlug: user.franchise?.slug ? sanitizeFranchiseSlug(user.franchise.slug) : undefined,
       email: user.email,
     });
     const refreshToken = generateRefreshToken({
@@ -86,6 +93,7 @@ export async function POST(request: NextRequest) {
           roleId: user.roleId,
           roleName: user.role.name,
           franchiseId: user.franchiseId?.toString(),
+          franchise: serializeAuthFranchise(user.franchise),
           permissions,
         },
       },

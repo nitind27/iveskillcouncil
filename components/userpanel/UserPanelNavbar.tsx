@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
 import { defaultConfig, type UserPanelConfig } from "@/config/userpanel.config";
 import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUserPanelBasePath, useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { useAuth } from "@/contexts/AuthContext";
+import { franchiseDashboardPath, getFranchisePathSlug, sanitizeFranchiseSlug, shouldPrefixFranchiseApp } from "@/lib/franchise-path";
 
 const NAV_LABEL_KEYS: Record<string, string> = {
   Home: "nav.home",
@@ -21,13 +24,6 @@ const NAV_LABEL_KEYS: Record<string, string> = {
   Gallery: "nav.gallery",
   Contact: "nav.contact",
 };
-
-function navHref(href: string): string {
-  if (href === "#home" || href === "/" || href === "") return "/userpanel";
-  if (href === "#courses") return "/userpanel/courses";
-  if (href.startsWith("#")) return `/userpanel${href}`;
-  return href;
-}
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
   Home:      <FiHome      className="w-3.5 h-3.5" />,
@@ -46,11 +42,24 @@ interface UserPanelNavbarProps {
 
 export default function UserPanelNavbar({ config, userName }: UserPanelNavbarProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const ticking = useRef(false);
   const pathname = usePathname();
   const { site, nav } = config;
+  const basePath = useUserPanelBasePath();
+  const up = useUserPanelHref();
+  const siteSlug = getFranchisePathSlug(pathname || "")?.replace(/-/g, "") || null;
+  const ownSlug = user?.franchise?.slug ? sanitizeFranchiseSlug(user.franchise.slug) : "";
+  const dashboardPath = user
+    ? shouldPrefixFranchiseApp(user.roleId, ownSlug)
+      ? franchiseDashboardPath(ownSlug)
+      : "/dashboard"
+    : franchiseDashboardPath(siteSlug);
+  const dashboardOrLoginHref = userName || user
+    ? dashboardPath
+    : `/login?redirect=${encodeURIComponent(dashboardPath)}`;
 
   const links =
     nav.links?.length > 0 ? nav.links : defaultConfig.nav.links;
@@ -86,7 +95,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             "mx-auto flex h-[var(--up-header-height)] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8",
             scrolled ? "border-b border-[#EEF2F7]" : ""
           )}>
-            <Link href="/userpanel" className="group flex min-w-0 flex-shrink-0 items-center gap-2.5">
+            <Link href={basePath} className="group flex min-w-0 flex-shrink-0 items-center gap-2.5">
               <div className="relative flex items-center justify-center">
                 {site.logoUrl ? (
                   <img
@@ -123,10 +132,10 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             <div className="hidden flex-1 items-center justify-center md:flex">
               <div className="flex items-center gap-0.5 rounded-full border border-[#E5E7EB] bg-[#F8FAFC] p-1">
                 {links.map((link) => {
-                  const href = navHref(link.href);
+                  const href = up(link.href);
                   const isActive =
                     pathname === href ||
-                    (href !== "/userpanel" && !!pathname?.startsWith(href.split("#")[0]) && !href.includes("#"));
+                    (href !== basePath && !!pathname?.startsWith(href.split("#")[0]) && !href.includes("#"));
                   return (
                     <Link
                       key={link.label}
@@ -152,14 +161,14 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               <LanguageSwitcher variant="userpanel" className="hidden md:flex" />
 
               <Link
-                href="/login?redirect=%2Fdashboard"
+                href={dashboardOrLoginHref}
                 className="hidden items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#374151] shadow-sm transition-all hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] sm:inline-flex"
               >
                 <FiLogIn className="h-3.5 w-3.5" />
                 {userName ? t("menu.dashboard", "Dashboard") : t("nav.login", "Login")}
               </Link>
 
-              <Link href="/userpanel/courses" className="hidden sm:block">
+              <Link href={up("/userpanel/courses")} className="hidden sm:block">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1E4A85] px-4 py-1.5 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-[#163A6B]">
                   Enroll Now
                   <FiArrowRight className="h-3.5 w-3.5" />
@@ -251,7 +260,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
 
               <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
                 {links.map((link) => {
-                  const href = navHref(link.href);
+                  const href = up(link.href);
                   const isActive = pathname === href;
                   return (
                     <Link
@@ -276,12 +285,12 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               </div>
 
               <div className="space-y-2 border-t border-[#E5E7EB] px-3 pb-5 pt-3">
-                <Link href="/login?redirect=%2Fdashboard" onClick={() => setMobileOpen(false)}>
+                <Link href={dashboardOrLoginHref} onClick={() => setMobileOpen(false)}>
                   <span className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#2D5DA8] py-2.5 text-sm font-bold text-[#2D5DA8]">
                     <FiLogIn className="h-4 w-4" /> Login
                   </span>
                 </Link>
-                <Link href="/userpanel/courses" onClick={() => setMobileOpen(false)}>
+                <Link href={up("/userpanel/courses")} onClick={() => setMobileOpen(false)}>
                   <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E4A85] py-2.5 text-sm font-bold text-white">
                     Enroll Now <FiArrowRight className="h-4 w-4" />
                   </span>

@@ -29,6 +29,8 @@ export async function GET() {
     const data = franchises.map((f) => ({
       id: f.id.toString(),
       name: f.name,
+      slug: f.slug,
+      portalPath: f.slug ? `/${f.slug}` : null,
       address: f.address,
       city: f.city,
       state: f.state,

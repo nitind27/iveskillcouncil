@@ -7,6 +7,7 @@ import {
   FiLinkedin, FiInstagram, FiYoutube, FiUser, FiArrowRight,
 } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
+import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 function quickLinkHref(href: string): string {
   if (href === "#home" || href === "/" || href === "") return "/userpanel";
@@ -50,6 +51,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function UserPanelFooter({ config }: UserPanelFooterProps) {
+  const up = useUserPanelHref();
   const { site, footer } = config;
 
   return (
@@ -118,7 +120,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
               {(footer.quickLinks || []).map((link) => (
                 <li key={link.href + link.label}>
                   <Link
-                    href={quickLinkHref(link.href)}
+                    href={up(quickLinkHref(link.href))}
                     className="group inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-[#C4A35A]"
                   >
                     <FiArrowRight className="h-3.5 w-3.5 text-[#C4A35A] opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />

@@ -2,11 +2,31 @@ import { prisma } from './prisma';
 import { generateAccessToken, generateRefreshToken, verifyAccessToken, type TokenPayload } from './jwt';
 import bcrypt from 'bcryptjs';
 import { getEffectivePermissions } from './get-effective-permissions';
+import { sanitizeFranchiseSlug } from './franchise-path';
 import {
   DatabaseUnavailableError,
   isDbUnavailableError,
   withDbRetry,
 } from './db';
+
+export function serializeAuthFranchise(
+  franchise: {
+    id: bigint | string;
+    name: string;
+    status: string;
+    state?: string | null;
+    slug?: string | null;
+  } | null
+) {
+  if (!franchise) return null;
+  return {
+    id: franchise.id.toString(),
+    name: franchise.name,
+    status: franchise.status,
+    state: franchise.state ?? undefined,
+    slug: franchise.slug ? sanitizeFranchiseSlug(franchise.slug) : null,
+  };
+}
 
 export interface LoginCredentials {
   email: string;
@@ -26,6 +46,7 @@ export interface AuthResult {
       name: string;
       status: string;
       state?: string;
+      slug?: string | null;
     } | null;
     permissions: string[];
   };
@@ -57,6 +78,7 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
               name: true,
               status: true,
               state: true,
+              slug: true,
             },
           },
         },
@@ -92,6 +114,7 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
         userId: user.id.toString(),
         roleId: user.roleId,
         franchiseId: user.franchiseId?.toString(),
+        franchiseSlug: user.franchise?.slug ? sanitizeFranchiseSlug(user.franchise.slug) : undefined,
         email: user.email,
       };
 
@@ -109,14 +132,7 @@ export async function authenticateUser(credentials: LoginCredentials): Promise<A
           roleId: user.roleId,
           roleName: user.role.name,
           franchiseId: user.franchiseId?.toString(),
-          franchise: user.franchise
-            ? {
-                id: user.franchise.id.toString(),
-                name: user.franchise.name,
-                status: user.franchise.status,
-                state: user.franchise.state ?? undefined,
-              }
-            : null,
+          franchise: serializeAuthFranchise(user.franchise),
           permissions,
         },
         accessToken,
@@ -151,6 +167,7 @@ export async function getUserFromToken(token: string) {
               name: true,
               status: true,
               state: true,
+              slug: true,
             },
           },
         },
@@ -173,14 +190,7 @@ export async function getUserFromToken(token: string) {
         roleId: user.roleId,
         roleName: user.role.name,
         franchiseId: user.franchiseId?.toString(),
-        franchise: user.franchise
-          ? {
-              id: user.franchise.id.toString(),
-              name: user.franchise.name,
-              status: user.franchise.status,
-              state: user.franchise.state ?? undefined,
-            }
-          : null,
+        franchise: serializeAuthFranchise(user.franchise),
         permissions,
       };
     });

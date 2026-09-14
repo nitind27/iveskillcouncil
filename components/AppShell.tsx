@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { isFranchisePublicSitePath } from "@/lib/franchise-path";
 
 const AdminLayout = dynamic(() => import("@/components/adminpanel/AdminLayout"));
 
@@ -11,9 +12,13 @@ function isPublicPath(pathname: string) {
     pathname === "/login" ||
     pathname.startsWith("/userpanel") ||
     pathname.startsWith("/exam-link") ||
+    pathname === "/f" ||
+    pathname.startsWith("/f/") ||
+    isFranchisePublicSitePath(pathname) ||
     pathname === "/400" ||
     pathname === "/401" ||
     pathname === "/403" ||
+    pathname === "/404" ||
     pathname === "/503"
   );
 }

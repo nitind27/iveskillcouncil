@@ -6,6 +6,8 @@ import { rateLimiter, rateLimitConfig, rateLimitKey } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
 import { ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE, getAuthCookieOptions } from '@/lib/auth-cookies';
 import { randomUUID } from 'crypto';
+import { serializeAuthFranchise } from '@/lib/auth';
+import { sanitizeFranchiseSlug } from '@/lib/franchise-path';
 import { DatabaseUnavailableError, isDbUnavailableError, withDbRetry } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +41,7 @@ export async function POST(request: NextRequest) {
               id: true,
               name: true,
               status: true,
+              slug: true,
             },
           },
         },
@@ -57,17 +60,14 @@ export async function POST(request: NextRequest) {
       roleId: userData.roleId,
       roleName: userData.role.name,
       franchiseId: userData.franchiseId?.toString(),
-      franchise: userData.franchise ? {
-        id: userData.franchise.id.toString(),
-        name: userData.franchise.name,
-        status: userData.franchise.status,
-      } : null,
+      franchise: serializeAuthFranchise(userData.franchise),
     };
 
     const newAccessToken = generateAccessToken({
       userId: user.id,
       roleId: user.roleId,
       franchiseId: user.franchiseId,
+      franchiseSlug: user.franchise?.slug || undefined,
       email: user.email,
     });
 

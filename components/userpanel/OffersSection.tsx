@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import { FiTag, FiArrowRight, FiCheck, FiGift, FiUsers, FiClock, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+  FiTag,
+  FiArrowRight,
+  FiCheck,
+  FiGift,
+  FiUsers,
+  FiClock,
+  FiCalendar,
+  FiPercent,
+  FiCopy,
+  FiCheckCircle,
+} from "react-icons/fi";
 import OfferModal from "./OfferModal";
 import OfferApplyFormModal from "./OfferApplyFormModal";
 import type { OfferItem, UserPanelConfig } from "@/config/userpanel.config";
@@ -23,288 +29,297 @@ function offerIcon(title: string) {
   return FiGift;
 }
 
+function offerCouponCode(offer: OfferItem): string {
+  const t = offer.title.toLowerCase();
+  if (t.includes("summer")) return `SUMMER${offer.discount}`;
+  if (t.includes("refer")) return `REFER${offer.discount}`;
+  if (t.includes("early") || t.includes("bird")) return `EARLY${offer.discount}`;
+  return `OFFER${offer.discount}`;
+}
+
 function offerPerks(offer: OfferItem): string[] {
   const t = offer.title.toLowerCase();
   if (t.includes("refer")) {
-    return ["Share with a friend", "Discount on next enrolment", "Simple online claim"];
+    return [
+      "Share referral code with a friend",
+      "Get instant discount on next enrolment",
+      "Instant online redemption & tracking",
+    ];
   }
   if (t.includes("early") || t.includes("bird")) {
-    return ["Priority batch seat", "Fee locked in advance", "Book 2 months ahead"];
+    return [
+      "Guaranteed seat in upcoming priority batch",
+      "Tuition fee locked at discounted rate",
+      "Early bird study materials & orientation",
+    ];
   }
   if (t.includes("summer")) {
-    return ["Valid on all courses", "Instant confirmation", "Limited seats only"];
+    return [
+      "Applicable across all vocational programs",
+      "Instant fee concession at checkout",
+      "Includes verified certificate on completion",
+    ];
   }
-  return ["Valid on selected programmes", "Easy online apply", "Limited-period benefit"];
+  return [
+    "Valid on select vocational certificates",
+    "Easy online application process",
+    "Limited-period institutional grant",
+  ];
 }
 
-function OfferTiltCard({
+const THEMES = [
+  {
+    badge: "Seasonal Special",
+    accent: "#C4A35A",
+    accentLight: "#FBF7ED",
+    tagBg: "bg-amber-50 text-amber-800 border-amber-200",
+    buttonBg: "bg-gradient-to-r from-[#C4A35A] to-[#A88B48] text-slate-950 hover:brightness-105",
+    discountBadge: "bg-[#1E4A85] text-white",
+    cardRing: "hover:border-[#C4A35A]/60 hover:shadow-[0_16px_40px_rgba(196,163,90,0.18)]",
+    featured: true,
+  },
+  {
+    badge: "Student Referral",
+    accent: "#10B981",
+    accentLight: "#ECFDF5",
+    tagBg: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    buttonBg: "bg-[#1E4A85] text-white hover:bg-[#163A6B]",
+    discountBadge: "bg-emerald-600 text-white",
+    cardRing: "hover:border-emerald-500/50 hover:shadow-[0_16px_40px_rgba(16,185,129,0.15)]",
+    featured: false,
+  },
+  {
+    badge: "Priority Booking",
+    accent: "#1E4A85",
+    accentLight: "#EFF6FF",
+    tagBg: "bg-blue-50 text-blue-800 border-blue-200",
+    buttonBg: "bg-[#1E4A85] text-white hover:bg-[#163A6B]",
+    discountBadge: "bg-[#1E4A85] text-white",
+    cardRing: "hover:border-[#1E4A85]/50 hover:shadow-[0_16px_40px_rgba(30,74,133,0.15)]",
+    featured: false,
+  },
+];
+
+function VoucherCard({
   offer,
   index,
-  featured,
   onClaim,
 }: {
   offer: OfferItem;
   index: number;
-  featured: boolean;
   onClaim: () => void;
 }) {
-  const px = useMotionValue(0);
-  const py = useMotionValue(0);
-  const rotateX = useSpring(useTransform(py, [-0.5, 0.5], [14, -14]), { stiffness: 220, damping: 18 });
-  const rotateY = useSpring(useTransform(px, [-0.5, 0.5], [-18, 18]), { stiffness: 220, damping: 18 });
-  const glareX = useTransform(px, [-0.5, 0.5], ["0%", "100%"]);
-  const glareY = useTransform(py, [-0.5, 0.5], ["0%", "100%"]);
-  const glareBg = useTransform(
-    [glareX, glareY],
-    ([x, y]) => `radial-gradient(420px circle at ${x} ${y}, rgba(196,163,90,0.28), transparent 55%)`
-  );
+  const [copied, setCopied] = useState(false);
+  const theme = THEMES[index % THEMES.length];
   const Icon = offerIcon(offer.title);
   const perks = offerPerks(offer);
+  const code = offerCouponCode(offer);
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    px.set((e.clientX - rect.left) / rect.width - 0.5);
-    py.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-
-  const onLeave = () => {
-    px.set(0);
-    py.set(0);
+  const handleCopyCode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <motion.div
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      className="relative h-full"
+    <motion.article
+      initial={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white transition-all duration-300 shadow-[0_4px_20px_rgba(15,23,42,0.05)] hover:-translate-y-1.5 ${theme.cardRing}`}
     >
+      {/* Top Banner Accent Stripe */}
       <div
-        className={`relative flex h-full min-h-[430px] flex-col overflow-visible rounded-[1.6rem] border p-6 ${
-          featured
-            ? "border-[#D4B05C]/40 bg-gradient-to-br from-[#1E4A85]/90 via-[#102A4C] to-[#0B1F38] shadow-[0_30px_70px_rgba(0,0,0,0.45),0_0_28px_rgba(196,163,90,0.16)]"
-            : "border-[#C4A35A]/18 bg-gradient-to-br from-white/10 via-[#163A6B]/80 to-[#0B1F38] shadow-[0_24px_50px_rgba(0,0,0,0.35)]"
-        }`}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.6rem] opacity-70 mix-blend-screen"
-          style={{ background: glareBg }}
-        />
+        className="h-2 w-full"
+        style={{
+          background: theme.featured
+            ? "linear-gradient(90deg, #1E4A85, #C4A35A, #163A6B)"
+            : `linear-gradient(90deg, ${theme.accent}, #1E4A85)`,
+        }}
+      />
 
-        <div className="relative mb-5 flex items-start justify-between" style={{ transform: "translateZ(28px)" }}>
-          <span className="text-[11px] font-bold tracking-[0.22em] text-[#D4B05C]">
-            {String(index + 1).padStart(2, "0")}
+      {/* Card Header & Content */}
+      <div className="flex flex-1 flex-col p-6 sm:p-7">
+        {/* Top Badges Row */}
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${theme.tagBg}`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {theme.badge}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#D4B05C]">
-            <Icon className="h-3 w-3" />
-            Limited
+
+          {theme.featured && (
+            <span className="rounded-full bg-[#C4A35A]/15 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-[#8C7340]">
+              Featured
+            </span>
+          )}
+        </div>
+
+        {/* Discount Value Display */}
+        <div className="mt-5 flex items-baseline gap-2">
+          <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+            {offer.discount}%
+          </span>
+          <span className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#C4A35A]">
+            Discount
           </span>
         </div>
 
-        <div className="relative mb-6 flex justify-center" style={{ transform: "translateZ(48px)" }}>
-          <div className="offer-coin-halo pointer-events-none absolute h-28 w-28 rounded-full bg-[#C4A35A]/40 blur-2xl" />
-          <div className="offer-coin relative flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full">
-            <span className="text-[2rem] font-black leading-none text-[#1A1408]">{offer.discount}%</span>
-            <span className="mt-0.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#1A1408]/75">Off</span>
-          </div>
-        </div>
-
-        <h3 className="relative text-center text-xl font-extrabold text-white" style={{ transform: "translateZ(32px)" }}>
+        {/* Offer Title & Description */}
+        <h3 className="mt-2 text-xl font-extrabold text-slate-900 group-hover:text-[#1E4A85] transition-colors">
           {offer.title}
         </h3>
-        <p className="relative mt-2 text-center text-sm leading-relaxed text-white/65" style={{ transform: "translateZ(24px)" }}>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600 font-medium">
           {offer.description}
         </p>
 
-        <ul className="relative mt-5 space-y-2" style={{ transform: "translateZ(26px)" }}>
-          {perks.map((perk) => (
-            <li key={perk} className="flex items-start gap-2 text-[13px] text-white/80">
-              <FiCheck className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#D4B05C]" />
-              {perk}
-            </li>
-          ))}
-        </ul>
-
-        <div className="relative mt-auto pt-6" style={{ transform: "translateZ(40px)" }}>
+        {/* Coupon Code Pill */}
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <FiPercent className="h-4 w-4 text-[#C4A35A]" />
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700">
+              {code}
+            </span>
+          </div>
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClaim();
-            }}
-            className="offer-btn-glow inline-flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-extrabold"
+            onClick={handleCopyCode}
+            className="flex items-center gap-1 text-xs font-semibold text-[#1E4A85] hover:text-[#163A6B] transition-colors"
           >
-            Claim Offer
-            <FiArrowRight className="h-4 w-4" />
+            {copied ? (
+              <>
+                <FiCheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-emerald-600 font-bold">Copied!</span>
+              </>
+            ) : (
+              <>
+                <FiCopy className="h-3.5 w-3.5" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Dashed Ticket Divider with Notches */}
+        <div className="relative -mx-6 sm:-mx-7 my-6">
+          <div className="border-t-2 border-dashed border-slate-200" />
+          <div className="absolute -left-3 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border border-slate-200 bg-[#F8FAFC]" />
+          <div className="absolute -right-3 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border border-slate-200 bg-[#F8FAFC]" />
+        </div>
+
+        {/* Benefits Checklist */}
+        <div className="space-y-2.5">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            What you get:
+          </p>
+          <ul className="space-y-2">
+            {perks.map((perk) => (
+              <li key={perk} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium leading-relaxed">
+                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <FiCheck className="h-2.5 w-2.5 stroke-[3]" />
+                </span>
+                <span>{perk}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Valid Date or Guarantee */}
+        <div className="mt-5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+          <FiCalendar className="h-3.5 w-3.5 text-[#C4A35A]" />
+          <span>{offer.validUntil ? `Valid until: ${offer.validUntil}` : "Limited seats available this batch"}</span>
+        </div>
+
+        {/* Action Button */}
+        <div className="mt-6 pt-2">
+          <button
+            type="button"
+            onClick={onClaim}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-bold shadow-sm transition-all hover:shadow-md active:scale-[0.98] ${theme.buttonBg}`}
+          >
+            <span>Claim Offer</span>
+            <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </div>
-    </motion.div>
+    </motion.article>
   );
 }
 
 export default function OffersSection({ config }: OffersSectionProps) {
   const [selectedOffer, setSelectedOffer] = useState<OfferItem | null>(null);
   const [applyFormOffer, setApplyFormOffer] = useState<OfferItem | null>(null);
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
   const { offers } = config;
   const items = offers?.items || [];
 
-  useEffect(() => {
-    if (items.length < 2 || paused) return;
-    const id = window.setInterval(() => {
-      if (!window.matchMedia("(min-width: 1024px)").matches) return;
-      setActive((i) => (i + 1) % items.length);
-    }, 4200);
-    return () => window.clearInterval(id);
-  }, [items.length, paused]);
-
   if (items.length === 0) return null;
-
-  const goPrev = () => setActive((i) => (i === 0 ? items.length - 1 : i - 1));
-  const goNext = () => setActive((i) => (i === items.length - 1 ? 0 : i + 1));
 
   return (
     <>
-      <section id="offers" className="relative overflow-hidden bg-[#070F1C] px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-10%,rgba(196,163,90,0.22),transparent_58%)]" />
-        <div className="offer-orb pointer-events-none absolute left-[8%] top-16 h-40 w-40 rounded-full bg-[#C4A35A]/18 blur-3xl" />
-        <div className="offer-orb offer-orb-delay pointer-events-none absolute bottom-10 right-[10%] h-52 w-52 rounded-full bg-[#1E4A85]/50 blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
-
+      <section
+        id="offers"
+        className="relative overflow-hidden bg-[#F8FAFC] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 border-y border-slate-200/80"
+      >
         <div className="relative mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-10 text-center lg:mb-6"
-          >
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#D4B05C]">
-              <FiTag className="h-3.5 w-3.5" />
-              Exclusive deals
-            </span>
-            <h2 className="hero-title-glow text-3xl font-extrabold tracking-tight md:text-5xl">
-              {offers.sectionTitle}
+          {/* Section Header */}
+          <div className="mb-10 text-center sm:mb-14">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3.5 py-1 text-xs font-bold text-amber-800 shadow-sm">
+              <FiTag className="h-3.5 w-3.5 text-[#C4A35A]" />
+              <span>Exclusive Student Privileges</span>
+            </div>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              {offers.sectionTitle || "Current Offers"}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-base text-white/65">
-              Move across the cards — a 3D showcase of limited enrolment benefits.
+            <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed">
+              Take advantage of limited-time fee concessions, referral rewards, and early enrolment perks.
             </p>
-          </motion.div>
+          </div>
 
-          <div
-              className="relative mx-auto hidden h-[560px] max-w-6xl lg:block"
-              style={{ perspective: 1600 }}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
-              <div className="pointer-events-none absolute bottom-6 left-1/2 h-24 w-[70%] -translate-x-1/2 rounded-[100%] bg-[#C4A35A]/20 blur-3xl" />
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+            {items.map((offer, index) => (
+              <VoucherCard
+                key={offer.id}
+                offer={offer}
+                index={index}
+                onClaim={() => setSelectedOffer(offer)}
+              />
+            ))}
+          </div>
 
-              {items.map((offer, index) => {
-                const raw = index - active;
-                const half = Math.floor(items.length / 2);
-                let offset = raw;
-                if (offset > half) offset -= items.length;
-                if (offset < -half) offset += items.length;
-                const abs = Math.abs(offset);
-                const hidden = abs > 1 && items.length > 3;
-
-                return (
-                  <motion.div
-                    key={offer.id}
-                    className="absolute top-8 w-[340px] cursor-pointer"
-                    style={{ left: "50%", transformStyle: "preserve-3d" }}
-                    animate={{
-                      x: `calc(-50% + ${offset * 250}px)`,
-                      z: abs === 0 ? 120 : -90,
-                      rotateY: offset * -32,
-                      scale: abs === 0 ? 1.04 : 0.86,
-                      opacity: hidden ? 0 : abs === 0 ? 1 : 0.72,
-                      y: abs === 0 ? 0 : 28,
-                      zIndex: hidden ? 0 : 20 - abs,
-                    }}
-                    transition={{ type: "spring", stiffness: 160, damping: 22 }}
-                    onClick={() => {
-                      if (abs !== 0) setActive(index);
-                    }}
-                  >
-                    <OfferTiltCard
-                      offer={offer}
-                      index={index}
-                      featured={abs === 0}
-                      onClaim={() => setSelectedOffer(offer)}
-                    />
-                  </motion.div>
-                );
-              })}
-
-              {items.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={goPrev}
-                    aria-label="Previous offer"
-                    className="absolute left-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#C4A35A]/40 bg-[#0B1F38]/80 text-[#D4B05C] shadow-[0_0_16px_rgba(196,163,90,0.25)] backdrop-blur-md transition hover:bg-[#C4A35A] hover:text-[#1A1408]"
-                  >
-                    <FiChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    aria-label="Next offer"
-                    className="absolute right-2 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#C4A35A]/40 bg-[#0B1F38]/80 text-[#D4B05C] shadow-[0_0_16px_rgba(196,163,90,0.25)] backdrop-blur-md transition hover:bg-[#C4A35A] hover:text-[#1A1408]"
-                  >
-                    <FiChevronRight className="h-6 w-6" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:hidden">
-              {items.map((offer, index) => (
-                <motion.div
-                  key={offer.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.08 }}
-                  style={{ perspective: 1200 }}
-                >
-                  <OfferTiltCard
-                    offer={offer}
-                    index={index}
-                    featured={index === 0}
-                    onClaim={() => setSelectedOffer(offer)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {items.length > 1 && (
-            <div className="mt-2 hidden justify-center gap-2 lg:flex">
-              {items.map((offer, i) => (
-                <button
-                  key={offer.id}
-                  type="button"
-                  aria-label={`Show ${offer.title}`}
-                  onClick={() => setActive(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === active ? "w-8 bg-[#C4A35A] shadow-[0_0_10px_rgba(196,163,90,0.55)]" : "w-2 bg-white/20 hover:bg-[#C4A35A]/50"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Bottom Trust Guarantee Strip */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm text-xs sm:text-sm text-slate-700">
+            <span className="flex items-center gap-2 font-semibold">
+              <FiCheckCircle className="h-4 w-4 text-[#1E4A85]" />
+              Instant Fee Concession
+            </span>
+            <span className="h-3 w-px bg-slate-300 hidden sm:block" />
+            <span className="flex items-center gap-2 font-semibold">
+              <FiCheckCircle className="h-4 w-4 text-emerald-600" />
+              Verified Govt. Aligned Certification
+            </span>
+            <span className="h-3 w-px bg-slate-300 hidden sm:block" />
+            <span className="flex items-center gap-2 font-semibold">
+              <FiCheckCircle className="h-4 w-4 text-[#C4A35A]" />
+              National Franchise Network
+            </span>
+          </div>
         </div>
       </section>
 
+      {/* Offer Details Modal */}
       <OfferModal
         offer={selectedOffer}
         onClose={() => setSelectedOffer(null)}
-        onApplyNow={(offer) => { setSelectedOffer(null); setApplyFormOffer(offer); }}
+        onApplyNow={(offer) => {
+          setSelectedOffer(null);
+          setApplyFormOffer(offer);
+        }}
       />
+
+      {/* Offer Application Form Modal */}
       <OfferApplyFormModal
         open={!!applyFormOffer}
         onClose={() => setApplyFormOffer(null)}

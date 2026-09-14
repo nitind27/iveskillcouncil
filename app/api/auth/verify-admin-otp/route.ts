@@ -4,6 +4,7 @@ import { successResponse, errorResponse, rateLimitResponse } from "@/lib/api-res
 import { rateLimiter, rateLimitConfig, rateLimitKey } from "@/lib/rate-limit";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import { getEffectivePermissions } from "@/lib/get-effective-permissions";
+import { serializeAuthFranchise } from "@/lib/auth";
 import { ROLES } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       include: {
         role: true,
         franchise: {
-          select: { id: true, name: true, status: true, state: true },
+          select: { id: true, name: true, status: true, state: true, slug: true },
         },
       },
     });
@@ -101,14 +102,7 @@ export async function POST(request: NextRequest) {
           roleId: user.roleId,
           roleName: user.role.name,
           franchiseId: user.franchiseId?.toString(),
-          franchise: user.franchise
-            ? {
-                id: user.franchise.id.toString(),
-                name: user.franchise.name,
-                status: user.franchise.status,
-                state: user.franchise.state ?? undefined,
-              }
-            : null,
+          franchise: serializeAuthFranchise(user.franchise),
           permissions,
         },
       },

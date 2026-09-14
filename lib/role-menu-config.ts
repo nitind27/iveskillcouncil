@@ -29,9 +29,11 @@ import {
   BarChart3,
   Inbox,
   Printer,
+  Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLES } from "./permissions";
+import { isFranchiseAdminPath, isFranchisePublicSitePath, stripFranchiseAppPrefix } from "./franchise-path";
 
 export interface RoleMenuItem {
   id: string;
@@ -121,6 +123,12 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
         label: "Requests",
         icon: Award,
         href: "/certificates/requests",
+      },
+      {
+        id: "certificate-templates",
+        label: "Certificate Demos",
+        icon: Eye,
+        href: "/certificates/templates",
       },
       {
         id: "certificates-print",
@@ -232,6 +240,12 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
         label: "Certificate Requests",
         icon: Award,
         href: "/certificates/requests",
+      },
+      {
+        id: "certificate-templates",
+        label: "Certificate Demos",
+        icon: Eye,
+        href: "/certificates/templates",
       },
     ],
   },
@@ -442,15 +456,20 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
 export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   const numRoleId = Number(roleId) || 0;
   const normalizedPath = (pathname || "").replace(/\/$/, "").trim() || "/";
+  const appPath = isFranchiseAdminPath(normalizedPath)
+    ? stripFranchiseAppPrefix(normalizedPath)
+    : normalizedPath;
 
   if (numRoleId === ROLES.SUPER_ADMIN || numRoleId === ROLES.ADMIN) return true;
-  if (normalizedPath === "/dashboard") return true;
+  if (appPath === "/dashboard") return true;
 
-  if (normalizedPath === "/admin" || normalizedPath.startsWith("/admin/")) {
+  if (appPath === "/admin" || appPath.startsWith("/admin/")) {
     return true;
   }
 
-  if (normalizedPath.startsWith("/f/")) return true;
+  if (normalizedPath === "/f" || normalizedPath.startsWith("/f/") || isFranchisePublicSitePath(normalizedPath)) {
+    return true;
+  }
   if (normalizedPath.startsWith("/exam-link")) return true;
   if (normalizedPath.startsWith("/api/")) return true;
   if (normalizedPath === "/403" || normalizedPath === "/404") return true;
@@ -458,8 +477,7 @@ export function canRoleAccessPath(roleId: number, pathname: string): boolean {
   const allowed = ROLE_ALLOWED_PATHS[numRoleId];
   if (!allowed || allowed.length === 0) return false;
 
-  const pathForCheck = (pathname || "").replace(/\/$/, "") || "/";
   return allowed.some(
-    (prefix) => pathForCheck === prefix || pathForCheck.startsWith(prefix + "/")
+    (prefix) => appPath === prefix || appPath.startsWith(prefix + "/")
   );
 }

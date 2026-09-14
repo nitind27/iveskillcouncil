@@ -15,6 +15,7 @@ import { useLogoConfig } from "@/hooks/useLogoConfig";
 import { cn } from "@/lib/utils";
 import { getMenuForRole, type RoleMenuItem } from "@/lib/role-menu-config";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFranchiseAppHref, useFranchiseDashboardPath, useStrippedAppPath } from "@/hooks/useFranchiseAppPath";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -44,6 +45,9 @@ export default function Sidebar({
   const pn = pathname || "";
   const { logoUrl, siteName } = useLogoConfig();
   const { t } = useLanguage();
+  const appHref = useFranchiseAppHref();
+  const dashboardPath = useFranchiseDashboardPath();
+  const appPath = useStrippedAppPath();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const roleId = user?.roleId ?? 0;
   const menuSectionsFiltered = useMemo(() => getMenuForRole(roleId), [roleId]);
@@ -53,8 +57,8 @@ export default function Sidebar({
     menuSectionsFiltered.forEach((section) => {
       section.items.forEach((item) => {
         if (item.children) {
-          const hasActiveChild = item.children.some((child) => child.href === pn);
-          if (hasActiveChild || item.href === pn) {
+          const hasActiveChild = item.children.some((child) => appHref(child.href) === pn || child.href === appPath);
+          if (hasActiveChild || appHref(item.href) === pn || item.href === appPath) {
             activePaths.add(item.id);
           }
         }
@@ -66,12 +70,13 @@ export default function Sidebar({
         [...activePaths].every((id) => prev.has(id));
       return same ? prev : activePaths;
     });
-  }, [pn, menuSectionsFiltered]);
+  }, [pn, appPath, appHref, menuSectionsFiltered]);
 
   const goTo = (href: string) => {
+    const target = appHref(href);
     if (isMobileOpen) onMobileClose();
-    if (href && href !== "#" && href !== pn) {
-      router.push(href);
+    if (target && target !== "#" && target !== pn) {
+      router.push(target);
     }
   };
 
@@ -86,8 +91,9 @@ export default function Sidebar({
 
   const isActive = (href?: string) => {
     if (!href) return false;
-    if (href === "/dashboard") return pn === "/dashboard";
-    return pn === href || pn.startsWith(href + "/");
+    const full = appHref(href);
+    if (href === "/dashboard") return appPath === "/dashboard";
+    return pn === full || appPath === href || appPath.startsWith(href + "/");
   };
 
   const renderMenuItem = (item: RoleMenuItem, level: number = 0) => {
@@ -154,7 +160,7 @@ export default function Sidebar({
     return (
       <Link
         key={item.id}
-        href={item.href || "#"}
+        href={appHref(item.href || "/dashboard")}
         prefetch
         onClick={(e) => {
           e.preventDefault();
@@ -222,7 +228,7 @@ export default function Sidebar({
         <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3">
           {!isCollapsed && (
             <Link
-              href="/dashboard"
+              href={dashboardPath}
               className="block min-w-0 flex-1 overflow-hidden pr-1"
               aria-label={siteName || "Dashboard"}
             >
@@ -247,7 +253,7 @@ export default function Sidebar({
           )}
           {isCollapsed && (
             <Link
-              href="/dashboard"
+              href={dashboardPath}
               className="mx-auto flex h-10 w-10 shrink-0 items-center justify-center"
               aria-label={siteName || "Dashboard"}
             >

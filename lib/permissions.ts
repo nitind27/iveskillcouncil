@@ -3,6 +3,8 @@
  * SUPER_ADMIN can assign permissions to roles and to subscription plans.
  */
 
+import { isFranchiseAdminPath, stripFranchiseAppPrefix } from "./franchise-path";
+
 export const ROLES = {
   SUPER_ADMIN: 1,
   ADMIN: 2,
@@ -167,11 +169,12 @@ export function hasPermission(
 
 /** Get required permission key for a path (longest matching route). */
 export function getRequiredPermissionForPath(pathname: string): PermissionKey | null {
+  const appPath = isFranchiseAdminPath(pathname) ? stripFranchiseAppPrefix(pathname) : pathname;
   const routes = Object.keys(ROUTE_PERMISSION_MAP).sort(
     (a, b) => b.length - a.length
   ) as (keyof typeof ROUTE_PERMISSION_MAP)[];
   for (const route of routes) {
-    if (pathname === route || pathname.startsWith(route + "/")) {
+    if (appPath === route || appPath.startsWith(route + "/")) {
       return ROUTE_PERMISSION_MAP[route];
     }
   }

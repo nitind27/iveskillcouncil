@@ -16,6 +16,7 @@ import {
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import { useCourseCart } from "@/contexts/CourseCartContext";
 import type { CourseItem } from "@/config/userpanel.config";
+import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
 
 function getSlug(c: CourseItem): string {
   return c.slug || c.id;
@@ -31,6 +32,7 @@ export default function CourseDetailPage() {
   const slug = typeof params?.slug === "string" ? params.slug : "";
   const config = useUserPanelConfig();
   const { add: addToCart, has: inCart } = useCourseCart();
+  const up = useUserPanelHref();
   const courses = config.courses?.items || [];
   const course = slug ? findCourseBySlug(courses, slug) : null;
 
@@ -44,7 +46,7 @@ export default function CourseDetailPage() {
         >
           <h1 className="text-2xl font-bold text-[var(--up-text)] mb-4">Course not found</h1>
           <Link
-            href="/userpanel/courses"
+            href={up("/userpanel/courses")}
             className="inline-flex items-center gap-2 text-[var(--up-accent)] font-semibold"
           >
             <FiArrowLeft className="w-4 h-4" /> Back to courses
@@ -73,7 +75,7 @@ export default function CourseDetailPage() {
           className="mb-8"
         >
           <Link
-            href="/userpanel/courses"
+            href={up("/userpanel/courses")}
             className="inline-flex items-center gap-2 text-[var(--up-text-muted)] hover:text-[var(--up-accent)] transition-colors text-sm font-medium"
           >
             <FiArrowLeft className="w-4 h-4" /> All courses

@@ -23,7 +23,14 @@ import {
   MessageCircle,
   Search,
   Hash,
+  Printer,
+  Sparkles,
 } from "lucide-react";
+import { CertificateDemoModal } from "@/components/certificates/demo/CertificateDemoModal";
+import {
+  CERTIFICATE_TYPE_CONFIGS,
+  type CertificateTypeId,
+} from "@/components/certificates/demo/types";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -32,6 +39,7 @@ import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { StudentProfileDrawer } from "@/components/students/StudentProfileDrawer";
 import { ROLES } from "@/lib/permissions";
+import { useFranchiseAppHref } from "@/hooks/useFranchiseAppPath";
 
 interface NavbarProps {
   onSidebarToggle: () => void;
@@ -86,7 +94,7 @@ function NotificationIcon({ type }: { type: string }) {
   }
 }
 
-type OpenPanel = null | "notifications" | "profile" | "search";
+type OpenPanel = null | "notifications" | "profile" | "search" | "certificates";
 
 const iconBtn =
   "flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/45 hover:bg-[#C4A35A]/8 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]";
@@ -95,8 +103,11 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const { t } = useLanguage();
+  const appHref = useFranchiseAppHref();
   const pathname = usePathname() || "";
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [demoModalType, setDemoModalType] = useState<CertificateTypeId>("vocational");
   const [quickSearch, setQuickSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
@@ -402,6 +413,143 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
               <MessageCircle className="h-4 w-4" />
             </Link>
 
+            {/* Certificate Dropdown & Demos */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => togglePanel("certificates")}
+                aria-expanded={openPanel === "certificates"}
+                className={cn(
+                  "flex h-9 items-center gap-1.5 rounded-xl border px-2.5 sm:px-3 text-xs font-bold transition shadow-sm",
+                  openPanel === "certificates"
+                    ? "border-[#1E4A85] bg-[#1E4A85] text-white shadow-md shadow-[#1E4A85]/20 dark:border-[#C4A35A] dark:bg-[#C4A35A] dark:text-slate-950"
+                    : "border-slate-200/90 bg-white text-[#1E4A85] hover:border-[#C4A35A]/50 hover:bg-[#C4A35A]/10 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]"
+                )}
+                aria-label="Certificates"
+                title="Certificate Demos & Portal"
+              >
+                <Award className="h-4 w-4 text-[#C4A35A]" />
+                <span className="hidden sm:inline">Certificates</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3 w-3 text-slate-400 transition-transform duration-200",
+                    openPanel === "certificates" && "rotate-180 text-white dark:text-slate-950"
+                  )}
+                />
+              </button>
+
+              {openPanel === "certificates" && (
+                <div
+                  className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(26rem,calc(100vw-1.25rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+                  role="dialog"
+                  aria-label="Certificates Menu"
+                >
+                  {/* Dropdown Header */}
+                  <div className="flex items-center justify-between bg-gradient-to-r from-[#1E4A85] to-[#163A6B] px-4 py-3 text-white">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#C4A35A] text-slate-950 shadow-sm">
+                        <Award className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold flex items-center gap-1.5">
+                          <span>Certificate Demos</span>
+                          <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-[#F3E4B8]">
+                            6 Types
+                          </span>
+                        </h3>
+                        <p className="text-[11px] text-white/75">
+                          Preview official certificates, marksheets & diplomas
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenPanel(null)}
+                      className="rounded-lg bg-white/10 p-1.5 text-white/80 hover:bg-white/20 hover:text-white"
+                      aria-label="Close"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Templates List */}
+                  <div className="max-h-[min(65vh,25rem)] overflow-y-auto p-2">
+                    <div className="flex items-center justify-between px-2 pt-1 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[#1E4A85] dark:text-[#C4A35A]">
+                      <span>Select Certificate Format</span>
+                      <span className="text-slate-400 font-semibold normal-case">Click to view demo</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {CERTIFICATE_TYPE_CONFIGS.map((cfg) => (
+                        <button
+                          key={cfg.id}
+                          type="button"
+                          onClick={() => {
+                            setDemoModalType(cfg.id);
+                            setDemoModalOpen(true);
+                            setOpenPanel(null);
+                          }}
+                          className="group flex w-full items-start gap-2.5 rounded-xl p-2 text-left transition hover:bg-[#1E4A85]/5 dark:hover:bg-white/5"
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[#1E4A85] group-hover:bg-[#1E4A85] group-hover:text-white dark:bg-slate-800 dark:text-[#E8D5A3]">
+                            <Award className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="truncate text-xs font-bold text-slate-900 group-hover:text-[#1E4A85] dark:text-white">
+                                {cfg.title}
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                {cfg.badge}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-[10px] text-slate-500 line-clamp-1">
+                              {cfg.description}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Quick Portal Links & Full Studio Button */}
+                    <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Link
+                          href="/certificates/requests"
+                          onClick={() => setOpenPanel(null)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200/80 p-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <FileCheck className="h-3.5 w-3.5 text-[#1E4A85]" />
+                          <span>Requests Portal</span>
+                        </Link>
+                        <Link
+                          href="/certificates/print"
+                          onClick={() => setOpenPanel(null)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200/80 p-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <Printer className="h-3.5 w-3.5 text-[#C4A35A]" />
+                          <span>Bulk Print Center</span>
+                        </Link>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDemoModalType("vocational");
+                          setDemoModalOpen(true);
+                          setOpenPanel(null);
+                        }}
+                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1E4A85] to-[#163A6B] py-2.5 text-xs font-bold text-white shadow-sm hover:brightness-105 active:scale-[0.99] transition"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-[#C4A35A]" />
+                        <span>Launch Full Interactive Studio</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Notifications */}
             <div className="relative">
               <button
@@ -460,7 +608,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                       notifications.map((n) => (
                         <Link
                           key={n.id}
-                          href={n.href}
+                          href={appHref(n.href)}
                           onClick={() => {
                             markAsSeen(n.id);
                             setOpenPanel(null);
@@ -551,7 +699,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                       <LanguageSwitcher variant="admin" />
                     </div>
                     <Link
-                      href="/profile"
+                      href={appHref("/profile")}
                       onClick={() => setOpenPanel(null)}
                       role="menuitem"
                       className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
@@ -562,7 +710,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                       {t("nav.profile", "Profile")}
                     </Link>
                     <Link
-                      href="/account"
+                      href={appHref("/account")}
                       onClick={() => setOpenPanel(null)}
                       role="menuitem"
                       className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
@@ -596,6 +744,12 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
         open={!!profileStudentId}
         studentId={profileStudentId}
         onClose={() => setProfileStudentId(null)}
+      />
+      <CertificateDemoModal
+        key={demoModalType}
+        open={demoModalOpen}
+        onClose={() => setDemoModalOpen(false)}
+        initialType={demoModalType}
       />
     </>
   );

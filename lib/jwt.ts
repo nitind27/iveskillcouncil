@@ -7,6 +7,7 @@ export interface TokenPayload {
   userId: string;
   roleId: number;
   franchiseId?: string;
+  franchiseSlug?: string;
   email: string;
 }
 

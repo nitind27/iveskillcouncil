@@ -54,6 +54,8 @@ export async function GET(
     const formatted = {
       id: franchise.id.toString(),
       name: franchise.name,
+      slug: franchise.slug,
+      portalPath: franchise.slug ? `/${franchise.slug}` : null,
       owner: {
         id: franchise.owner.id.toString(),
         name: franchise.owner.fullName,

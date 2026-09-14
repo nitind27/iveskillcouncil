@@ -1,22 +1,46 @@
-import { ROLES } from "./permissions";
 import { canRoleAccessPath } from "./role-menu-config";
+import {
+  canAccessFranchiseAdminPath,
+  franchiseAppHref,
+  franchiseDashboardPath,
+  isFranchiseAdminPath,
+  shouldPrefixFranchiseApp,
+  stripFranchiseAppPrefix,
+} from "./franchise-path";
 
 const BLOCKED_REDIRECTS = ["/403", "/401", "/400", "/500", "/503", "/login"];
 
+const ADMIN_APP_PREFIXES = [
+  "/dashboard",
+  "/students",
+  "/fees",
+  "/attendance",
+  "/staff",
+  "/certificates",
+  "/reports",
+  "/announcements",
+  "/chat",
+  "/profile",
+  "/account",
+  "/my-course",
+  "/my-fees",
+  "/my-exams",
+  "/assigned-students",
+  "/certificate",
+  "/exams",
+];
+
+function isAdminAppPath(path: string): boolean {
+  const p = (path || "").replace(/\/$/, "") || "/";
+  return ADMIN_APP_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
+}
+
 /** Default home after login for each role */
-export function getDefaultHomeForRole(roleId: number): string {
-  switch (Number(roleId)) {
-    case ROLES.STUDENT:
-      return "/dashboard";
-    case ROLES.STAFF:
-      return "/dashboard";
-    case ROLES.SUB_ADMIN:
-      return "/dashboard";
-    case ROLES.ADMIN:
-    case ROLES.SUPER_ADMIN:
-    default:
-      return "/dashboard";
+export function getDefaultHomeForRole(roleId: number, franchiseSlug?: string | null): string {
+  if (shouldPrefixFranchiseApp(roleId, franchiseSlug)) {
+    return franchiseDashboardPath(franchiseSlug);
   }
+  return "/dashboard";
 }
 
 /** Decode and sanitize redirect query param (before role is known) */
@@ -50,16 +74,32 @@ export function parseLoginRedirectParam(redirectParam: string | null | undefined
 }
 
 /** Final redirect after login — ensures role can access the target path */
-export function resolvePostLoginRedirect(requestedPath: string, roleId: number): string {
+export function resolvePostLoginRedirect(
+  requestedPath: string,
+  roleId: number,
+  franchiseSlug?: string | null
+): string {
+  const defaultHome = getDefaultHomeForRole(roleId, franchiseSlug);
   const path = parseLoginRedirectParam(requestedPath);
 
   if (path === "/admin" || path.startsWith("/admin/")) {
-    return getDefaultHomeForRole(roleId);
+    return defaultHome;
   }
 
-  if (canRoleAccessPath(roleId, path)) {
-    return path;
+  if (isFranchiseAdminPath(path) && !canAccessFranchiseAdminPath(path, roleId, franchiseSlug)) {
+    return defaultHome;
   }
 
-  return getDefaultHomeForRole(roleId);
+  const appPath = isFranchiseAdminPath(path) ? stripFranchiseAppPrefix(path) : path;
+  const canAccess = canRoleAccessPath(roleId, appPath) || canRoleAccessPath(roleId, path);
+
+  if (!canAccess) {
+    return defaultHome;
+  }
+
+  if (shouldPrefixFranchiseApp(roleId, franchiseSlug) && isAdminAppPath(appPath)) {
+    return franchiseAppHref(appPath, franchiseSlug);
+  }
+
+  return path;
 }

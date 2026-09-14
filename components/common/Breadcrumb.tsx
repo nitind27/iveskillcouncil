@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { franchiseAppHref, getFranchisePathSlug, isFranchiseAdminPath, stripFranchiseAppPrefix } from "@/lib/franchise-path";
 
 export interface BreadcrumbItem {
   label: string;
@@ -64,12 +65,16 @@ export default function Breadcrumb({
 }: BreadcrumbProps) {
   const pathname = usePathname();
   const pn = pathname || "";
+  const franchiseSlug = isFranchiseAdminPath(pn) ? getFranchisePathSlug(pn)?.replace(/-/g, "") : null;
+  const prefix = (href?: string) => (href ? franchiseAppHref(href, franchiseSlug) : href);
 
   // Generate breadcrumb items from pathname if not provided
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    if (items) return items;
+    if (items) {
+      return items.map((item) => ({ ...item, href: prefix(item.href) }));
+    }
 
-    const pathSegments = pn.split("/").filter(Boolean);
+    const pathSegments = (franchiseSlug ? stripFranchiseAppPrefix(pn) : pn).split("/").filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [];
 
     if (showHome) {
@@ -87,7 +92,7 @@ export default function Breadcrumb({
 
       breadcrumbs.push({
         label: pathTitleMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
-        href: isLast ? undefined : currentPath,
+        href: isLast ? undefined : prefix(currentPath),
       });
     });
 

@@ -143,7 +143,12 @@ export function CertificatePreviewModal({
     }
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    setTimeout(() => {
+      window.print();
+    }, 60);
+  };
 
   if (!open) return null;
 
