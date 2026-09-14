@@ -190,6 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error?: string;
     requiresOtp?: boolean;
     email?: string;
+    user?: User | null;
   }> => {
     try {
       const res = await fetchWithDbRetry(
