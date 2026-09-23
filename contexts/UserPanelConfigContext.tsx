@@ -5,13 +5,16 @@ import { defaultConfig } from "@/config/userpanel.config";
 import type { CourseItem, UserPanelConfig } from "@/config/userpanel.config";
 import { useFranchiseSiteSlug } from "@/hooks/useUserPanelBasePath";
 
-const SESSION_CACHE_KEY = "up_config_v4";
+const SESSION_CACHE_KEY = "up_config_v5";
 
 function mergeConfig(data: unknown): UserPanelConfig {
   if (!data || typeof data !== "object") return defaultConfig;
   const c = data as Record<string, unknown>;
   return {
-    welcomePopup: (c.welcomePopup as UserPanelConfig["welcomePopup"]) ?? defaultConfig.welcomePopup,
+    welcomePopup: {
+      ...defaultConfig.welcomePopup,
+      ...((c.welcomePopup as UserPanelConfig["welcomePopup"]) ?? {}),
+    },
     site: { ...defaultConfig.site, ...(c.site as UserPanelConfig["site"]) },
     nav: {
       links:

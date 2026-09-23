@@ -65,13 +65,46 @@ export interface SocialLink {
   iconKey: "facebook" | "twitter" | "linkedin" | "instagram" | "youtube";
 }
 
-/** Superadmin-controlled welcome popup shown once per session on user panel. */
+export type WelcomePopupSize = "sm" | "md" | "lg" | "xl" | "custom";
+export type WelcomePopupFrequency = "once_per_session" | "once_ever" | "every_visit";
+export type WelcomePopupImageFit = "contain" | "cover" | "fill";
+
+/** Superadmin-controlled welcome popup on the user panel. */
 export interface WelcomePopupConfig {
+  /** Master switch — when false, popup never shows. */
   enabled: boolean;
-  /** Image URL uploaded/set by superadmin; shown in the modal. */
+  /** Image URL uploaded/set by superadmin. */
   imageUrl: string | null;
-  /** Modal width preset (superadmin selectable). */
-  size?: "sm" | "md" | "lg" | "xl";
+  /** Width preset; use customWidthPx when size is "custom". */
+  size?: WelcomePopupSize;
+  /** Max width in px when size === "custom" (default 720). */
+  customWidthPx?: number;
+  /** Max height as % of viewport height (default 85). */
+  maxHeightVh?: number;
+  /** How the image fills the modal frame. */
+  imageFit?: WelcomePopupImageFit;
+  /** Image alt text (accessibility). */
+  altText?: string;
+  /** Optional heading above/below image. */
+  title?: string;
+  showTitle?: boolean;
+  /** Optional body / description text. */
+  body?: string;
+  showBody?: boolean;
+  /** Optional CTA button. */
+  ctaLabel?: string;
+  ctaHref?: string;
+  showCta?: boolean;
+  /** Close (X) button visibility. */
+  showCloseButton?: boolean;
+  /** Clicking dimmed backdrop closes the modal. */
+  closeOnBackdrop?: boolean;
+  /** How often to show for returning visitors. */
+  frequency?: WelcomePopupFrequency;
+  /** Delay before open (ms). */
+  delayMs?: number;
+  /** Backdrop darkness 0–100 (default 80). */
+  backdropOpacity?: number;
 }
 
 export interface UserPanelConfig {
@@ -144,6 +177,22 @@ const defaultConfig: UserPanelConfig = {
     enabled: false,
     imageUrl: null,
     size: "lg",
+    customWidthPx: 720,
+    maxHeightVh: 85,
+    imageFit: "contain",
+    altText: "Welcome",
+    title: "",
+    showTitle: false,
+    body: "",
+    showBody: false,
+    ctaLabel: "Explore",
+    ctaHref: "/userpanel",
+    showCta: false,
+    showCloseButton: true,
+    closeOnBackdrop: true,
+    frequency: "once_per_session",
+    delayMs: 400,
+    backdropOpacity: 80,
   },
   site: {
     name: "Edu Institute",

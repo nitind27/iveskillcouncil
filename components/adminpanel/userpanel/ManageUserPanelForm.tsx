@@ -66,7 +66,10 @@ const TABS = [
 function ensureConfig(c: Partial<UserPanelConfig> | null): UserPanelConfig {
   if (!c || typeof c !== "object") return defaultConfig;
   return {
-    welcomePopup: c.welcomePopup ?? defaultConfig.welcomePopup,
+    welcomePopup: {
+      ...defaultConfig.welcomePopup,
+      ...(c.welcomePopup ?? {}),
+    },
     site: c.site ?? defaultConfig.site,
     nav: c.nav ?? defaultConfig.nav,
     hero: c.hero ?? defaultConfig.hero,
@@ -500,72 +503,124 @@ export default function ManageUserPanelForm() {
           {/* Welcome Popup */}
           {activeTab === "welcomePopup" && (
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#1E4A85]" />
-                Welcome Popup (User Panel)
-              </h2>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#1E4A85]" />
+                    Welcome Popup (User Panel)
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Control whether the popup shows, its size, image, text, button, and how often it appears.
+                    Changes apply after Save — then refresh the user panel.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWelcomePreviewOpen(true)}
+                  disabled={!config.welcomePopup.imageUrl}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-lg border border-[#1E4A85]/25 bg-[#1E4A85]/5 px-4 py-2.5 text-sm font-semibold text-[#1E4A85] transition hover:bg-[#1E4A85]/10",
+                    !config.welcomePopup.imageUrl && "opacity-50 pointer-events-none"
+                  )}
+                >
+                  <Monitor className="w-4 h-4" />
+                  Live preview
+                </button>
+              </div>
+
               {config.welcomePopup.imageUrl && (
                 <WelcomePopupModal
                   open={welcomePreviewOpen}
                   onClose={() => setWelcomePreviewOpen(false)}
-                  imageUrl={config.welcomePopup.imageUrl}
+                  imageUrl={getFullImageUrl(config.welcomePopup.imageUrl)}
                   size={config.welcomePopup.size ?? "lg"}
+                  customWidthPx={config.welcomePopup.customWidthPx}
+                  maxHeightVh={config.welcomePopup.maxHeightVh}
+                  imageFit={config.welcomePopup.imageFit}
+                  altText={config.welcomePopup.altText}
+                  title={config.welcomePopup.title}
+                  showTitle={config.welcomePopup.showTitle}
+                  body={config.welcomePopup.body}
+                  showBody={config.welcomePopup.showBody}
+                  ctaLabel={config.welcomePopup.ctaLabel}
+                  ctaHref={config.welcomePopup.ctaHref}
+                  showCta={config.welcomePopup.showCta}
+                  showCloseButton={config.welcomePopup.showCloseButton !== false}
+                  closeOnBackdrop={config.welcomePopup.closeOnBackdrop !== false}
+                  backdropOpacity={config.welcomePopup.backdropOpacity}
                 />
               )}
-              <p className="text-sm text-muted-foreground max-w-xl">
-                When enabled, a professional modal with your image is shown once per browser session when a user opens the user panel. Only visible if you enable it and set an image URL.
-              </p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="welcomePopupEnabled"
-                  checked={config.welcomePopup.enabled}
-                  onChange={(e) =>
+
+              {/* On / Off */}
+              <div
+                className={cn(
+                  "flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between",
+                  config.welcomePopup.enabled
+                    ? "border-emerald-300/70 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                    : "border-border bg-muted/30"
+                )}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground">Show welcome popup</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {config.welcomePopup.enabled
+                      ? "ON — visitors will see the popup (if an image is set)."
+                      : "OFF — popup is hidden on the user panel."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={config.welcomePopup.enabled}
+                  onClick={() =>
                     setConfig((c) => ({
                       ...c,
-                      welcomePopup: { ...c.welcomePopup, enabled: e.target.checked },
+                      welcomePopup: { ...c.welcomePopup, enabled: !c.welcomePopup.enabled },
                     }))
                   }
-                  className="h-4 w-4 rounded border-input text-[#1E4A85] focus:ring-2 focus:ring-[#1E4A85]/20"
-                />
-                <label htmlFor="welcomePopupEnabled" className={labelClass}>
-                  Enable welcome popup on user panel (show once per session)
-                </label>
+                  className={cn(
+                    "relative h-10 w-[88px] shrink-0 rounded-full transition-colors",
+                    config.welcomePopup.enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-1 left-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-black shadow transition-transform",
+                      config.welcomePopup.enabled && "translate-x-[48px]"
+                    )}
+                  >
+                    {config.welcomePopup.enabled ? "ON" : "OFF"}
+                  </span>
+                </button>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Image */}
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-foreground">Upload image file</p>
+                    <p className="text-sm font-bold text-foreground">Popup image</p>
                     <p className="text-xs text-muted-foreground">
-                      Uploading a new file will replace the old uploaded image (old file will be deleted).
+                      Required for the popup to appear. New upload replaces the previous file.
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setWelcomePreviewOpen(true)}
-                      disabled={!config.welcomePopup.imageUrl}
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors",
-                        (!config.welcomePopup.imageUrl || welcomeUploading) && "opacity-60 pointer-events-none"
-                      )}
-                    >
-                      <Monitor className="w-4 h-4" />
-                      Preview
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
                     {config.welcomePopup.imageUrl && (
                       <button
                         type="button"
                         onClick={() => openImageEditor(getFullImageUrl(config.welcomePopup.imageUrl!), "welcome")}
                         disabled={welcomeUploading}
-                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
                       >
                         <Pencil className="w-4 h-4" />
                         Edit image
                       </button>
                     )}
-                    <label className={cn("inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer", welcomeUploading && "opacity-60 pointer-events-none")}>
+                    <label
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent",
+                        welcomeUploading && "pointer-events-none opacity-60"
+                      )}
+                    >
                       <input
                         type="file"
                         accept="image/*"
@@ -577,43 +632,54 @@ export default function ManageUserPanelForm() {
                         }}
                       />
                       {welcomeUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                      {welcomeUploading ? "Uploading…" : "Choose file"}
+                      {welcomeUploading ? "Uploading…" : "Upload"}
                     </label>
                   </div>
                 </div>
-                {welcomeUploadError && (
-                  <div className="text-sm text-destructive">{welcomeUploadError}</div>
-                )}
-              </div>
-
-              <div>
-                <label className={labelClass}>Popup image URL</label>
-                <input
-                  className={inputClass}
-                  placeholder="https://..."
-                  value={config.welcomePopup.imageUrl ?? ""}
-                  onChange={(e) =>
-                    setConfig((c) => ({
-                      ...c,
-                      welcomePopup: {
-                        ...c.welcomePopup,
-                        imageUrl: e.target.value.trim() || null,
-                      },
-                    }))
-                  }
-                />
+                {welcomeUploadError && <p className="text-sm text-destructive">{welcomeUploadError}</p>}
+                <div>
+                  <label className={labelClass}>Image URL</label>
+                  <input
+                    className={inputClass}
+                    placeholder="/uploads/userpanel/welcome/… or https://…"
+                    value={config.welcomePopup.imageUrl ?? ""}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        welcomePopup: {
+                          ...c.welcomePopup,
+                          imageUrl: e.target.value.trim() || null,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Alt text (accessibility)</label>
+                  <input
+                    className={inputClass}
+                    placeholder="Welcome"
+                    value={config.welcomePopup.altText ?? ""}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        welcomePopup: { ...c.welcomePopup, altText: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
                 {config.welcomePopup.imageUrl && (
-                  <div className="mt-3 relative h-48 w-full max-w-xl rounded-lg overflow-hidden bg-muted border border-border">
+                  <div className="relative h-52 w-full max-w-xl overflow-hidden rounded-xl border border-border bg-muted">
                     <img
                       src={getFullImageUrl(config.welcomePopup.imageUrl)}
                       alt="Popup preview"
-                      className="object-contain w-full h-full"
+                      className="h-full w-full object-contain"
                       onError={(e) => {
                         const t = e.currentTarget;
                         t.style.display = "none";
                         const p = t.parentElement;
                         if (p) {
-                          p.innerHTML = `<div class="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground text-sm"><span>⚠️ Image not found</span><span class="text-xs break-all px-4 text-center">${config.welcomePopup.imageUrl}</span></div>`;
+                          p.innerHTML = `<div class="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground text-sm"><span>Image not found</span><span class="text-xs break-all px-4 text-center">${config.welcomePopup.imageUrl}</span></div>`;
                         }
                       }}
                     />
@@ -621,27 +687,364 @@ export default function ManageUserPanelForm() {
                 )}
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              {/* Size */}
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
                 <div>
-                  <label className={labelClass}>Modal size</label>
-                  <select
-                    className={inputClass}
-                    value={config.welcomePopup.size ?? "lg"}
+                  <p className="text-sm font-bold text-foreground">Size & display</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pick a preset or set exact max width / height so the popup fits your image.
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-5">
+                  {(
+                    [
+                      { id: "sm", label: "S", hint: "448px" },
+                      { id: "md", label: "M", hint: "512px" },
+                      { id: "lg", label: "L", hint: "672px" },
+                      { id: "xl", label: "XL", hint: "896px" },
+                      { id: "custom", label: "Custom", hint: "px" },
+                    ] as const
+                  ).map((opt) => {
+                    const active = (config.welcomePopup.size ?? "lg") === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() =>
+                          setConfig((c) => ({
+                            ...c,
+                            welcomePopup: { ...c.welcomePopup, size: opt.id },
+                          }))
+                        }
+                        className={cn(
+                          "rounded-xl border px-3 py-3 text-center transition",
+                          active
+                            ? "border-[#1E4A85] bg-[#1E4A85]/10 ring-2 ring-[#1E4A85]/25"
+                            : "border-border hover:bg-muted/50"
+                        )}
+                      >
+                        <span className="block text-sm font-bold text-foreground">{opt.label}</span>
+                        <span className="text-[10px] text-muted-foreground">{opt.hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(config.welcomePopup.size ?? "lg") === "custom" && (
+                  <div>
+                    <label className={labelClass}>
+                      Max width: {config.welcomePopup.customWidthPx ?? 720}px
+                    </label>
+                    <input
+                      type="range"
+                      min={280}
+                      max={1200}
+                      step={10}
+                      value={config.welcomePopup.customWidthPx ?? 720}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: {
+                            ...c.welcomePopup,
+                            customWidthPx: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="mt-2 w-full accent-[#1E4A85]"
+                    />
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={280}
+                        max={1200}
+                        className={cn(inputClass, "mt-0 max-w-[140px]")}
+                        value={config.welcomePopup.customWidthPx ?? 720}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            welcomePopup: {
+                              ...c.welcomePopup,
+                              customWidthPx: Math.min(1200, Math.max(280, Number(e.target.value) || 720)),
+                            },
+                          }))
+                        }
+                      />
+                      <span className="text-xs text-muted-foreground">px (280–1200)</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>
+                      Max height: {config.welcomePopup.maxHeightVh ?? 85}vh
+                    </label>
+                    <input
+                      type="range"
+                      min={45}
+                      max={95}
+                      step={1}
+                      value={config.welcomePopup.maxHeightVh ?? 85}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: {
+                            ...c.welcomePopup,
+                            maxHeightVh: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="mt-2 w-full accent-[#1E4A85]"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Image fit</label>
+                    <select
+                      className={inputClass}
+                      value={config.welcomePopup.imageFit ?? "contain"}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: {
+                            ...c.welcomePopup,
+                            imageFit: e.target.value as "contain" | "cover" | "fill",
+                          },
+                        }))
+                      }
+                    >
+                      <option value="contain">Contain (full image, no crop)</option>
+                      <option value="cover">Cover (fill frame, may crop)</option>
+                      <option value="fill">Fill (stretch to frame)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Backdrop darkness: {config.welcomePopup.backdropOpacity ?? 80}%
+                  </label>
+                  <input
+                    type="range"
+                    min={20}
+                    max={95}
+                    step={5}
+                    value={config.welcomePopup.backdropOpacity ?? 80}
                     onChange={(e) =>
                       setConfig((c) => ({
                         ...c,
                         welcomePopup: {
                           ...c.welcomePopup,
-                          size: e.target.value as any,
+                          backdropOpacity: Number(e.target.value),
                         },
                       }))
                     }
-                  >
-                    <option value="sm">Small</option>
-                    <option value="md">Medium</option>
-                    <option value="lg">Large</option>
-                    <option value="xl">Extra Large</option>
-                  </select>
+                    className="mt-2 w-full accent-[#1E4A85]"
+                  />
+                </div>
+              </div>
+
+              {/* Text & CTA */}
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-foreground">Text & button</p>
+                  <p className="text-xs text-muted-foreground">Optional title, description, and CTA under the image.</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5">
+                  <label htmlFor="wpShowTitle" className="text-sm font-medium">Show title</label>
+                  <input
+                    id="wpShowTitle"
+                    type="checkbox"
+                    checked={Boolean(config.welcomePopup.showTitle)}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        welcomePopup: { ...c.welcomePopup, showTitle: e.target.checked },
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                  />
+                </div>
+                {config.welcomePopup.showTitle && (
+                  <div>
+                    <label className={labelClass}>Title</label>
+                    <input
+                      className={inputClass}
+                      placeholder="Welcome to our institute"
+                      value={config.welcomePopup.title ?? ""}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: { ...c.welcomePopup, title: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5">
+                  <label htmlFor="wpShowBody" className="text-sm font-medium">Show description</label>
+                  <input
+                    id="wpShowBody"
+                    type="checkbox"
+                    checked={Boolean(config.welcomePopup.showBody)}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        welcomePopup: { ...c.welcomePopup, showBody: e.target.checked },
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                  />
+                </div>
+                {config.welcomePopup.showBody && (
+                  <div>
+                    <label className={labelClass}>Description</label>
+                    <textarea
+                      className={cn(inputClass, "min-h-[88px] resize-y")}
+                      placeholder="Short message for visitors…"
+                      value={config.welcomePopup.body ?? ""}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: { ...c.welcomePopup, body: e.target.value },
+                        }))
+                      }
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5">
+                  <label htmlFor="wpShowCta" className="text-sm font-medium">Show CTA button</label>
+                  <input
+                    id="wpShowCta"
+                    type="checkbox"
+                    checked={Boolean(config.welcomePopup.showCta)}
+                    onChange={(e) =>
+                      setConfig((c) => ({
+                        ...c,
+                        welcomePopup: { ...c.welcomePopup, showCta: e.target.checked },
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                  />
+                </div>
+                {config.welcomePopup.showCta && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className={labelClass}>Button label</label>
+                      <input
+                        className={inputClass}
+                        placeholder="Explore courses"
+                        value={config.welcomePopup.ctaLabel ?? ""}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            welcomePopup: { ...c.welcomePopup, ctaLabel: e.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Button link</label>
+                      <input
+                        className={inputClass}
+                        placeholder="/userpanel/courses"
+                        value={config.welcomePopup.ctaHref ?? ""}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            welcomePopup: { ...c.welcomePopup, ctaHref: e.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Behavior */}
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-foreground">Behavior</p>
+                  <p className="text-xs text-muted-foreground">When and how the popup opens / closes.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Show frequency</label>
+                    <select
+                      className={inputClass}
+                      value={config.welcomePopup.frequency ?? "once_per_session"}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: {
+                            ...c.welcomePopup,
+                            frequency: e.target.value as
+                              | "once_per_session"
+                              | "once_ever"
+                              | "every_visit",
+                          },
+                        }))
+                      }
+                    >
+                      <option value="once_per_session">Once per browser session</option>
+                      <option value="once_ever">Once ever (this browser)</option>
+                      <option value="every_visit">Every page visit</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Open delay: {config.welcomePopup.delayMs ?? 400}ms
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={3000}
+                      step={100}
+                      value={config.welcomePopup.delayMs ?? 400}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: {
+                            ...c.welcomePopup,
+                            delayMs: Number(e.target.value),
+                          },
+                        }))
+                      }
+                      className="mt-3 w-full accent-[#1E4A85]"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5 text-sm font-medium">
+                    Show close (X) button
+                    <input
+                      type="checkbox"
+                      checked={config.welcomePopup.showCloseButton !== false}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: { ...c.welcomePopup, showCloseButton: e.target.checked },
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5 text-sm font-medium">
+                    Close on backdrop click
+                    <input
+                      type="checkbox"
+                      checked={config.welcomePopup.closeOnBackdrop !== false}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          welcomePopup: { ...c.welcomePopup, closeOnBackdrop: e.target.checked },
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-input text-[#1E4A85]"
+                    />
+                  </label>
                 </div>
               </div>
             </div>
