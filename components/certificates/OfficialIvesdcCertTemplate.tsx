@@ -71,8 +71,8 @@ Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in
     data.verificationWebsite,
   ]);
 
-  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "Demo Father Name";
-  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[1]?.trim() || "Demo Mother Name";
+  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "—";
+  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[0]?.trim() || "—";
 
   // Dynamic Typography & Content Font Scaling
   const fontScale = (data.innerFontScale || 100) / 100;

@@ -41,8 +41,8 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
   return (
     <>
       <section id="franchise" className="relative overflow-hidden bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/[0.06] blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-[#C4A35A]/[0.08] blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 bottom-8 h-64 w-64 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl space-y-10">
           <motion.div
@@ -52,11 +52,11 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
               <FiBriefcase className="h-3.5 w-3.5" />
               Franchise
             </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#003366] md:text-4xl">
               {franchise?.sectionTitle || "Featured Branch"}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-[#64748B]">
@@ -69,19 +69,19 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-3xl border border-[#1E4A85]/20 shadow-[0_24px_60px_rgba(15,39,68,0.18)]"
+            className="relative overflow-hidden rounded-3xl border border-[#003366]/20 shadow-[0_24px_60px_rgba(15,39,68,0.18)]"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0F2744] via-[#163A6B] to-[#1E4A85]" />
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#C4A35A]/20 blur-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#001a33] via-[#002244] to-[#003366]" />
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#FF7F0E]/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#C4A35A] via-white/70 to-[#C4A35A]" />
+            <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF7F0E] via-white/70 to-[#FF7F0E]" />
 
             <div className="relative grid items-center gap-8 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr] lg:gap-12 lg:p-12">
               <div>
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#C4A35A]">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF7F0E]">
                   Partner with IVESDC
                 </p>
-                <h3 className="mb-3 text-2xl font-extrabold leading-tight text-white drop-shadow-[0_0_18px_rgba(196,163,90,0.25)] md:text-3xl">
+                <h3 className="mb-3 text-2xl font-extrabold leading-tight text-white drop-shadow-[0_0_18px_rgba(255,127,14,0.25)] md:text-3xl">
                   Ready to open your own branch?
                 </h3>
                 <p className="mb-6 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
@@ -97,7 +97,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                       transition={{ delay: 0.1 + i * 0.06 }}
                       className="flex items-start gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/90"
                     >
-                      <FiCheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#C4A35A]" />
+                      <FiCheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#FF7F0E]" />
                       {p}
                     </motion.div>
                   ))}
@@ -108,7 +108,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                 <button
                   type="button"
                   onClick={() => setPlansOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C4A35A] px-6 py-3.5 text-sm font-bold text-[#0F172A] shadow-lg transition-colors hover:bg-[#A88B48] hover:text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF7F0E] px-6 py-3.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(255,127,14,0.35)] transition-colors hover:bg-[#E66A00]"
                 >
                   View Plans &amp; Buy
                   <FiArrowRight className="h-4 w-4" />
@@ -146,18 +146,18 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                     className="h-full w-full object-cover"
                     onError={() => setHighlightSrc(FALLBACK_IMAGE)}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/55 via-transparent to-transparent" />
-                  <span className="absolute bottom-4 left-4 rounded-md bg-[#C4A35A] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#0F172A]">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#001a33]/55 via-transparent to-transparent" />
+                  <span className="absolute bottom-4 left-4 rounded-md bg-[#003366] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white">
                     Featured Branch
                   </span>
                 </div>
 
                 <div className="flex flex-col justify-center gap-6 p-7 md:p-10">
                   <div>
-                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-[#003366]">
                       Spotlight
                     </p>
-                    <h3 className="text-2xl font-extrabold text-[#0F172A] md:text-3xl">
+                    <h3 className="text-2xl font-extrabold text-[#003366] md:text-3xl">
                       {highlight.name}
                     </h3>
                   </div>
@@ -170,8 +170,8 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                       { icon: FiMail, value: highlight.email },
                     ].map(({ icon: Icon, value }) => (
                       <li key={value} className="flex items-center gap-3 text-sm text-[#475569]">
-                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/10">
-                          <Icon className="h-4 w-4 text-[#1E4A85]" />
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/10">
+                          <Icon className="h-4 w-4 text-[#003366]" />
                         </span>
                         {value}
                       </li>
@@ -182,13 +182,13 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                     <button
                       type="button"
                       onClick={() => openInquiry({ name: highlight.name })}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#163A6B]"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#003366] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#002244]"
                     >
                       Visit & Enquire <FiExternalLink className="h-4 w-4" />
                     </button>
                     <Link
                       href={highlight.detailsUrl || "/userpanel/franchises"}
-                      className="inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] px-5 py-2.5 text-sm font-semibold text-[#334155] transition-colors hover:border-[#1E4A85]/40 hover:text-[#1E4A85]"
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] px-5 py-2.5 text-sm font-semibold text-[#334155] transition-colors hover:border-[#003366]/40 hover:text-[#003366]"
                     >
                       All Franchises <FiArrowRight className="h-4 w-4" />
                     </Link>

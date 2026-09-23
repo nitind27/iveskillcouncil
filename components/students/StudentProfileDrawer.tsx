@@ -17,11 +17,14 @@ import {
   User,
   Pencil,
   Trash2,
+  Award,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
 import { EditStudentModal } from "@/components/students/EditStudentModal";
+import { StudentOfficialCertificatesModal } from "@/components/certificates/StudentOfficialCertificatesModal";
 import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
 
 /** Above ChatWidget (z-400) so profile never sits under the FAB. */
@@ -99,6 +102,8 @@ export function StudentProfileDrawer({
   const [error, setError] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [certOpen, setCertOpen] = useState(false);
+  const [certTab, setCertTab] = useState<"vocational" | "marksheet">("vocational");
 
   const fetchProfile = useCallback(() => {
     if (!studentId) return;
@@ -115,10 +120,12 @@ export function StudentProfileDrawer({
   }, [studentId]);
 
   useEffect(() => {
-    if (!open || !studentId) {
+    if (!open) {
       setData(null);
+      setCertOpen(false);
       return;
     }
+    if (!studentId) return;
     fetchProfile();
   }, [open, studentId, fetchProfile]);
 
@@ -229,28 +236,54 @@ export function StudentProfileDrawer({
 
         {/* Action bar for Admins */}
         {data && canManage && (
-          <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-5 py-2.5">
-            <button
-              type="button"
-              onClick={() => setEditModalOpen(true)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit Student
-            </button>
-            <button
-              type="button"
-              disabled={deleting}
-              onClick={handleDelete}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white py-2 text-xs font-bold text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
-            >
-              {deleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-              Delete Student
-            </button>
+          <div className="space-y-2 border-b border-slate-100 bg-slate-50/80 px-5 py-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCertTab("vocational");
+                  setCertOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#C4A35A]/40 bg-white py-2 text-xs font-bold text-[#8B6914] shadow-sm transition hover:border-[#C4A35A] hover:bg-[#C4A35A]/10"
+              >
+                <Award className="h-3.5 w-3.5" />
+                Certificate
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCertTab("marksheet");
+                  setCertOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#1E4A85]/25 bg-white py-2 text-xs font-bold text-[#1E4A85] shadow-sm transition hover:border-[#1E4A85]/50 hover:bg-[#1E4A85]/5"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Marksheet
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(true)}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit Student
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDelete}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white py-2 text-xs font-bold text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                Delete Student
+              </button>
+            </div>
           </div>
         )}
 
@@ -380,6 +413,14 @@ export function StudentProfileDrawer({
             fetchProfile();
             onStudentUpdated?.(studentId);
           }}
+        />
+      )}
+      {studentId && (
+        <StudentOfficialCertificatesModal
+          studentId={studentId}
+          open={certOpen}
+          initialTab={certTab}
+          onClose={() => setCertOpen(false)}
         />
       )}
     </div>

@@ -17,22 +17,27 @@ export default function PageLoader({ text = "Loading...", variant = "userpanel" 
   const isAdmin = variant === "admin";
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center gap-8 ${isAdmin ? "bg-background" : "bg-[#F8FAFC]"}`}>
+    <div className={`min-h-screen flex flex-col items-center justify-center gap-8 ${isAdmin ? "bg-background" : "bg-[#F8F9FA]"}`}>
       {/* ── Animated logo mark ── */}
       <div className="relative flex items-center justify-center">
         {/* outer slow ring */}
         <motion.span
           animate={{ rotate: 360 }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="absolute w-20 h-20 rounded-full border-2 border-dashed border-[#2D5DA8]/20"
+          className={`absolute w-20 h-20 rounded-full border-2 border-dashed ${isAdmin ? "border-[#2D5DA8]/20" : "border-[#003366]/20"}`}
         />
 
         {/* middle ring — counter-rotate */}
         <motion.span
           animate={{ rotate: -360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="absolute w-14 h-14 rounded-full border-2 border-[#A8C63A]/30"
-          style={{ borderTopColor: "#A8C63A", borderRightColor: "transparent", borderBottomColor: "transparent", borderLeftColor: "transparent" }}
+          className={`absolute w-14 h-14 rounded-full border-2 ${isAdmin ? "border-[#A8C63A]/30" : "border-[#28A745]/30"}`}
+          style={{
+            borderTopColor: isAdmin ? "#A8C63A" : "#28A745",
+            borderRightColor: "transparent",
+            borderBottomColor: "transparent",
+            borderLeftColor: "transparent",
+          }}
         />
 
         {/* inner fast arc */}
@@ -42,8 +47,8 @@ export default function PageLoader({ text = "Loading...", variant = "userpanel" 
           className="absolute w-9 h-9 rounded-full"
           style={{
             border: "2.5px solid transparent",
-            borderTopColor: "#F39C12",
-            borderRightColor: "#F39C12",
+            borderTopColor: isAdmin ? "#F39C12" : "#FF7F0E",
+            borderRightColor: isAdmin ? "#F39C12" : "#FF7F0E",
           }}
         />
 
@@ -51,13 +56,13 @@ export default function PageLoader({ text = "Loading...", variant = "userpanel" 
         <motion.span
           animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-          className="w-4 h-4 rounded-full bg-[#2D5DA8]"
+          className={`w-4 h-4 rounded-full ${isAdmin ? "bg-[#2D5DA8]" : "bg-[#FF7F0E]"}`}
         />
       </div>
 
       {/* ── Animated dots text ── */}
       <div className="flex flex-col items-center gap-2">
-        <p className={`text-sm font-semibold tracking-wide ${isAdmin ? "text-muted-foreground" : "text-[#374151]"}`}>
+        <p className={`text-sm font-semibold tracking-wide ${isAdmin ? "text-muted-foreground" : "text-[#003366]"}`}>
           {text}
         </p>
 
@@ -73,7 +78,7 @@ export default function PageLoader({ text = "Loading...", variant = "userpanel" 
                 delay: i * 0.15,
                 ease: "easeInOut",
               }}
-              className="w-1.5 h-1.5 rounded-full bg-[#2D5DA8]/50"
+              className={`w-1.5 h-1.5 rounded-full ${isAdmin ? "bg-[#2D5DA8]/50" : "bg-[#FF7F0E]/50"}`}
             />
           ))}
         </div>

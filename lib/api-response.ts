@@ -5,6 +5,8 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  /** Which form field caused the error (e.g. email, phone) */
+  field?: string;
   pagination?: {
     page: number;
     limit: number;
@@ -31,12 +33,14 @@ export function successResponse<T>(
 
 export function errorResponse(
   error: string,
-  status: number = 400
+  status: number = 400,
+  field?: string
 ): NextResponse<ApiResponse> {
   return NextResponse.json(
     {
       success: false,
       error,
+      ...(field ? { field } : {}),
     },
     { status }
   );

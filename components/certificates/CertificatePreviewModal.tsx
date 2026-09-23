@@ -144,10 +144,15 @@ export function CertificatePreviewModal({
   };
 
   const handlePrint = () => {
+    const prevZoom = zoom;
+    setZoom(100);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-    setTimeout(() => {
-      window.print();
-    }, 60);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.print();
+        setZoom(prevZoom);
+      }, 120);
+    });
   };
 
   if (!open) return null;
@@ -336,7 +341,7 @@ export function CertificatePreviewModal({
                 </div>
               ) : data ? (
                 <div
-                  className="origin-top transition-transform duration-200"
+                  className="studio-zoom-container origin-top transition-transform duration-200"
                   style={{ transform: `scale(${zoom / 100})` }}
                 >
                   <IvesdcCertificateTemplate

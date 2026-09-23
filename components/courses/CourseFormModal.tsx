@@ -60,7 +60,8 @@ export type CourseFormState = {
   description: string;
   syllabus: string;
   eligibility: string;
-  certificateSubject: string;
+  /** One subject per row; saved as comma-separated string in API/DB */
+  certificateSubjects: string[];
   tags: string[];
   isPopular: boolean;
   isRecommended: boolean;
@@ -96,7 +97,7 @@ export function emptyCourseForm(): CourseFormState {
     description: "",
     syllabus: "",
     eligibility: "",
-    certificateSubject: "",
+    certificateSubjects: [""],
     tags: [""],
     isPopular: false,
     isRecommended: false,
@@ -139,7 +140,15 @@ export function courseToForm(c: Record<string, unknown>): CourseFormState {
     description: String(c.description || ""),
     syllabus: String(c.syllabus || ""),
     eligibility: String(c.eligibility || ""),
-    certificateSubject: String(c.certificateSubject || ""),
+    certificateSubjects: (() => {
+      const raw = String(c.certificateSubject || "").trim();
+      if (!raw) return [""];
+      const parts = raw
+        .split(/[,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return parts.length ? parts : [""];
+    })(),
     tags: tags.length ? tags : [""],
     isPopular: Boolean(c.isPopular),
     isRecommended: Boolean(c.isRecommended),
@@ -242,6 +251,17 @@ export function CourseFormModal({
     setForm((f) => ({
       ...f,
       tags: f.tags.length <= 1 ? [""] : f.tags.filter((_, idx) => idx !== i),
+    }));
+
+  const addCertificateSubject = () =>
+    setForm((f) => ({ ...f, certificateSubjects: [...f.certificateSubjects, ""] }));
+  const removeCertificateSubject = (i: number) =>
+    setForm((f) => ({
+      ...f,
+      certificateSubjects:
+        f.certificateSubjects.length <= 1
+          ? [""]
+          : f.certificateSubjects.filter((_, idx) => idx !== i),
     }));
 
   const addExamFee = () => {
@@ -815,21 +835,46 @@ export function CourseFormModal({
                   </div>
                   <div>
                     <label className={labelCls}>Certificate Subject</label>
-                    <input
-                      type="text"
-                      value={form.certificateSubject}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          certificateSubject: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g. HTML, CSS, JavaScript, Python"
-                      className={inputCls}
-                    />
+                    <div className="space-y-2">
+                      {form.certificateSubjects.map((subject, i) => (
+                        <div key={i} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={subject}
+                            onChange={(e) =>
+                              setForm((f) => {
+                                const certificateSubjects = [...f.certificateSubjects];
+                                certificateSubjects[i] = e.target.value;
+                                return { ...f, certificateSubjects };
+                              })
+                            }
+                            placeholder={`Subject ${i + 1} (e.g. MS Word)`}
+                            className={inputCls}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeCertificateSubject(i)}
+                            className="h-10 shrink-0 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-600"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={addCertificateSubject}
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-[#1E4A85]"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Subject
+                      </button>
+                    </div>
                     <p className={helpCls}>
-                      Shows only on the certificate. Stored with admission so later course
-                      edits won&apos;t change already-issued certificates.
+                      Add subjects here, or manage them anytime from{" "}
+                      <a href="/dashboard/subjects" className="font-semibold text-[#1E4A85] underline">
+                        Course Subjects
+                      </a>
+                      . Selecting this course in Marks Entry loads these subjects automatically.
                     </p>
                   </div>
                 </section>

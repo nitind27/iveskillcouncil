@@ -194,10 +194,15 @@ export function CertificateDemoModal({
   };
 
   const handlePrint = () => {
+    const prevZoom = zoom;
+    setZoom(100);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-    setTimeout(() => {
-      window.print();
-    }, 60);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.print();
+        setZoom(prevZoom);
+      }, 120);
+    });
   };
 
   if (!open) return null;
@@ -273,16 +278,39 @@ export function CertificateDemoModal({
             display: none !important;
             visibility: hidden !important;
           }
+          .studio-zoom-container,
+          .cert-print-stage,
+          .origin-top,
+          .student-cert-print-root {
+            display: block !important;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            transform: none !important;
+            transform-origin: 0 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            max-width: 210mm !important;
+            max-height: 297mm !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            zoom: 1 !important;
+          }
           .certificate-sheet,
           .certificate-sheet * {
             visibility: visible !important;
           }
           .certificate-sheet {
-            position: fixed !important;
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            right: 0 !important;
-            margin: 0 auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
             padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
@@ -295,14 +323,24 @@ export function CertificateDemoModal({
             break-inside: avoid !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            transform-origin: top center !important;
-            transform: scale(0.7512) !important;
-            transform: scale(calc(296.6mm / 1492px)) !important;
+            transform-origin: 0 0 !important;
+            width: 1054px !important;
+            height: 1492px !important;
+            transform: scale(0.752) !important;
           }
           .certificate-sheet[id*="marksheet2"],
           .certificate-sheet[id*="marksheet-v2"] {
-            transform: scale(0.5464) !important;
-            transform: scale(calc(296.6mm / 2048px)) !important;
+            width: 1054px !important;
+            height: 1492px !important;
+            min-width: 1054px !important;
+            min-height: 1492px !important;
+            max-width: 1054px !important;
+            max-height: 1492px !important;
+            left: 0 !important;
+            top: 0 !important;
+            right: auto !important;
+            transform-origin: 0 0 !important;
+            transform: scale(0.752) !important;
           }
           .certificate-sheet[style*="1024"],
           .certificate-sheet[id*="diploma"],
@@ -310,8 +348,10 @@ export function CertificateDemoModal({
           .certificate-sheet[id*="merit"],
           .certificate-sheet[id*="workshop"],
           .certificate-sheet[id*="ivesdc-cert"] {
-            transform: scale(1.0945) !important;
-            transform: scale(calc(296.6mm / 1024px)) !important;
+            width: 723px !important;
+            height: 1024px !important;
+            transform-origin: 0 0 !important;
+            transform: scale(1.098) !important;
           }
         }
       `}</style>
@@ -520,13 +560,13 @@ export function CertificateDemoModal({
 
         {/* Center: Scrollable Certificate Canvas */}
         <main className="flex-1 overflow-auto bg-[#131b28] p-4 sm:p-8 flex justify-center items-start">
-          <div
-            className="mx-auto origin-top transition-transform duration-200"
-            style={{
-              transform: `scale(${zoom / 100})`,
-              marginBottom: "120px",
-            }}
-          >
+            <div
+              className="studio-zoom-container mx-auto origin-top transition-transform duration-200"
+              style={{
+                transform: `scale(${zoom / 100})`,
+                marginBottom: "120px",
+              }}
+            >
             {renderTemplate()}
           </div>
         </main>

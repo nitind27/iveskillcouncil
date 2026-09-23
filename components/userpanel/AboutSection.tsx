@@ -54,25 +54,25 @@ const features = [
     icon: FiZap,
     label: "Fast-Track Learning",
     desc: "Structured curriculum for quick skill gains",
-    color: "text-[#C4A35A] bg-[#C4A35A]/10",
+    color: "text-[#FF7F0E] bg-[#FF7F0E]/10",
   },
   {
     icon: FiShield,
     label: "Certified Programs",
     desc: "Industry-recognized certifications",
-    color: "text-[#1E4A85] bg-[#1E4A85]/10",
+    color: "text-[#28A745] bg-[#28A745]/10",
   },
   {
     icon: FiUsers,
     label: "Expert Mentors",
     desc: "Learn from experienced professionals",
-    color: "text-[#1E4A85] bg-[#EEF2F7]",
+    color: "text-[#0056b3] bg-[#0056b3]/10",
   },
   {
     icon: FiAward,
     label: "Award Winning",
     desc: "National & global recognitions",
-    color: "text-[#C4A35A] bg-[#C4A35A]/10",
+    color: "text-[#FF7F0E] bg-[#FF7F0E]/10",
   },
 ];
 
@@ -90,11 +90,11 @@ function OwnerShowcase() {
 
   return (
     <div className="relative mx-auto w-full max-w-[440px] lg:max-w-none">
-      <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-[#1E4A85]/20 via-transparent to-[#C4A35A]/25 opacity-80 blur-[1px]" />
-      <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full border border-[#C4A35A]/30" />
-      <div className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-[#1E4A85]/10" />
+      <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-[#003366]/20 via-transparent to-[#FF7F0E]/25 opacity-80 blur-[1px]" />
+      <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full border border-[#FF7F0E]/30" />
+      <div className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-[#003366]/10" />
 
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/60 bg-[#0B1F3A] shadow-[0_28px_70px_rgba(15,23,42,0.22)] ring-1 ring-[#1E4A85]/15">
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/60 bg-[#001a33] shadow-[0_28px_70px_rgba(15,23,42,0.22)] ring-1 ring-[#003366]/15">
         <div className="relative aspect-[3/4] w-full">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -113,14 +113,14 @@ function OwnerShowcase() {
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0B1F3A] via-[#0B1F3A]/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#001a33] via-[#001a33]/20 to-transparent" />
             </motion.div>
           </AnimatePresence>
 
           <div className="absolute left-0 right-0 top-0 z-20 h-1 bg-white/10">
             <motion.div
               key={`progress-${index}`}
-              className="h-full origin-left bg-gradient-to-r from-[#C4A35A] to-[#E8D5A3]"
+              className="h-full origin-left bg-gradient-to-r from-[#FF7F0E] to-[#FFD4A8]"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
@@ -129,8 +129,8 @@ function OwnerShowcase() {
 
           <div className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 backdrop-blur-md">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C4A35A] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C4A35A]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF7F0E] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF7F0E]" />
             </span>
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/95">
               Leadership
@@ -146,7 +146,7 @@ function OwnerShowcase() {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.4 }}
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E8D5A3]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#FFD4A8]">
                   {slide.role}
                 </p>
                 <p className="mt-1 max-w-[95%] text-sm font-semibold leading-snug text-white sm:text-base">
@@ -161,7 +161,7 @@ function OwnerShowcase() {
                   key={i}
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-300",
-                    i === index ? "w-7 bg-[#C4A35A]" : "w-1.5 bg-white/40"
+                    i === index ? "w-7 bg-[#FF7F0E]" : "w-1.5 bg-white/40"
                   )}
                 />
               ))}
@@ -177,7 +177,7 @@ function OwnerShowcase() {
         transition={{ delay: 0.2, duration: 0.45 }}
         className="absolute -left-2 top-8 z-30 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-3.5 py-2.5 shadow-xl backdrop-blur-sm sm:flex lg:-left-4"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#1E4A85] to-[#163A6B]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#003366] to-[#002244]">
           <FiUsers className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -195,7 +195,7 @@ function OwnerShowcase() {
         transition={{ delay: 0.35, duration: 0.45 }}
         className="absolute -right-2 bottom-28 z-30 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-3.5 py-2.5 shadow-xl backdrop-blur-sm sm:flex lg:-right-3"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#C4A35A] to-[#A88B48]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7F0E] to-[#E66A00]">
           <FiAward className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -221,8 +221,8 @@ export default function AboutSection({ config }: AboutSectionProps) {
       id="about"
       className="relative overflow-hidden bg-gradient-to-b from-[#F7F9FC] via-white to-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
     >
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/[0.06] blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-[#C4A35A]/[0.08] blur-3xl" />
+      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -243,8 +243,8 @@ export default function AboutSection({ config }: AboutSectionProps) {
             className="space-y-7"
           >
             <div>
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/20 bg-[#1E4A85]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#C4A35A]" />
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/20 bg-[#003366]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF7F0E]" />
                 Our Story
               </span>
               <h2 className="mb-4 text-3xl font-extrabold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl lg:text-[2.6rem]">
@@ -264,7 +264,7 @@ export default function AboutSection({ config }: AboutSectionProps) {
                   viewport={{ once: true }}
                   transition={{ delay: 0.08 + i * 0.07, duration: 0.4 }}
                   whileHover={{ y: -3 }}
-                  className="flex items-start gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-4 transition-shadow duration-300 hover:border-[#2D5DA8]/25 hover:bg-white hover:shadow-md"
+                  className="flex items-start gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-4 transition-shadow duration-300 hover:border-[#0056b3]/25 hover:bg-white hover:shadow-md"
                 >
                   <div
                     className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${f.color}`}
@@ -285,13 +285,13 @@ export default function AboutSection({ config }: AboutSectionProps) {
 
             <div className="flex flex-wrap gap-3 pt-1">
               <Link href={up(aboutButtonHref(about.buttonHref))}>
-                <span className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-6 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-[#163A6B]">
+                <span className="inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(255,127,14,0.3)] transition-colors hover:bg-[#E66A00]">
                   {about.buttonLabel}
                   <FiArrowRight className="h-4 w-4" />
                 </span>
               </Link>
               <Link href={up("/userpanel/courses")}>
-                <span className="inline-flex items-center gap-2 rounded-xl border border-[#1E4A85] bg-white px-6 py-3 text-sm font-bold text-[#1E4A85] transition-colors hover:bg-[#EEF2F7]">
+                <span className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-[#0056b3] bg-white px-6 py-3 text-sm font-bold text-[#0056b3] transition-colors hover:bg-[#F0F7FF]">
                   View Courses
                   <FiArrowRight className="h-4 w-4" />
                 </span>

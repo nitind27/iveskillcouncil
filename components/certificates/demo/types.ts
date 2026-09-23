@@ -73,7 +73,14 @@ export interface CertificateDemoData {
   directorSignatureUrl?: string;
   directorTitle?: string;
   stampUrl?: string;
+  /** Optional hologram preview image (physical sticker is 23×23 mm, applied manually) */
+  hologramUrl?: string;
+  /** Show dashed 23×23 mm hologram placement guide next to QR (default true on Result Form 2) */
+  showHologramGuide?: boolean;
   logoUrl?: string;
+  /** Fixed full-width Result Form 2 header (default: /certificates/IVESDC_header.svg) */
+  customHeaderUrl?: string;
+  headerHeight?: number;
   isoSealUrl?: string;
   partnerLogosUrl?: string;
   partnerLogos?: PartnerLogoItem[];
@@ -137,6 +144,18 @@ export interface CertificateDemoData {
   tableFontSize?: number;
   certBodyFontSize?: number;
   studentNameFontSize?: number;
+  /** ATC block (training centre name/code/address) */
+  atcFontSize?: number;
+  /** Govt order / legal text under RESULT QR */
+  govOrderFontSize?: number;
+  /** Registered office address under footer badge */
+  registeredOfficeFontSize?: number;
+  /** Signature line labels (Examination Coordinator / Director Signature) */
+  signLabelFontSize?: number;
+  /** Grade System legend box (A+ / A / B / C rows) */
+  gradeSystemFontSize?: number;
+  /** RESULT box value text (PASS A+ 85%) */
+  resultFontSize?: number;
 
   // Dynamic Workspace Padding & Layout Spacing (px)
   paddingTop?: number;
@@ -147,9 +166,11 @@ export interface CertificateDemoData {
   contentSpacing?: number;
 
   // Dynamic Watermark & Security Background
-  watermarkType?: "crest" | "tiled-grid" | "none";
+  watermarkType?: "crest" | "tiled-grid" | "shadow-flower" | "none";
   watermarkOpacity?: number;
   watermarkColor?: string;
+  /** Custom background pattern image (defaults to /certificates/bgcert.png for Result Form 2) */
+  backgroundPatternUrl?: string;
 }
 
 export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDemoData> = {
@@ -425,8 +446,10 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     directorSignatureUrl: "/cert/sig-director.png",
     directorTitle: "Director Signature",
     stampUrl: "/cert/stamp-blue.png?v=clean",
+    showHologramGuide: true,
     logoUrl: "/cert/ivesdc-logo.png?v=clean",
-    customBorderUrl: "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg",
+    customHeaderUrl: "/certificates/IVESDC_header.svg",
+    headerHeight: 128,
     courseName: "Computer Diploma Course",
     courseCode: "CDC-03M",
     duration: "03 Months",
@@ -444,6 +467,8 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     division: "First Class with Distinction",
     status: "PASS",
     borderStyle: "guilloche",
+    /** Result Form 2: floral SVG or switch to /certificates/Design.svg in customizer */
+    customBorderUrl: "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg",
     instituteName: "INSTITUTE OF VOCATIONAL EDUCATION AND SKILL DEVELOPMENT COUNCIL",
     tagline: "Building a Skilled and Self-Reliant Nation",
     accreditationLine1:
@@ -454,7 +479,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     registeredOffice:
       "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
     govOrderText:
-      "Under The General Administration Department\nGovt. of Gujarat vide it's Resolution\nGR No. CRR /10/2007/120320/G5, Dt :13-8-2008\nby Sachivalay Gandhinagar",
+      "Under The General Adm Vahivat Dept.\nGovt. of Gujarat Certificate According to\nLetter No. CRR - 10 - 2007 - 120320.\nG.P. New Sachivalaya Gandhinagar\ndate: 13-8-2008",
     verificationWebsite: "www.iveskillcouncil.edu.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     gradeSystem: [
@@ -463,30 +488,38 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
       { grade: "B", label: "Good", range: "55% to 69%" },
       { grade: "C", label: "Average", range: "40% to 54%" },
     ],
-    logoHeight: 86,
-    logoWidth: 175,
-    photoWidth: 128,
-    photoHeight: 158,
-    directorSigHeight: 38,
-    stampSize: 70,
-    qrCodeSize: 72,
-    titleFontSize: 22,
-    customBannerUrl: undefined,
-    bannerHeight: 48,
-    bannerWidth: 340,
+    logoHeight: 159,
+    logoWidth: 220,
+    photoWidth: 108,
+    photoHeight: 132,
+    directorSigHeight: 34,
+    stampSize: 90,
+    qrCodeSize: 70,
+    titleFontSize: 18.5,
+    customBannerUrl: "/cert/statement-of-marks-banner.svg",
+    bannerHeight: 42,
+    bannerWidth: 372,
     barcodeTextWords: "FOUR  SEVEN  THREE  NINE  EIGHT  FOUR  SIX",
     innerFontScale: 100,
-    candidateFontSize: 13,
-    tableFontSize: 12,
-    studentNameFontSize: 14,
-    paddingTop: 67,
-    paddingBottom: 67,
-    paddingLeft: 67,
-    paddingRight: 67,
-    headerSpacing: 6,
-    contentSpacing: 8,
-    watermarkType: "none",
-    watermarkOpacity: 0,
+    candidateFontSize: 12,
+    tableFontSize: 10.5,
+    studentNameFontSize: 13,
+    atcFontSize: 9,
+    govOrderFontSize: 8,
+    registeredOfficeFontSize: 7.5,
+    signLabelFontSize: 10.5,
+    gradeSystemFontSize: 9.5,
+    resultFontSize: 13,
+    paddingTop: 110,
+    paddingBottom: 116,
+    paddingLeft: 110,
+    paddingRight: 110,
+    headerSpacing: 4,
+    contentSpacing: 6,
+    watermarkType: "shadow-flower",
+    watermarkOpacity: 0.55,
+    backgroundPatternUrl: "/certificates/bgcert.png",
+    watermarkColor: "#8AA0B8",
     subjects: [
       {
         code: "SUB-01",

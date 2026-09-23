@@ -31,8 +31,8 @@ const PLAN_META: Record<string, { icon: React.ReactNode; tagline: string; color:
     popular: true,
   },
   DIAMOND: {
-    icon: <FiZap className="w-8 h-8"/>, tagline: "For large-scale operations", color: "text-[#2D5DA8]",
-    border: "border-[#2D5DA8]", badge: "Enterprise", badgeBg: "bg-[#2D5DA8] text-white", highlight: "#2D5DA8",
+    icon: <FiZap className="w-8 h-8"/>, tagline: "For large-scale operations", color: "text-[#0056b3]",
+    border: "border-[#0056b3]", badge: "Enterprise", badgeBg: "bg-[#0056b3] text-white", highlight: "#0056b3",
     features: ["Unlimited students","Full system access","Multi-branch support","Custom branding","Advanced analytics","Dedicated account manager","24/7 priority support"],
   },
 };
@@ -57,7 +57,7 @@ const ENTITY_DOCS = [
 const FORM_STEPS: Step[] = ["personal","business","documents","review"];
 const FORM_LABELS = ["Personal Info","Business Info","KYC Documents","Review & Pay"];
 
-const inputCls = "w-full px-4 py-3.5 rounded-2xl border border-[#E5E7EB] bg-white focus:border-[#2D5DA8] focus:ring-2 focus:ring-[#2D5DA8]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
+const inputCls = "w-full px-4 py-3.5 rounded-2xl border border-[#E5E7EB] bg-white focus:border-[#0056b3] focus:ring-2 focus:ring-[#0056b3]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
 const labelCls = "block text-sm font-semibold text-[#374151] mb-1.5";
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ export default function FranchisePlansPage() {
         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><FiX className="w-8 h-8 text-red-500"/></div>
         <h2 className="text-xl font-bold text-[#1A1A1A] mb-2">Could not load plans</h2>
         <p className="text-[#6B7280] mb-6">{fetchError}</p>
-        <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] transition-all">Retry</button>
+        <button onClick={() => window.location.reload()} className="px-6 py-3 rounded-xl bg-[#0056b3] text-white font-semibold hover:bg-[#003366] transition-all">Retry</button>
       </div>
     </div>
   );
@@ -219,7 +219,7 @@ export default function FranchisePlansPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#2D5DA8] via-[#1E4A85] to-[#1a3d70] py-20 px-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] py-20 px-4">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(168,198,58,0.12),transparent)]"/>
         <div className="absolute -bottom-1 left-0 right-0 h-16 bg-[#F8FAFC]" style={{clipPath:"ellipse(55% 100% at 50% 100%)"}}/>
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="max-w-4xl mx-auto text-center relative">
@@ -242,17 +242,17 @@ export default function FranchisePlansPage() {
           <div className="mb-10">
             <div className="flex items-center justify-between relative">
               <div className="absolute top-4 left-0 right-0 h-0.5 bg-[#E5E7EB] -z-10"/>
-              <div className="absolute top-4 left-0 h-0.5 bg-[#2D5DA8] -z-10 transition-all duration-500"
+              <div className="absolute top-4 left-0 h-0.5 bg-[#0056b3] -z-10 transition-all duration-500"
                 style={{width:`${(formStepIdx/(FORM_STEPS.length-1))*100}%`}}/>
               {FORM_STEPS.map((s,i) => (
                 <div key={s} className="flex flex-col items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${
                     i < formStepIdx ? "bg-[#A8C63A] border-[#A8C63A] text-white" :
-                    i === formStepIdx ? "bg-[#2D5DA8] border-[#2D5DA8] text-white" :
+                    i === formStepIdx ? "bg-[#0056b3] border-[#0056b3] text-white" :
                     "bg-white border-[#E5E7EB] text-[#9CA3AF]"}`}>
                     {i < formStepIdx ? <FiCheckCircle className="w-4 h-4"/> : i+1}
                   </div>
-                  <span className={`text-xs font-semibold hidden sm:block ${i===formStepIdx?"text-[#2D5DA8]":"text-[#9CA3AF]"}`}>{FORM_LABELS[i]}</span>
+                  <span className={`text-xs font-semibold hidden sm:block ${i===formStepIdx?"text-[#0056b3]":"text-[#9CA3AF]"}`}>{FORM_LABELS[i]}</span>
                 </div>
               ))}
             </div>
@@ -290,7 +290,7 @@ export default function FranchisePlansPage() {
                         </ul>
                         <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                           onClick={() => { setSelectedPlan(plan); setError(""); setStep("personal"); }}
-                          className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${meta.popular?"bg-[#F39C12] text-white hover:bg-[#D68910]":"bg-[#2D5DA8] text-white hover:bg-[#1E4A85]"}`}>
+                          className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${meta.popular?"bg-[#F39C12] text-white hover:bg-[#D68910]":"bg-[#0056b3] text-white hover:bg-[#003366]"}`}>
                           Get Started <FiArrowRight className="w-4 h-4"/>
                         </motion.button>
                       </div>
@@ -304,7 +304,7 @@ export default function FranchisePlansPage() {
                 ))}
               </div>
               <div className="text-center mt-8">
-                <Link href="/userpanel" className="text-[#2D5DA8] font-semibold hover:underline text-sm">← Back to Home</Link>
+                <Link href="/userpanel" className="text-[#0056b3] font-semibold hover:underline text-sm">← Back to Home</Link>
               </div>
             </motion.div>
           )}
@@ -344,10 +344,10 @@ export default function FranchisePlansPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[{v:"INDIVIDUAL",l:"Individual / Proprietor",d:"For sole proprietors and individuals"},{v:"ENTITY",l:"Registered Entity",d:"Pvt Ltd, LLP, Trust, Society"}].map(({v,l,d}) => (
                     <button key={v} type="button" onClick={()=>setBusinessType(v)}
-                      className={`p-4 rounded-2xl border-2 text-left transition-all ${businessType===v?"border-[#2D5DA8] bg-[#2D5DA8]/05":"border-[#E5E7EB] hover:border-[#2D5DA8]/40"}`}>
+                      className={`p-4 rounded-2xl border-2 text-left transition-all ${businessType===v?"border-[#0056b3] bg-[#0056b3]/05":"border-[#E5E7EB] hover:border-[#0056b3]/40"}`}>
                       <div className="flex items-center gap-2 mb-1">
-                        <FiBriefcase className={`w-4 h-4 ${businessType===v?"text-[#2D5DA8]":"text-[#9CA3AF]"}`}/>
-                        <span className={`font-bold text-sm ${businessType===v?"text-[#2D5DA8]":"text-[#374151]"}`}>{l}</span>
+                        <FiBriefcase className={`w-4 h-4 ${businessType===v?"text-[#0056b3]":"text-[#9CA3AF]"}`}/>
+                        <span className={`font-bold text-sm ${businessType===v?"text-[#0056b3]":"text-[#374151]"}`}>{l}</span>
                       </div>
                       <p className="text-xs text-[#6B7280]">{d}</p>
                     </button>
@@ -383,7 +383,7 @@ export default function FranchisePlansPage() {
                   const isImg    = uploaded?.type?.startsWith("image/");
                   const isUp     = uploading===doc.key;
                   return (
-                    <div key={doc.key} className={`rounded-2xl border-2 overflow-hidden transition-all ${uploaded?"border-[#A8C63A] shadow-md":"border-[#E5E7EB] hover:border-[#2D5DA8]/30"}`}>
+                    <div key={doc.key} className={`rounded-2xl border-2 overflow-hidden transition-all ${uploaded?"border-[#A8C63A] shadow-md":"border-[#E5E7EB] hover:border-[#0056b3]/30"}`}>
                       {/* Image preview */}
                       {uploaded && isImg && (
                         <div className="relative group h-32">
@@ -406,16 +406,16 @@ export default function FranchisePlansPage() {
                         </div>
                         {uploaded && !isImg ? (
                           <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-                            <FiFile className="w-4 h-4 text-[#2D5DA8] flex-shrink-0"/>
+                            <FiFile className="w-4 h-4 text-[#0056b3] flex-shrink-0"/>
                             <span className="truncate flex-1">{uploaded.name}</span>
-                            <a href={uploaded.url} target="_blank" rel="noopener noreferrer" className="text-[#2D5DA8] hover:underline flex-shrink-0">View</a>
+                            <a href={uploaded.url} target="_blank" rel="noopener noreferrer" className="text-[#0056b3] hover:underline flex-shrink-0">View</a>
                           </div>
                         ) : !uploaded ? (
                           <label className="cursor-pointer block">
                             <input type="file" accept={doc.accept} className="hidden"
                               ref={el=>{fileRefs.current[doc.key]=el;}}
                               onChange={e=>{const f=e.target.files?.[0];if(f)uploadDoc(doc.key,doc.label,f);}}/>
-                            <span className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all w-fit ${isUp?"bg-[#EEF2F7] text-[#6B7280]":"bg-[#2D5DA8]/10 text-[#2D5DA8] hover:bg-[#2D5DA8]/20"}`}>
+                            <span className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all w-fit ${isUp?"bg-[#EEF2F7] text-[#6B7280]":"bg-[#0056b3]/10 text-[#0056b3] hover:bg-[#0056b3]/20"}`}>
                               {isUp?<FiLoader className="w-3.5 h-3.5 animate-spin"/>:<FiUpload className="w-3.5 h-3.5"/>}
                               {isUp?"Uploading...":"Choose File"}
                             </span>
@@ -454,7 +454,7 @@ export default function FranchisePlansPage() {
                         <div key={d.key} className="rounded-xl overflow-hidden border border-[#E5E7EB] cursor-pointer hover:shadow-md transition-all" onClick={()=>setPreviewDoc(d)}>
                           {d.type?.startsWith("image/")
                             ? <img src={d.url} alt={d.label} className="w-full h-16 object-cover"/>
-                            : <div className="w-full h-16 bg-[#EEF2F7] flex items-center justify-center"><FiFile className="w-6 h-6 text-[#2D5DA8]"/></div>}
+                            : <div className="w-full h-16 bg-[#EEF2F7] flex items-center justify-center"><FiFile className="w-6 h-6 text-[#0056b3]"/></div>}
                           <p className="text-[10px] font-semibold text-[#6B7280] px-2 py-1 truncate">{d.label}</p>
                         </div>
                       ))}
@@ -462,7 +462,7 @@ export default function FranchisePlansPage() {
                   </div>
                 )}
                 {/* Plan summary */}
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#EEF2F7] to-[#F8FAFC] border border-[#2D5DA8]/15 flex items-center justify-between">
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#EEF2F7] to-[#F8FAFC] border border-[#0056b3]/15 flex items-center justify-between">
                   <div>
                     <p className="text-xs text-[#6B7280] mb-1">Selected Plan</p>
                     <p className="text-xl font-extrabold text-[#1A1A1A]">{selectedPlan.name}</p>
@@ -470,7 +470,7 @@ export default function FranchisePlansPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-[#6B7280] mb-1">Total Amount</p>
-                    <p className="text-3xl font-black text-[#2D5DA8]">₹{selectedPlan.price.toLocaleString("en-IN")}</p>
+                    <p className="text-3xl font-black text-[#0056b3]">₹{selectedPlan.price.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
                 {error && (
@@ -491,8 +491,8 @@ export default function FranchisePlansPage() {
           {step === "processing" && (
             <motion.div key="processing" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col items-center justify-center py-24 gap-6">
               <div className="relative">
-                <motion.div animate={{rotate:360}} transition={{duration:1,repeat:Infinity,ease:"linear"}} className="w-20 h-20 rounded-full border-4 border-[#2D5DA8]/20 border-t-[#2D5DA8]"/>
-                <FiAward className="w-8 h-8 text-[#2D5DA8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"/>
+                <motion.div animate={{rotate:360}} transition={{duration:1,repeat:Infinity,ease:"linear"}} className="w-20 h-20 rounded-full border-4 border-[#0056b3]/20 border-t-[#0056b3]"/>
+                <FiAward className="w-8 h-8 text-[#0056b3] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"/>
               </div>
               <div className="text-center">
                 <p className="font-extrabold text-[#1A1A1A] text-2xl mb-2">Opening Payment Gateway...</p>
@@ -515,7 +515,7 @@ export default function FranchisePlansPage() {
               </div>
             )}
             <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} onClick={goNext}
-              className="ml-auto flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#2D5DA8] text-white font-bold hover:bg-[#1E4A85] transition-all shadow-lg">
+              className="ml-auto flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0056b3] text-white font-bold hover:bg-[#003366] transition-all shadow-lg">
               Continue <FiArrowRight className="w-4 h-4"/>
             </motion.button>
           </div>
@@ -539,11 +539,11 @@ export default function FranchisePlansPage() {
               <img src={previewDoc.url} alt={previewDoc.label} className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" onClick={e=>e.stopPropagation()}/>
             ) : (
               <div className="bg-white rounded-3xl p-10 text-center shadow-2xl" onClick={e=>e.stopPropagation()}>
-                <FiFile className="w-16 h-16 text-[#2D5DA8] mx-auto mb-4"/>
+                <FiFile className="w-16 h-16 text-[#0056b3] mx-auto mb-4"/>
                 <p className="font-bold text-[#1A1A1A] text-lg mb-1">{previewDoc.label}</p>
                 <p className="text-[#6B7280] text-sm mb-6">{previewDoc.name}</p>
                 <a href={previewDoc.url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#2D5DA8] text-white font-bold hover:bg-[#1E4A85] transition-all">
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#0056b3] text-white font-bold hover:bg-[#003366] transition-all">
                   Open PDF <FiArrowRight className="w-4 h-4"/>
                 </a>
               </div>

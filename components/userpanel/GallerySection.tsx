@@ -43,7 +43,7 @@ function GalleryTile({
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.45, delay: (index % 6) * 0.07, ease: [0.22, 1, 0.36, 1] }}
       onClick={onOpen}
-      className={`group relative col-span-12 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#EEF2F7] text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1 hover:border-[#1E4A85]/25 hover:shadow-[0_20px_44px_rgba(30,74,133,0.14)] ${tileClass(index, total)}`}
+      className={`group relative col-span-12 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#EEF2F7] text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1 hover:border-[#003366]/25 hover:shadow-[0_20px_44px_rgba(0,51,102,0.14)] ${tileClass(index, total)}`}
     >
       <img
         src={imgSrc}
@@ -51,7 +51,7 @@ function GalleryTile({
         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
         onError={() => setImgSrc(FALLBACK_IMAGE)}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/80 via-[#0F2744]/15 to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#001a33]/80 via-[#001a33]/15 to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-90" />
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
         <span className="text-sm font-semibold text-white drop-shadow-sm">{alt}</span>
         <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100">
@@ -104,7 +104,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
           <button
             type="button"
             onClick={() => setLightboxIndex(null)}
-            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#C4A35A] hover:text-[#1A1408]"
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408]"
             aria-label="Close"
           >
             <FiX className="h-5 w-5" />
@@ -114,7 +114,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i! - 1 + images.length) % images.length); }}
-                className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#C4A35A] hover:text-[#1A1408]"
+                className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408]"
                 aria-label="Previous"
               >
                 <FiChevronLeft className="h-6 w-6" />
@@ -122,7 +122,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => (i! + 1) % images.length); }}
-                className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#C4A35A] hover:text-[#1A1408]"
+                className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408]"
                 aria-label="Next"
               >
                 <FiChevronRight className="h-6 w-6" />
@@ -146,7 +146,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
             <div className="mt-4 flex items-center justify-between gap-4 text-sm text-white/80">
               <span className="font-medium text-white">{current.alt || `Image ${lightboxIndex + 1}`}</span>
               {images.length > 1 && (
-                <span className="rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/15 px-3 py-1 text-xs font-semibold text-[#C4A35A]">
+                <span className="rounded-full border border-[#FF7F0E]/35 bg-[#FF7F0E]/15 px-3 py-1 text-xs font-semibold text-[#FF7F0E]">
                   {lightboxIndex + 1} / {images.length}
                 </span>
               )}
@@ -159,8 +159,8 @@ export default function GallerySection({ config }: GallerySectionProps) {
 
   return (
     <section id="gallery" className="relative overflow-hidden bg-[#F7F8FA] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="pointer-events-none absolute -left-16 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/[0.06] blur-3xl" />
-      <div className="pointer-events-none absolute -right-12 bottom-6 h-56 w-56 rounded-full bg-[#C4A35A]/[0.08] blur-3xl" />
+      <div className="pointer-events-none absolute -left-16 top-10 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
+      <div className="pointer-events-none absolute -right-12 bottom-6 h-56 w-56 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
         <motion.div
@@ -170,7 +170,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
           transition={{ duration: 0.5 }}
           className="mb-12 text-center"
         >
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
             <FiImage className="h-3.5 w-3.5" />
             Moments
           </span>

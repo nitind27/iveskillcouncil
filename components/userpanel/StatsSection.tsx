@@ -15,11 +15,11 @@ const ICON_MAP = {
 } as const;
 
 const CARD_COLORS = [
-  { gradient: "from-[#1E4A85] to-[#163A6B]", ring: "group-hover:ring-[#1E4A85]/20" },
-  { gradient: "from-[#2D5DA8] to-[#1E4A85]", ring: "group-hover:ring-[#2D5DA8]/20" },
-  { gradient: "from-[#C4A35A] to-[#A88B48]", ring: "group-hover:ring-[#C4A35A]/25" },
-  { gradient: "from-[#1E4A85] to-[#0F2744]", ring: "group-hover:ring-[#1E4A85]/20" },
-  { gradient: "from-[#C4A35A] to-[#8C7340]", ring: "group-hover:ring-[#C4A35A]/25" },
+  { gradient: "from-[#003366] to-[#002244]", ring: "group-hover:ring-[#003366]/20" },
+  { gradient: "from-[#FF7F0E] to-[#E66A00]", ring: "group-hover:ring-[#FF7F0E]/25" },
+  { gradient: "from-[#28A745] to-[#1E7E34]", ring: "group-hover:ring-[#28A745]/25" },
+  { gradient: "from-[#0056b3] to-[#003366]", ring: "group-hover:ring-[#0056b3]/20" },
+  { gradient: "from-[#FF7F0E] to-[#CC5500]", ring: "group-hover:ring-[#FF7F0E]/25" },
 ];
 
 interface StatsSectionProps {
@@ -31,8 +31,9 @@ export default function StatsSection({ config }: StatsSectionProps) {
   if (stats.length === 0) return null;
 
   return (
-    <section className="relative z-10 bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <section className="relative z-10 overflow-hidden bg-[#F8F9FA] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="up-wave-decor" aria-hidden />
+      <div className="relative z-[1] mx-auto max-w-7xl">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
           {stats.map((stat: StatItem, i: number) => {
             const Icon = ICON_MAP[stat.iconKey] || FiBook;
@@ -48,7 +49,7 @@ export default function StatsSection({ config }: StatsSectionProps) {
                 className="group"
               >
                 <div
-                  className={`relative flex h-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white px-3 py-6 shadow-[0_8px_24px_rgba(15,23,42,0.04)] ring-1 ring-transparent transition-all duration-300 group-hover:shadow-[0_16px_40px_rgba(45,93,168,0.12)] ${color.ring}`}
+                  className={`relative flex h-full flex-col items-center justify-center overflow-hidden rounded-xl border border-[#E5E7EB] bg-white px-3 py-6 shadow-[0_4px_16px_rgba(0,51,102,0.06)] ring-1 ring-transparent transition-all duration-300 group-hover:shadow-[0_12px_32px_rgba(0,51,102,0.12)] ${color.ring}`}
                 >
                   <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${color.gradient}`} />
                   <motion.div

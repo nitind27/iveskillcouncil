@@ -50,7 +50,7 @@ function PayContent() {
           <p className="text-sm text-[#6B7280] mb-6">{error || "Order not found"}</p>
           <Link
             href="/userpanel/franchise-plans"
-            className="inline-block rounded-xl bg-[#1E4A85] px-6 py-3 text-sm font-semibold text-white"
+            className="inline-block rounded-xl bg-[#003366] px-6 py-3 text-sm font-semibold text-white"
           >
             View franchise plans
           </Link>
@@ -60,17 +60,17 @@ function PayContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#0F2A4A] to-[#1E4A85] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#001a33] to-[#003366] px-4 py-10">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1E4A85]/10 text-[#1E4A85]">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#003366]/10 text-[#003366]">
             <IndianRupee className="h-7 w-7" />
           </div>
-          <h1 className="text-xl font-bold text-[#1E4A85]">Franchise Fee Payment</h1>
+          <h1 className="text-xl font-bold text-[#003366]">Franchise Fee Payment</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {order.fullName} · {order.planName}
           </p>
-          <p className="mt-3 text-3xl font-extrabold text-[#1E4A85]">
+          <p className="mt-3 text-3xl font-extrabold text-[#003366]">
             ₹{order.amount.toLocaleString("en-IN")}
           </p>
         </div>

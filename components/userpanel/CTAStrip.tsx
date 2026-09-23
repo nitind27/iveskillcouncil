@@ -25,9 +25,9 @@ export default function CTAStrip() {
 
   return (
     <section className="relative overflow-hidden bg-[#070F1C] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(196,163,90,0.14),transparent_58%)]" />
-      <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#1E4A85]/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 top-8 h-56 w-56 rounded-full bg-[#C4A35A]/12 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(255,127,14,0.14),transparent_58%)]" />
+      <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#003366]/40 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 top-8 h-56 w-56 rounded-full bg-[#FF7F0E]/12 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
         <motion.div
@@ -35,14 +35,14 @@ export default function CTAStrip() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-3xl border border-[#C4A35A]/25 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+          className="relative overflow-hidden rounded-3xl border border-[#FF7F0E]/25 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#163A6B] via-[#102A4C] to-[#0B1F38]" />
-          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#C4A35A] via-white/60 to-[#C4A35A]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#002244] via-[#002244] to-[#001a33]" />
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
 
           <div className="relative grid items-center gap-10 p-8 sm:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:p-12">
             <div>
-              <span className="mb-4 inline-flex rounded-full border border-[#C4A35A]/35 bg-[#C4A35A]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#C4A35A]">
+              <span className="mb-4 inline-flex rounded-full border border-[#FF7F0E]/35 bg-[#FF7F0E]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#FF7F0E]">
                 Get started today
               </span>
               <h2 className="text-3xl font-extrabold leading-tight text-white md:text-4xl">
@@ -62,7 +62,7 @@ export default function CTAStrip() {
                     transition={{ delay: 0.12 + i * 0.06 }}
                     className="flex items-center gap-2.5 text-sm text-white/85"
                   >
-                    <FiCheckCircle className="h-4 w-4 flex-shrink-0 text-[#C4A35A]" />
+                    <FiCheckCircle className="h-4 w-4 flex-shrink-0 text-[#FF7F0E]" />
                     {perk}
                   </motion.div>
                 ))}
@@ -71,7 +71,7 @@ export default function CTAStrip() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href={up("/userpanel/courses")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#1E4A85] shadow-lg transition-colors hover:bg-[#EEF2F7]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] px-5 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#E66A00]"
                 >
                   Browse Courses
                   <FiArrowRight className="h-4 w-4" />
@@ -93,7 +93,7 @@ export default function CTAStrip() {
                   animate={{ scale: 1, opacity: 1 }}
                   className="flex min-h-[180px] flex-col items-center justify-center text-center"
                 >
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#C4A35A] text-lg font-bold text-[#0F172A]">
+                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#28A745] text-lg font-bold text-white">
                     ✓
                   </span>
                   <p className="text-lg font-bold text-white">You&apos;re subscribed</p>
@@ -102,7 +102,7 @@ export default function CTAStrip() {
               ) : (
                 <>
                   <div className="mb-5 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C4A35A]/15 text-[#C4A35A]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF7F0E]/15 text-[#FF7F0E]">
                       <FiMail className="h-5 w-5" />
                     </span>
                     <div>
@@ -117,11 +117,11 @@ export default function CTAStrip() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
-                      className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm text-white placeholder-white/45 outline-none transition-colors focus:border-[#C4A35A]/60 focus:bg-white/12"
+                      className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm text-white placeholder-white/45 outline-none transition-colors focus:border-[#FF7F0E]/60 focus:bg-white/12"
                     />
                     <button
                       type="submit"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C4A35A] py-3.5 text-sm font-bold text-[#0F172A] shadow-[0_8px_24px_rgba(196,163,90,0.28)] transition-colors hover:bg-[#A88B48] hover:text-white"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF7F0E] py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,127,14,0.28)] transition-colors hover:bg-[#E66A00]"
                     >
                       Subscribe
                       <FiSend className="h-4 w-4" />

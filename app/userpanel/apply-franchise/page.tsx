@@ -37,7 +37,7 @@ interface UploadedDoc { key: string; url: string; name: string; type: string; la
 
 const STEPS = ["Personal Info", "Business Info", "Documents", "Review & Submit"];
 
-const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] bg-white focus:border-[#2D5DA8] focus:ring-2 focus:ring-[#2D5DA8]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
+const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] bg-white focus:border-[#0056b3] focus:ring-2 focus:ring-[#0056b3]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
 const labelCls = "block text-sm font-semibold text-[#374151] mb-1.5";
 
 export default function ApplyFranchisePage() {
@@ -151,7 +151,7 @@ export default function ApplyFranchisePage() {
           <p className="text-[#6B7280] mb-2">Thank you, <strong>{fullName}</strong>.</p>
           <p className="text-[#6B7280] text-sm mb-8">Our team will review your application and contact you at <strong>{email}</strong> within 2–3 business days.</p>
           <Link href="/userpanel">
-            <motion.span whileHover={{ scale: 1.03 }} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#2D5DA8] text-white font-bold hover:bg-[#1E4A85] transition-all cursor-pointer">
+            <motion.span whileHover={{ scale: 1.03 }} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#0056b3] text-white font-bold hover:bg-[#003366] transition-all cursor-pointer">
               Back to Home <FiArrowRight className="w-4 h-4" />
             </motion.span>
           </Link>
@@ -163,7 +163,7 @@ export default function ApplyFranchisePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero */}
-      <div className="relative bg-gradient-to-br from-[#2D5DA8] via-[#1E4A85] to-[#1a3d70] py-14 px-4 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] py-14 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(168,198,58,0.12),transparent)]" />
         <div className="absolute -bottom-1 left-0 right-0 h-10 bg-[#F8FAFC]" style={{ clipPath: "ellipse(55% 100% at 50% 100%)" }} />
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto text-center relative">
@@ -179,17 +179,17 @@ export default function ApplyFranchisePage() {
         {/* Step indicator */}
         <div className="flex items-center justify-between mb-10 relative">
           <div className="absolute top-4 left-0 right-0 h-0.5 bg-[#E5E7EB] -z-10" />
-          <div className="absolute top-4 left-0 h-0.5 bg-[#2D5DA8] -z-10 transition-all duration-500" style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }} />
+          <div className="absolute top-4 left-0 h-0.5 bg-[#0056b3] -z-10 transition-all duration-500" style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }} />
           {STEPS.map((s, i) => (
             <div key={s} className="flex flex-col items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${
                 i < step ? "bg-[#A8C63A] border-[#A8C63A] text-white" :
-                i === step ? "bg-[#2D5DA8] border-[#2D5DA8] text-white" :
+                i === step ? "bg-[#0056b3] border-[#0056b3] text-white" :
                 "bg-white border-[#E5E7EB] text-[#9CA3AF]"
               }`}>
                 {i < step ? <FiCheckCircle className="w-4 h-4" /> : i + 1}
               </div>
-              <span className={`text-xs font-semibold hidden sm:block ${i === step ? "text-[#2D5DA8]" : "text-[#9CA3AF]"}`}>{s}</span>
+              <span className={`text-xs font-semibold hidden sm:block ${i === step ? "text-[#0056b3]" : "text-[#9CA3AF]"}`}>{s}</span>
             </div>
           ))}
         </div>
@@ -245,7 +245,7 @@ export default function ApplyFranchisePage() {
                   <div className="grid grid-cols-2 gap-3">
                     {[{ v: "INDIVIDUAL", l: "Individual / Proprietor" }, { v: "ENTITY", l: "Registered Entity (Pvt/LLP/Trust)" }].map(({ v, l }) => (
                       <button key={v} type="button" onClick={() => setBusinessType(v)}
-                        className={`p-4 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${businessType === v ? "border-[#2D5DA8] bg-[#2D5DA8]/05 text-[#2D5DA8]" : "border-[#E5E7EB] text-[#374151] hover:border-[#2D5DA8]/40"}`}>
+                        className={`p-4 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${businessType === v ? "border-[#0056b3] bg-[#0056b3]/05 text-[#0056b3]" : "border-[#E5E7EB] text-[#374151] hover:border-[#0056b3]/40"}`}>
                         {l}
                       </button>
                     ))}
@@ -280,7 +280,7 @@ export default function ApplyFranchisePage() {
                     const uploaded = docs.find((d) => d.key === doc.key);
                     const isUploading = uploading === doc.key;
                     return (
-                      <div key={doc.key} className={`relative rounded-2xl border-2 p-4 transition-all ${uploaded ? "border-[#A8C63A] bg-[#A8C63A]/05" : "border-[#E5E7EB] bg-white hover:border-[#2D5DA8]/30"}`}>
+                      <div key={doc.key} className={`relative rounded-2xl border-2 p-4 transition-all ${uploaded ? "border-[#A8C63A] bg-[#A8C63A]/05" : "border-[#E5E7EB] bg-white hover:border-[#0056b3]/30"}`}>
                         <div className="flex items-start justify-between gap-2 mb-3">
                           <div>
                             <p className="text-sm font-semibold text-[#1A1A1A]">{doc.label}</p>
@@ -306,7 +306,7 @@ export default function ApplyFranchisePage() {
                               ref={(el) => { fileRefs.current[doc.key] = el; }}
                               onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc(doc.key, doc.label, f); }}
                             />
-                            <span className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${isUploading ? "bg-[#EEF2F7] text-[#6B7280]" : "bg-[#2D5DA8]/10 text-[#2D5DA8] hover:bg-[#2D5DA8]/20"}`}>
+                            <span className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${isUploading ? "bg-[#EEF2F7] text-[#6B7280]" : "bg-[#0056b3]/10 text-[#0056b3] hover:bg-[#0056b3]/20"}`}>
                               {isUploading ? <FiLoader className="w-3.5 h-3.5 animate-spin" /> : <FiUpload className="w-3.5 h-3.5" />}
                               {isUploading ? "Uploading..." : "Choose File"}
                             </span>
@@ -345,7 +345,7 @@ export default function ApplyFranchisePage() {
                     ))}
                   </div>
                 </div>
-                <div className="p-4 rounded-2xl bg-[#EEF2F7] border border-[#2D5DA8]/15 text-sm text-[#374151]">
+                <div className="p-4 rounded-2xl bg-[#EEF2F7] border border-[#0056b3]/15 text-sm text-[#374151]">
                   By submitting, you confirm that all information provided is accurate. Our team will verify your documents and contact you within 2–3 business days.
                 </div>
               </div>
@@ -366,7 +366,7 @@ export default function ApplyFranchisePage() {
                 </button>
               )}
               {step < STEPS.length - 1 ? (
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={next} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#2D5DA8] text-white font-bold text-sm hover:bg-[#1E4A85] transition-all shadow-md">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={next} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0056b3] text-white font-bold text-sm hover:bg-[#003366] transition-all shadow-md">
                   Continue <FiArrowRight className="w-4 h-4" />
                 </motion.button>
               ) : (

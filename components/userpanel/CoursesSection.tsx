@@ -35,7 +35,7 @@ function CourseCard({ course, index, href }: { course: CourseItem; index: number
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.45, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#1E4A85]/25 hover:shadow-[0_18px_40px_rgba(30,74,133,0.12)]"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#003366]/25 hover:shadow-[0_18px_40px_rgba(0,51,102,0.12)]"
     >
       <div className="relative h-44 overflow-hidden bg-[#EEF2F7]">
         <img
@@ -44,15 +44,15 @@ function CourseCard({ course, index, href }: { course: CourseItem; index: number
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           onError={() => setSrc(FALLBACK_IMAGE)}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/70 via-[#0F2744]/10 to-transparent" />
-        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-[#0F2744]/80 px-2.5 py-1 text-[11px] font-semibold text-white">
-          <FiClock className="h-3 w-3 text-[#C4A35A]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#001a33]/70 via-[#001a33]/10 to-transparent" />
+        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-[#001a33]/80 px-2.5 py-1 text-[11px] font-semibold text-white">
+          <FiClock className="h-3 w-3 text-[#FF7F0E]" />
           {course.duration}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="mb-2 text-[15px] font-bold leading-snug text-[#0F172A] transition-colors group-hover:text-[#1E4A85]">
+        <h3 className="mb-2 text-[15px] font-bold leading-snug text-[#0F172A] transition-colors group-hover:text-[#003366]">
           {formatTitle(course.title)}
         </h3>
         {course.description ? (
@@ -64,7 +64,7 @@ function CourseCard({ course, index, href }: { course: CourseItem; index: number
         )}
         <Link
           href={href}
-          className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#1E4A85] bg-white py-2.5 text-sm font-semibold text-[#1E4A85] transition-colors hover:bg-[#1E4A85] hover:text-white"
+          className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#003366] bg-white py-2.5 text-sm font-semibold text-[#003366] transition-colors hover:bg-[#003366] hover:text-white"
         >
           View Details
           <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -94,7 +94,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
           transition={{ duration: 0.5 }}
           className="mb-12 text-center"
         >
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#1E4A85]">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
             <FiBookOpen className="h-3.5 w-3.5" />
             Programs
           </span>
@@ -120,7 +120,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
         >
           <Link
             href={up("/userpanel/courses")}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#1E4A85] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#163A6B]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#FF7F0E] px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(255,127,14,0.3)] transition-colors hover:bg-[#E66A00]"
           >
             Browse all courses
             <FiArrowRight className="h-4 w-4" />

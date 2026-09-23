@@ -69,6 +69,7 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
   const [form, setForm] = useState(emptyForm);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phone?: string }>({});
   const profileRef = useRef<HTMLInputElement>(null);
   const signatureRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +83,7 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
     setCreatedCode(null);
     setProfilePreview(null);
     setSignaturePreview(null);
+    setFieldErrors({});
     setForm({
       ...emptyForm,
       franchiseId: isSubAdmin && user?.franchiseId ? String(user.franchiseId) : "",
@@ -106,6 +108,8 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
 
   const set = (key: keyof typeof emptyForm, value: string | boolean) => {
     setForm((f) => ({ ...f, [key]: value }));
+    if (key === "email") setFieldErrors((e) => ({ ...e, email: undefined }));
+    if (key === "phone") setFieldErrors((e) => ({ ...e, phone: undefined }));
   };
 
   const readFile = (file: File, kind: "profile" | "signature") => {
@@ -127,6 +131,7 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
   };
 
   const submit = async () => {
+    setFieldErrors({});
     if (!form.franchiseId) {
       await showError("Franchise", "Select a franchise");
       return;
@@ -139,10 +144,12 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
       return;
     }
     if (!e.valid) {
+      setFieldErrors({ email: e.error! });
       await showError("Email", e.error!);
       return;
     }
     if (!p.valid) {
+      setFieldErrors({ phone: p.error! });
       await showError("Mobile", p.error!);
       return;
     }
@@ -189,7 +196,18 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
       });
       const json = await res.json();
       if (!res.ok) {
-        await showError("Error", json.error || "Failed to add student");
+        const msg = String(json.error || "Failed to add student");
+        const field = String(json.field || "");
+        const lower = msg.toLowerCase();
+        if (field === "email" || (!field && lower.includes("email"))) {
+          setFieldErrors({ email: msg });
+          await showError("Email", msg);
+        } else if (field === "phone" || (!field && (lower.includes("mobile") || lower.includes("phone")))) {
+          setFieldErrors({ phone: msg });
+          await showError("Mobile", msg);
+        } else {
+          await showError("Error", msg);
+        }
         return;
       }
       const code = json.data?.studentCode as string;
@@ -197,9 +215,11 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
       setCreatedCode(code);
       await showSuccess(
         "Student added",
-        json.data?.emailSent
-          ? `ID ${code} created. Account details emailed to ${form.email.trim()}. Assign a course next.`
-          : `ID ${code} created. Assign a course next.`
+        json.data?.phoneShared
+          ? `ID ${code} created. This mobile was already used by another account, so it was saved as alternate mobile.`
+          : json.data?.emailSent
+            ? `ID ${code} created. Account details emailed to ${form.email.trim()}. Assign a course next.`
+            : `ID ${code} created. Assign a course next.`
       );
       onSuccess?.({
         id: String(json.data?.id),
@@ -316,12 +336,12 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
                 className={inputClass}
               />
             </Field>
-            <Field label="Mobile">
+            <Field label="Mobile" error={fieldErrors.phone}>
               <input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
                 placeholder="Enter Mobile Number"
-                className={inputClass}
+                className={cn(inputClass, fieldErrors.phone && "border-red-400 focus:border-red-400 focus:ring-red-200")}
               />
             </Field>
             <Field label="Alternate Mobile">
@@ -332,13 +352,13 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
                 className={inputClass}
               />
             </Field>
-            <Field label="Email Address *">
+            <Field label="Email Address *" error={fieldErrors.email}>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
                 placeholder="Enter Email Address"
-                className={inputClass}
+                className={cn(inputClass, fieldErrors.email && "border-red-400 focus:border-red-400 focus:ring-red-200")}
               />
             </Field>
           </div>
@@ -526,11 +546,20 @@ export function AddStudentModal({ open, onClose, onSuccess }: AddStudentModalPro
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  error?: string;
+}) {
   return (
     <div>
       <label className={labelClass}>{label}</label>
       {children}
+      {error ? <p className="mt-1 text-[11px] font-semibold text-red-600">{error}</p> : null}
     </div>
   );
 }

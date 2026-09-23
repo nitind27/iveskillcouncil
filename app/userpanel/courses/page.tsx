@@ -45,8 +45,8 @@ const TYPE_LABEL: Record<string, string> = {
 
 const TYPE_STYLE: Record<string, string> = {
   SILVER: "bg-white/95 text-[#475569]",
-  GOLD: "bg-[#C4A35A] text-[#1A1408]",
-  DIAMOND: "bg-[#1E4A85] text-white",
+  GOLD: "bg-[#FF7F0E] text-white",
+  DIAMOND: "bg-[#003366] text-white",
 };
 
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -126,7 +126,7 @@ function CourseCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.32), ease: [0.22, 1, 0.36, 1] }}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E8ECF1] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#1E4A85]/20 hover:shadow-[0_16px_40px_rgba(30,74,133,0.1)]"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E8ECF1] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#003366]/20 hover:shadow-[0_16px_40px_rgba(0,51,102,0.1)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-[#EEF2F7]">
         <img
@@ -135,15 +135,15 @@ function CourseCard({
           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           onError={() => setImgSrc(CATEGORY_IMAGES.default)}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F2744]/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#001a33]/50 to-transparent" />
         <span className={`absolute left-3 top-3 rounded-md px-2.5 py-1 text-[11px] font-bold shadow-sm ${TYPE_STYLE[course.type] || TYPE_STYLE.SILVER}`}>
           {TYPE_LABEL[course.type] || course.type}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#1E4A85]">{catName}</p>
-        <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug text-[#0F172A] group-hover:text-[#1E4A85]">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#003366]">{catName}</p>
+        <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug text-[#0F172A] group-hover:text-[#003366]">
           {formatTitle(course.name)}
         </h3>
         <p className="mb-4 line-clamp-2 flex-1 text-sm leading-relaxed text-[#64748B]">
@@ -156,14 +156,14 @@ function CourseCard({
 
         <div className="mb-4 flex items-center border-t border-[#F1F5F9] pt-3">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B]">
-            <FiClock className="h-3.5 w-3.5 text-[#C4A35A]" />
+            <FiClock className="h-3.5 w-3.5 text-[#FF7F0E]" />
             {formatDuration(course.durationMonths)}
           </span>
         </div>
 
         <Link
           href={up("/userpanel/franchises")}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E4A85] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#163A6B]"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF7F0E] py-2.5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(255,127,14,0.25)] transition-colors hover:bg-[#E66A00]"
         >
           Enroll Course
           <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -239,7 +239,7 @@ export default function UserPanelCoursesPage() {
       <section className="border-b border-[#E5E7EB] bg-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#1E4A85]/15 bg-[#1E4A85]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1E4A85]">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#003366]">
               <FiBookOpen className="h-3.5 w-3.5" />
               All Programs
             </span>
@@ -258,15 +258,15 @@ export default function UserPanelCoursesPage() {
             className="mt-6 flex flex-wrap gap-3"
           >
             <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2.5 text-sm">
-              <span className="font-bold text-[#1E4A85]">{presentCategories.length}</span>
+              <span className="font-bold text-[#003366]">{presentCategories.length}</span>
               <span className="ml-1.5 text-[#64748B]">categories</span>
             </div>
             <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2.5 text-sm">
-              <span className="font-bold text-[#1E4A85]">{courses.length}</span>
+              <span className="font-bold text-[#003366]">{courses.length}</span>
               <span className="ml-1.5 text-[#64748B]">programmes</span>
             </div>
             <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-2.5 text-sm">
-              <span className="font-bold text-[#1E4A85]">{filtered.length}</span>
+              <span className="font-bold text-[#003366]">{filtered.length}</span>
               <span className="ml-1.5 text-[#64748B]">showing now</span>
             </div>
           </motion.div>
@@ -285,8 +285,8 @@ export default function UserPanelCoursesPage() {
                   onClick={() => setActive("ALL")}
                   className={`flex flex-shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-left text-sm font-semibold transition-all lg:w-full ${
                     activeSlug === "ALL"
-                      ? "border-[#1E4A85] bg-[#1E4A85] text-white shadow-sm"
-                      : "border-[#E5E7EB] bg-white text-[#475569] hover:border-[#1E4A85]/25 hover:text-[#1E4A85]"
+                      ? "border-[#003366] bg-[#003366] text-white shadow-sm"
+                      : "border-[#E5E7EB] bg-white text-[#475569] hover:border-[#003366]/25 hover:text-[#003366]"
                   }`}
                 >
                   <FiGrid className="h-4 w-4 flex-shrink-0" />
@@ -306,8 +306,8 @@ export default function UserPanelCoursesPage() {
                       onClick={() => setActive(cat.slug)}
                       className={`flex flex-shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-left text-sm font-semibold transition-all lg:w-full ${
                         isActive
-                          ? "border-[#C4A35A]/50 bg-[#C4A35A]/12 text-[#7A6230]"
-                          : "border-[#E5E7EB] bg-white text-[#475569] hover:border-[#1E4A85]/25 hover:text-[#1E4A85]"
+                          ? "border-[#FF7F0E]/50 bg-[#FF7F0E]/12 text-[#CC5500]"
+                          : "border-[#E5E7EB] bg-white text-[#475569] hover:border-[#003366]/25 hover:text-[#003366]"
                       }`}
                     >
                       <span className="flex-shrink-0">{icon}</span>
@@ -331,7 +331,7 @@ export default function UserPanelCoursesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by course name or description..."
-                className="w-full rounded-xl border border-[#E5E7EB] bg-white py-3 pl-12 pr-10 text-sm shadow-sm outline-none transition-all focus:border-[#1E4A85]/35 focus:ring-2 focus:ring-[#1E4A85]/10"
+                className="w-full rounded-xl border border-[#E5E7EB] bg-white py-3 pl-12 pr-10 text-sm shadow-sm outline-none transition-all focus:border-[#003366]/35 focus:ring-2 focus:ring-[#003366]/10"
               />
               {search && (
                 <button
@@ -350,7 +350,7 @@ export default function UserPanelCoursesPage() {
                 <FiBookOpen className="mx-auto mb-4 h-12 w-12 text-[#CBD5E1]" />
                 <h2 className="mb-2 text-xl font-bold text-[#0F172A]">No courses yet</h2>
                 <p className="mb-6 text-[#64748B]">Courses appear here when added in the admin panel.</p>
-                <Link href={up("/userpanel/franchises")} className="inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] px-6 py-3 font-semibold text-white hover:bg-[#163A6B]">
+                <Link href={up("/userpanel/franchises")} className="inline-flex items-center gap-2 rounded-xl bg-[#003366] px-6 py-3 font-semibold text-white hover:bg-[#002244]">
                   Browse Branches <FiArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -379,7 +379,7 @@ export default function UserPanelCoursesPage() {
                       <section key={slug} className="scroll-mt-28">
                         <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-[#E5E7EB] pb-4">
                           <div className="flex items-center gap-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E4A85]/10 text-[#1E4A85]">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#003366]/10 text-[#003366]">
                               {icon}
                             </span>
                             <div>
@@ -392,7 +392,7 @@ export default function UserPanelCoursesPage() {
                           <button
                             type="button"
                             onClick={() => setActive(slug)}
-                            className="text-sm font-semibold text-[#1E4A85] hover:text-[#163A6B]"
+                            className="text-sm font-semibold text-[#003366] hover:text-[#002244]"
                           >
                             View all {items.length} →
                           </button>
@@ -412,7 +412,7 @@ export default function UserPanelCoursesPage() {
                           <button
                             type="button"
                             onClick={() => setActive(slug)}
-                            className="mt-4 text-sm font-semibold text-[#1E4A85] hover:underline"
+                            className="mt-4 text-sm font-semibold text-[#003366] hover:underline"
                           >
                             + {items.length - 6} more in {cat.name}
                           </button>
@@ -449,15 +449,15 @@ export default function UserPanelCoursesPage() {
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative mt-12 overflow-hidden rounded-2xl border border-[#1E4A85]/15 bg-gradient-to-r from-[#163A6B] to-[#1E4A85] px-6 py-8 sm:flex sm:items-center sm:justify-between"
+            className="relative mt-12 overflow-hidden rounded-2xl border border-[#003366]/15 bg-gradient-to-r from-[#002244] to-[#003366] px-6 py-8 sm:flex sm:items-center sm:justify-between"
           >
             <div className="mb-4 sm:mb-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#C4A35A]">Ready to start?</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#FF7F0E]">Ready to start?</p>
               <p className="mt-1 text-lg font-bold text-white">Find a franchise branch and enrol today.</p>
             </div>
             <Link
               href={up("/userpanel/franchises")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#C4A35A] px-6 py-3 text-sm font-bold text-[#0F172A] transition-colors hover:bg-[#A88B48] hover:text-white"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#E66A00]"
             >
               Browse Branches
               <FiArrowRight className="h-4 w-4" />

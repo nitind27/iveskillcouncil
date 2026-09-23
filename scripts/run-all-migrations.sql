@@ -54,3 +54,34 @@ CREATE TABLE IF NOT EXISTS `announcements` (
   KEY `idx_announcement_created` (`created_at`),
   CONSTRAINT `announcements_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 7. Student subject marks (class-wise marks entry)
+CREATE TABLE IF NOT EXISTS `student_subject_marks` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` BIGINT UNSIGNED NOT NULL,
+  `course_id` BIGINT UNSIGNED NOT NULL,
+  `subject_name` VARCHAR(150) NOT NULL,
+  `max_marks` INT NOT NULL DEFAULT 100,
+  `obtained_marks` INT NOT NULL DEFAULT 0,
+  `updated_by_id` BIGINT UNSIGNED NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_student_course_subject` (`student_id`, `course_id`, `subject_name`),
+  KEY `idx_ssm_course` (`course_id`),
+  KEY `idx_ssm_student` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 8. Course subjects (per-course syllabus for marks / certificates)
+CREATE TABLE IF NOT EXISTS `course_subjects` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `course_id` BIGINT UNSIGNED NOT NULL,
+  `name` VARCHAR(150) NOT NULL,
+  `max_marks` INT NOT NULL DEFAULT 100,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_course_subject_name` (`course_id`, `name`),
+  KEY `idx_course_subject_course` (`course_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

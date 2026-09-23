@@ -30,6 +30,8 @@ import {
   Clock,
   Pencil,
   Trash2,
+  Award,
+  FileText,
 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,11 +39,56 @@ import { ROLES } from "@/lib/permissions";
 import { AddStudentModal } from "@/components/students/AddStudentModal";
 import { EditStudentModal } from "@/components/students/EditStudentModal";
 import { AssignCourseModal } from "@/components/students/AssignCourseModal";
+import { StudentOfficialCertificatesModal } from "@/components/certificates/StudentOfficialCertificatesModal";
 import { showDeleteConfirm, showSuccess, showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
+/** Fallback when student has no uploaded profile photo */
+const STUDENT_PHOTO_FALLBACK = "/nophoto.jpeg";
+
 /** Above ChatWidget (z-400) and admin chrome so drawer is never clipped/covered. */
 const STUDENT_DRAWER_Z = 10050;
+
+function StudentPhoto({
+  src,
+  name,
+  size = 40,
+  className,
+  onPreview,
+}: {
+  src?: string | null;
+  name: string;
+  size?: number;
+  className?: string;
+  onPreview?: (url: string, name: string) => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = !failed && src ? src : STUDENT_PHOTO_FALLBACK;
+  const clickable = typeof onPreview === "function";
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={name}
+      width={size}
+      height={size}
+      onError={() => setFailed(true)}
+      onClick={(e) => {
+        if (!clickable) return;
+        e.stopPropagation();
+        onPreview(url, name);
+      }}
+      title={clickable ? "Click to preview photo" : undefined}
+      className={cn(
+        "shrink-0 rounded-lg object-cover ring-1 ring-[#1E4A85]/15 bg-[#1E4A85]/5",
+        clickable && "cursor-zoom-in transition hover:ring-2 hover:ring-[#1E4A85]/40",
+        className
+      )}
+      style={{ width: size, height: size }}
+      draggable={false}
+    />
+  );
+}
 
 interface StudentItem {
   id: string;
@@ -49,6 +96,7 @@ interface StudentItem {
   fullName: string;
   email: string;
   phone: string | null;
+  profileImageUrl?: string | null;
   franchiseId?: string;
   franchiseName: string;
   courseId?: string | null;
@@ -144,6 +192,9 @@ export default function StudentsPage() {
     fullName: string;
     franchiseId?: string;
   } | null>(null);
+  const [certStudentId, setCertStudentId] = useState<string | null>(null);
+  const [certTab, setCertTab] = useState<"vocational" | "marksheet">("vocational");
+  const [photoPreview, setPhotoPreview] = useState<{ url: string; name: string } | null>(null);
 
   const handleDelete = async (student: StudentItem) => {
     const res = await showDeleteConfirm(
@@ -184,13 +235,22 @@ export default function StudentsPage() {
   }, [search]);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selected && !photoPreview) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [selected]);
+  }, [selected, photoPreview]);
+
+  useEffect(() => {
+    if (!photoPreview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPhotoPreview(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [photoPreview]);
 
   useEffect(() => {
     setPage(1);
@@ -457,22 +517,30 @@ export default function StudentsPage() {
               </button>
             </div>
           ) : (
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead className="sticky top-0 z-[1] border-b border-[#1E4A85]/10 bg-[#1E4A85]/[0.04]">
                 <tr>
-                  {["Student", "Franchise", "Course", "Fees", "Admitted", "Status", "Actions"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className={cn(
-                          "px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1E4A85]/70",
-                          h === "Actions" ? "text-right" : "text-left"
-                        )}
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {[
+                    "Photo",
+                    "Student",
+                    "Franchise",
+                    "Course",
+                    "Fees",
+                    "Admitted",
+                    "Status",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className={cn(
+                        "px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1E4A85]/70",
+                        h === "Actions" ? "text-right" : "text-left",
+                        h === "Photo" && "w-[72px] px-3"
+                      )}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -486,38 +554,41 @@ export default function StudentsPage() {
                       transition={{ delay: Math.min(i * 0.02, 0.2) }}
                       className="border-b border-border/50 transition-colors hover:bg-[#1E4A85]/[0.03]"
                     >
+                      <td className="px-3 py-3">
+                        <StudentPhoto
+                          src={s.profileImageUrl}
+                          name={s.fullName}
+                          size={44}
+                          onPreview={(url, name) => setPhotoPreview({ url, name })}
+                        />
+                      </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-start gap-2.5">
-                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/10 text-[#1E4A85]">
-                            <GraduationCap className="h-4 w-4" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-foreground">{s.fullName}</p>
-                            {s.studentCode && (
-                              <p className="mt-0.5 font-mono text-[10px] font-bold text-[#C4A35A]">
-                                {s.studentCode}
-                              </p>
-                            )}
-                            <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
-                              <Mail className="h-3 w-3 shrink-0" />
-                              {s.email}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">{s.fullName}</p>
+                          {s.studentCode && (
+                            <p className="mt-0.5 font-mono text-[10px] font-bold text-[#C4A35A]">
+                              {s.studentCode}
                             </p>
-                            {s.phone && (
-                              <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                                <Phone className="h-3 w-3" />
-                                {s.phone}
-                              </p>
-                            )}
-                            {addr && (
-                              <p
-                                className="mt-1 flex max-w-[220px] items-center gap-1 truncate text-[10px] text-muted-foreground"
-                                title={addr}
-                              >
-                                <MapPin className="h-3 w-3 shrink-0 text-[#1E4A85]" />
-                                {addr}
-                              </p>
-                            )}
-                          </div>
+                          )}
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            {s.email}
+                          </p>
+                          {s.phone && (
+                            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <Phone className="h-3 w-3" />
+                              {s.phone}
+                            </p>
+                          )}
+                          {addr && (
+                            <p
+                              className="mt-1 flex max-w-[220px] items-center gap-1 truncate text-[10px] text-muted-foreground"
+                              title={addr}
+                            >
+                              <MapPin className="h-3 w-3 shrink-0 text-[#1E4A85]" />
+                              {addr}
+                            </p>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -597,6 +668,18 @@ export default function StudentsPage() {
                           >
                             <Eye className="h-3.5 w-3.5" />
                             <span>View</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCertTab("vocational");
+                              setCertStudentId(s.id);
+                            }}
+                            title="Official certificate & marksheet"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#C4A35A]/40 bg-[#C4A35A]/10 px-2.5 py-1.5 text-xs font-semibold text-[#8B6914] transition hover:border-[#C4A35A] hover:bg-[#C4A35A]/20"
+                          >
+                            <Award className="h-3.5 w-3.5" />
+                            <span>Cert</span>
                           </button>
                           <button
                             type="button"
@@ -750,14 +833,23 @@ export default function StudentsPage() {
                 >
                   <div className="shrink-0 border-b border-[#1E4A85]/15 bg-gradient-to-r from-[#0F2A4A] via-[#1E4A85] to-[#163A6B] px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-white">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]/80">
-                          Student details
-                        </p>
-                        <h2 className="truncate text-lg font-bold">{selected.fullName}</h2>
-                        <p className="mt-0.5 truncate text-sm text-white/70">{selected.email}</p>
-                        <div className="mt-2">
-                          <StatusBadge status={selected.status} />
+                      <div className="flex min-w-0 items-start gap-3">
+                        <StudentPhoto
+                          src={selected.profileImageUrl}
+                          name={selected.fullName}
+                          size={56}
+                          className="rounded-xl ring-2 ring-white/25"
+                          onPreview={(url, name) => setPhotoPreview({ url, name })}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]/80">
+                            Student details
+                          </p>
+                          <h2 className="truncate text-lg font-bold">{selected.fullName}</h2>
+                          <p className="mt-0.5 truncate text-sm text-white/70">{selected.email}</p>
+                          <div className="mt-2">
+                            <StatusBadge status={selected.status} />
+                          </div>
                         </div>
                       </div>
                       <button
@@ -859,6 +951,30 @@ export default function StudentsPage() {
                       <button
                         type="button"
                         onClick={() => {
+                          setCertTab("vocational");
+                          setCertStudentId(selected.id);
+                        }}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#C4A35A]/40 bg-[#C4A35A]/10 py-2.5 text-xs font-bold text-[#8B6914] transition hover:border-[#C4A35A] hover:bg-[#C4A35A]/20"
+                      >
+                        <Award className="h-4 w-4" />
+                        Certificate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCertTab("marksheet");
+                          setCertStudentId(selected.id);
+                        }}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#1E4A85]/20 bg-[#1E4A85]/5 py-2.5 text-xs font-bold text-[#1E4A85] transition hover:border-[#1E4A85]/40 hover:bg-[#1E4A85]/10"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Marksheet
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
                           setEditStudentId(selected.id);
                         }}
                         className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2.5 text-xs font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
@@ -895,6 +1011,61 @@ export default function StudentsPage() {
           document.body
         )}
 
+      {typeof document !== "undefined" &&
+        photoPreview &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              key="photo-preview"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+              style={{ zIndex: STUDENT_DRAWER_Z + 20 }}
+              onClick={() => setPhotoPreview(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Student photo preview"
+            >
+              <motion.div
+                initial={{ scale: 0.92, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.92, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/15 bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-[#0F2A4A] px-4 py-3 text-white">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E8D5A3]/80">
+                      Photo preview
+                    </p>
+                    <p className="truncate text-sm font-bold">{photoPreview.name}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreview(null)}
+                    className="rounded-lg bg-white/10 p-2 transition hover:bg-white/20"
+                    aria-label="Close preview"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-center bg-slate-50 p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photoPreview.url}
+                    alt={photoPreview.name}
+                    className="max-h-[min(70vh,520px)] w-full rounded-xl object-contain"
+                    draggable={false}
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body
+        )}
+
       <AddStudentModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -924,6 +1095,12 @@ export default function StudentsPage() {
         student={assignStudent}
         onClose={() => setAssignStudent(null)}
         onSuccess={() => mutate()}
+      />
+      <StudentOfficialCertificatesModal
+        studentId={certStudentId}
+        open={!!certStudentId}
+        initialTab={certTab}
+        onClose={() => setCertStudentId(null)}
       />
     </div>
   );

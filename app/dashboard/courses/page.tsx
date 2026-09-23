@@ -248,7 +248,11 @@ export default function SuperAdminCoursesPage() {
           description: courseForm.description.trim(),
           syllabus: courseForm.syllabus.trim(),
           eligibility: courseForm.eligibility.trim() || null,
-          certificateSubject: courseForm.certificateSubject.trim() || null,
+          certificateSubject:
+            courseForm.certificateSubjects
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .join(", ") || null,
           imageUrl: courseForm.imageUrl.trim() || null,
           previewVideoUrl: courseForm.previewVideoUrl.trim() || null,
           type: courseForm.type,

@@ -36,7 +36,7 @@ export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitc
 
   return (
     <div className={cn("relative flex items-center gap-1", className)}>
-      {!compact && <Globe className="h-4 w-4 shrink-0 text-[#1E4A85]" />}
+      {!compact && <Globe className="h-4 w-4 shrink-0 text-[#003366]" />}
 
       <div
         className={cn(
@@ -51,8 +51,8 @@ export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitc
             "px-2.5 transition",
             compact ? "h-full px-2.5" : "px-2.5 py-1.5",
             locale === "en"
-              ? "bg-[#1E4A85] text-white"
-              : "bg-white text-[#1E4A85] hover:bg-slate-50 dark:bg-white/5 dark:text-[#E8D5A3] dark:hover:bg-white/10"
+              ? "bg-[#003366] text-white"
+              : "bg-white text-[#003366] hover:bg-slate-50 dark:bg-white/5 dark:text-[#FFD4A8] dark:hover:bg-white/10"
           )}
         >
           EN
@@ -65,8 +65,8 @@ export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitc
             "max-w-[4.5rem] truncate transition",
             compact ? "h-full px-2" : "px-2.5 py-1.5",
             locale === regionalLocale
-              ? "bg-[#1E4A85] text-white"
-              : "bg-white text-[#1E4A85] hover:bg-slate-50 dark:bg-white/5 dark:text-[#E8D5A3] dark:hover:bg-white/10"
+              ? "bg-[#003366] text-white"
+              : "bg-white text-[#003366] hover:bg-slate-50 dark:bg-white/5 dark:text-[#FFD4A8] dark:hover:bg-white/10"
           )}
         >
           {regionalLabel}
@@ -90,7 +90,7 @@ export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitc
                   : t("lang.stateAutoDetected", "State auto-detected")
           }
         >
-          <Globe className={cn("shrink-0 text-[#1E4A85]/70", compact ? "h-3.5 w-3.5" : "hidden")} />
+          <Globe className={cn("shrink-0 text-[#003366]/70", compact ? "h-3.5 w-3.5" : "hidden")} />
           <span className={cn("truncate", compact ? "max-w-[56px] hidden xl:inline" : "max-w-[88px]")}>
             {stateDetecting ? "…" : stateOption.state}
           </span>
@@ -104,7 +104,7 @@ export function LanguageSwitcher({ variant = "admin", className }: LanguageSwitc
               onClick={() => setUserState(state)}
               className={cn(
                 "block w-full px-3 py-2 text-left text-xs hover:bg-muted",
-                userState === state && "bg-[#1E4A85]/10 font-semibold text-[#1E4A85]"
+                userState === state && "bg-[#003366]/10 font-semibold text-[#003366]"
               )}
             >
               {state}

@@ -164,7 +164,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
               type="button"
               aria-label="Previous slide"
               onClick={goPrev}
-              className="absolute left-3 sm:left-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#1E4A85] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
+              className="absolute left-3 sm:left-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#003366] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
             >
               <FiChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
@@ -172,7 +172,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
               type="button"
               aria-label="Next slide"
               onClick={goNext}
-              className="absolute right-3 sm:right-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#1E4A85] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
+              className="absolute right-3 sm:right-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#003366] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
             >
               <FiChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
@@ -189,7 +189,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
                   style={{
                     width: i === currentIndex ? 24 : 6,
                     backgroundColor:
-                      i === currentIndex ? "#C4A35A" : "rgba(255,255,255,0.6)",
+                      i === currentIndex ? "#FF7F0E" : "rgba(255,255,255,0.6)",
                   }}
                 />
               ))}
@@ -203,7 +203,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
         <div className="mx-auto flex max-w-7xl flex-col gap-3.5 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           {/* Council & Mission Indicator */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1E4A85] to-[#163A6B] text-[#C4A35A] shadow-sm">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#003366] to-[#002244] text-[#FF7F0E] shadow-sm">
               <FaGraduationCap className="h-5 w-5" />
             </div>
             <div>
@@ -214,7 +214,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
                 </span>
                 <span className="text-[#D1D5DB]">•</span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#64748B]">
-                  <FiAward className="h-3 w-3 text-[#C4A35A]" />
+                  <FiAward className="h-3 w-3 text-[#FF7F0E]" />
                   ISO 9001:2015
                 </span>
               </div>
@@ -231,9 +231,9 @@ export default function HeroSection({ config }: HeroSectionProps) {
               <motion.span
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="group inline-flex items-center gap-2 rounded-xl bg-[#1E4A85] hover:bg-[#163A6B] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition-all hover:shadow-md"
+                className="group inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] hover:bg-[#E66A00] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_4px_14px_rgba(255,127,14,0.35)] transition-all hover:shadow-md"
               >
-                <FiBookOpen className="h-4 w-4 text-[#C4A35A]" />
+                <FiBookOpen className="h-4 w-4 text-white" />
                 {hero?.ctaPrimary?.label || "View Courses"}
                 <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </motion.span>
@@ -244,9 +244,9 @@ export default function HeroSection({ config }: HeroSectionProps) {
               <motion.span
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1D5DB] hover:border-[#1E4A85]/40 hover:bg-[#F8FAFC] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#334155] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border-[1.5px] border-[#0056b3] bg-white hover:bg-[#F0F7FF] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#0056b3] transition-colors"
               >
-                <FiTag className="h-4 w-4 text-[#C4A35A]" />
+                <FiTag className="h-4 w-4" />
                 {hero?.ctaSecondary?.label || "Explore Offers"}
               </motion.span>
             </Link>
@@ -256,9 +256,9 @@ export default function HeroSection({ config }: HeroSectionProps) {
               <motion.span
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#D1D5DB] hover:border-[#1E4A85]/40 hover:bg-[#F8FAFC] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#334155] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#28A745]/40 bg-[#F0FFF4] hover:bg-[#D4EDDA] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#1E7E34] transition-colors"
               >
-                <FiCheckCircle className="h-4 w-4 text-[#1E4A85]" />
+                <FiCheckCircle className="h-4 w-4 text-[#28A745]" />
                 Verify Certificate
               </motion.span>
             </Link>

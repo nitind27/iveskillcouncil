@@ -41,7 +41,11 @@ export function courseFormToApiBody(form: CourseFormState) {
     description: form.description.trim(),
     syllabus: form.syllabus.trim(),
     eligibility: form.eligibility.trim() || null,
-    certificateSubject: form.certificateSubject.trim() || null,
+    certificateSubject:
+      form.certificateSubjects
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(", ") || null,
     imageUrl: form.imageUrl.trim() || null,
     previewVideoUrl: form.previewVideoUrl.trim() || null,
     type: form.type,

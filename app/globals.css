@@ -296,39 +296,99 @@ html.lang-gu body {
     animation: section-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  /* User Panel: IVESDC Brand Theme */
+  /* User Panel: IVESDC Brand Theme (saffron / white / green + navy) */
   .userpanel {
     /* Backgrounds */
-    --up-bg: #F8FAFC;
+    --up-bg: #F8F9FA;
     --up-bg-card: #FFFFFF;
-    --up-bg-muted: #EEF2F7;
+    --up-bg-muted: #F0F4F8;
     /* Text */
-    --up-text: #1A1A1A;
-    --up-text-muted: #6B7280;
-    --up-text-subtle: #7A7A7A;
+    --up-text: #0F172A;
+    --up-text-muted: #64748B;
+    --up-text-subtle: #94A3B8;
+    --up-heading: #003366;
     /* Borders */
     --up-border: #E5E7EB;
     --up-border-strong: #D1D5DB;
-    /* Primary — Navy */
-    --up-accent: #1E4A85;
-    --up-accent-hover: #163A6B;
-    --up-accent-muted: #7FA0C9;
-    /* Secondary — muted gold */
-    --up-green: #C4A35A;
-    --up-green-hover: #A88B48;
-    --up-green-muted: #E8D9B0;
-    /* Accent — gold */
-    --up-orange: #C4A35A;
-    --up-orange-hover: #A88B48;
-    --up-orange-muted: #E8D9B0;
+    /* Primary — Deep Navy */
+    --up-accent: #003366;
+    --up-accent-hover: #002244;
+    --up-accent-muted: #5A8AB8;
+    --up-blue: #0056b3;
+    /* Secondary — India Green */
+    --up-green: #28A745;
+    --up-green-hover: #1E7E34;
+    --up-green-muted: #D4EDDA;
+    /* Accent — Saffron / Orange (primary CTAs) */
+    --up-orange: #FF7F0E;
+    --up-orange-hover: #E66A00;
+    --up-orange-muted: #FFE4CC;
     /* Navbar glass */
-    --up-nav-bg: rgba(255, 255, 255, 0.95);
-    --up-nav-border: rgba(45, 93, 168, 0.10);
-    --up-nav-shadow: 0 4px 24px rgba(45, 93, 168, 0.08);
+    --up-nav-bg: rgba(255, 255, 255, 0.98);
+    --up-nav-border: rgba(0, 51, 102, 0.08);
+    --up-nav-shadow: 0 4px 20px rgba(0, 51, 102, 0.06);
+    --up-card-shadow: 0 4px 16px rgba(0, 51, 102, 0.06);
+    --up-card-shadow-hover: 0 12px 32px rgba(0, 51, 102, 0.12);
+    --up-radius: 12px;
     /* Fixed header + marquee heights */
     --up-header-height: 3.75rem;
     --up-marquee-height: 1.75rem;
-    --up-nav-height: calc(var(--up-header-height) + var(--up-marquee-height) + 2px);
+    --up-nav-height: calc(var(--up-header-height) + var(--up-marquee-height) + 3px);
+  }
+  .userpanel .up-card {
+    background: var(--up-bg-card);
+    border: 1px solid var(--up-border);
+    border-radius: var(--up-radius);
+    box-shadow: var(--up-card-shadow);
+  }
+  .userpanel .up-btn-primary {
+    background: var(--up-orange);
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .userpanel .up-btn-primary:hover {
+    background: var(--up-orange-hover);
+    box-shadow: 0 6px 16px rgba(255, 127, 14, 0.35);
+  }
+  .userpanel .up-btn-outline {
+    background: #fff;
+    color: var(--up-blue);
+    border: 1.5px solid var(--up-blue);
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .userpanel .up-btn-outline:hover {
+    background: #F0F7FF;
+  }
+  .userpanel .up-wave-decor {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .userpanel .up-wave-decor::before,
+  .userpanel .up-wave-decor::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+  }
+  .userpanel .up-wave-decor::before {
+    width: min(420px, 55vw);
+    height: min(420px, 55vw);
+    top: -18%;
+    left: -12%;
+    background: radial-gradient(circle, rgba(255, 127, 14, 0.14) 0%, transparent 68%);
+  }
+  .userpanel .up-wave-decor::after {
+    width: min(380px, 50vw);
+    height: min(380px, 50vw);
+    bottom: -20%;
+    right: -10%;
+    background: radial-gradient(circle, rgba(40, 167, 69, 0.12) 0%, transparent 68%);
   }
   .userpanel .up-hero {
     min-height: 280px;
@@ -368,8 +428,8 @@ html.lang-gu body {
     color: #ffffff;
     text-shadow:
       0 0 10px rgba(255, 255, 255, 0.45),
-      0 0 22px rgba(196, 163, 90, 0.28),
-      0 0 42px rgba(30, 74, 133, 0.18),
+      0 0 22px rgba(255, 127, 14, 0.28),
+      0 0 42px rgba(0, 51, 102, 0.18),
       0 2px 10px rgba(0, 0, 0, 0.9);
   }
   .userpanel .hero-sub-glow {
@@ -379,7 +439,7 @@ html.lang-gu body {
       0 2px 8px rgba(0, 0, 0, 0.85);
   }
   .userpanel .hero-badge-glow {
-    text-shadow: 0 0 8px rgba(196, 163, 90, 0.45);
+    text-shadow: 0 0 8px rgba(255, 127, 14, 0.45);
   }
 
   /* User Panel: header marquee */
@@ -529,39 +589,31 @@ html.lang-gu body {
 
 /* ==========================================================================
    OFFICIAL A4 PRINT ENGINE FOR CERTIFICATES & MARKSHEETS
-   Ensures single-page 100% full-fit on standard ISO A4 paper (210mm x 297mm)
-   with zero edge clipping, zero distortion, and zero accidental blank page 2.
+   Canvas: 1054×1492 px  →  ISO A4 210×297 mm (zero margins, one page)
+   Scale = min(210mm/1054px, 297mm/1492px) ≈ 0.752 at 96dpi
    ========================================================================== */
 @page {
   size: A4 portrait;
-  margin: 0mm;
+  margin: 0;
 }
 
 @media print {
-  /* 1. Base document reset to exact A4 dimensions */
   html,
   body {
     width: 210mm !important;
     height: 297mm !important;
-    min-width: 210mm !important;
-    min-height: 297mm !important;
-    max-width: 210mm !important;
-    max-height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #FFFFFF !important;
+    background: #fff !important;
     overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
-  /* 2. Hide everything by default (navbars, toolbars, buttons, sidebars) */
   body * {
     visibility: hidden !important;
   }
 
-  /* 3. Explicitly hide non-printable UI controls */
   .no-print,
   .no-print *,
   header.no-print,
@@ -578,12 +630,14 @@ html.lang-gu body {
     visibility: hidden !important;
   }
 
-  /* 4. Neutralize all studio containers & zoom wrappers */
+  /* Kill screen zoom / scroll wrappers — clip to exact A4 so page 2 never appears */
   .studio-root-container,
   .studio-body-container,
   .studio-overflow-container,
   .studio-zoom-container,
-  .cert-print-stage {
+  .cert-print-stage,
+  .origin-top,
+  .student-cert-print-root {
     display: block !important;
     position: static !important;
     overflow: visible !important;
@@ -591,25 +645,52 @@ html.lang-gu body {
     margin: 0 !important;
     border: none !important;
     transform: none !important;
+    transform-origin: top left !important;
     width: auto !important;
     height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
     background: transparent !important;
     box-shadow: none !important;
+    zoom: 1 !important;
   }
 
-  /* 5. Make certificate sheet and its descendants cleanly visible */
+  /*
+   * Clip stage to physical A4. Unscaled 1054×1492 would otherwise
+   * spill onto page 2 even after transform:scale (print engines use
+   * pre-transform layout for pagination).
+   */
+  .studio-zoom-container,
+  .cert-print-stage,
+  .student-cert-print-root {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    max-width: 210mm !important;
+    max-height: 297mm !important;
+    overflow: hidden !important;
+  }
+
   .certificate-sheet,
   .certificate-sheet * {
     visibility: visible !important;
   }
 
-  /* 6. Precision A4 fit for 1492px tall templates (Official Marksheet & Cert) */
+  /*
+   * Fit-to-page: fixed top-left + unitless scale (calc() inside scale()
+   * fails in several print engines).
+   * 210mm ≈ 794px @96dpi → 794/1054 ≈ 0.753
+   * 297mm ≈ 1123px @96dpi → 1123/1492 ≈ 0.752
+   */
   .certificate-sheet {
-    position: fixed !important;
+    position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    right: 0 !important;
-    margin: 0 auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
@@ -617,38 +698,50 @@ html.lang-gu body {
     page-break-before: avoid !important;
     page-break-after: avoid !important;
     page-break-inside: avoid !important;
-    break-before: avoid !important;
-    break-after: avoid !important;
     break-inside: avoid !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    transform-origin: top center !important;
-    /* Scale calculation:
-       1492px height -> 296.6mm / 1492px = 0.19879mm/px (0.7512 scale)
-       Fits 209.5mm x 296.6mm on A4 (safe buffer prevents blank Page 2) */
-    transform: scale(0.7512) !important;
-    transform: scale(calc(296.6mm / 1492px)) !important;
+    transform-origin: 0 0 !important;
+    width: 1054px !important;
+    height: 1492px !important;
+    min-width: 1054px !important;
+    min-height: 1492px !important;
+    max-width: 1054px !important;
+    max-height: 1492px !important;
+    transform: scale(0.752) !important;
   }
 
-  /* Layout 2 marksheet (2048px tall — ONLY_OUTSIDE_FLORAL_BORDER A4 SVG) */
   .certificate-sheet[id*="marksheet2"],
-  .certificate-sheet[id*="marksheet-v2"] {
-    transform: scale(0.5464) !important;
-    transform: scale(calc(296.6mm / 2048px)) !important;
+  .certificate-sheet[id*="marksheet-v2"],
+  .certificate-sheet[id*="marksheet"],
+  .certificate-sheet[id*="vocational"],
+  .certificate-sheet[id*="official-ivesdc"] {
+    width: 1054px !important;
+    height: 1492px !important;
+    min-width: 1054px !important;
+    min-height: 1492px !important;
+    max-width: 1054px !important;
+    max-height: 1492px !important;
+    transform-origin: 0 0 !important;
+    transform: scale(0.752) !important;
   }
 
-  /* 7. Precision A4 fit for 1024px tall templates (Diploma, ATC, Merit, Workshop) */
+  /* Landscape / shorter canvases (723×1024) */
   .certificate-sheet[style*="1024"],
   .certificate-sheet[id*="diploma"],
   .certificate-sheet[id*="affiliation"],
   .certificate-sheet[id*="merit"],
   .certificate-sheet[id*="workshop"],
   .certificate-sheet[id*="ivesdc-cert"] {
-    /* Scale calculation:
-       1024px height -> 296.6mm / 1024px = 0.28965mm/px (1.0945 scale)
-       Fits 209.3mm x 296.6mm on A4 */
-    transform: scale(1.0945) !important;
-    transform: scale(calc(296.6mm / 1024px)) !important;
+    width: 723px !important;
+    height: 1024px !important;
+    min-width: 723px !important;
+    min-height: 1024px !important;
+    max-width: 723px !important;
+    max-height: 1024px !important;
+    transform-origin: 0 0 !important;
+    /* 210mm/723px ≈ 1.098 — fill page width */
+    transform: scale(1.098) !important;
   }
 }
 

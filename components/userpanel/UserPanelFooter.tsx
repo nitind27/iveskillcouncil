@@ -45,7 +45,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h4 className="mb-5 text-sm font-bold uppercase tracking-[0.16em] text-white">
       {children}
-      <span className="mt-2 block h-[2px] w-10 rounded-full bg-[#C4A35A]" />
+      <span className="mt-2 block h-[2px] w-10 rounded-full bg-[#FF7F0E]" />
     </h4>
   );
 }
@@ -56,9 +56,9 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
 
   return (
     <footer id="contact" className="relative overflow-hidden bg-[#070F1C]">
-      <div className="h-[3px] bg-gradient-to-r from-[#163A6B] via-[#C4A35A] to-[#1E4A85]" />
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#1E4A85]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-[#C4A35A]/10 blur-3xl" />
+      <div className="h-[3px] bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
+      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#003366]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-[#FF7F0E]/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-12 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
@@ -78,7 +78,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
                 />
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1E4A85] text-xl font-bold text-white">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#003366] text-xl font-bold text-white">
                     {site.logoLetter}
                   </span>
                   <span className="text-lg font-bold text-white">{site.name}</span>
@@ -86,9 +86,9 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
               )}
             </div>
             <p className="text-sm leading-relaxed text-white/65">{footer.tagline}</p>
-            <div className="inline-flex rounded-lg border border-[#C4A35A]/25 bg-[#C4A35A]/10 px-3 py-2">
+            <div className="inline-flex rounded-lg border border-[#FF7F0E]/25 bg-[#FF7F0E]/10 px-3 py-2">
               <p className="text-[11px] leading-snug text-white/70">
-                <span className="font-semibold text-[#C4A35A]">CIN</span>
+                <span className="font-semibold text-[#FF7F0E]">CIN</span>
                 <span className="mt-0.5 block font-mono text-white/80">{FIXED_CONTACT.cin}</span>
               </p>
             </div>
@@ -100,7 +100,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
                     key={s.iconKey}
                     href={s.href}
                     aria-label={s.label || s.iconKey}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-all hover:-translate-y-0.5 hover:border-[#C4A35A]/40 hover:bg-[#1E4A85] hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-all hover:-translate-y-0.5 hover:border-[#FF7F0E]/40 hover:bg-[#003366] hover:text-white"
                   >
                     <Icon className="h-4 w-4" />
                   </a>
@@ -121,9 +121,9 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
                 <li key={link.href + link.label}>
                   <Link
                     href={up(quickLinkHref(link.href))}
-                    className="group inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-[#C4A35A]"
+                    className="group inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-[#FF7F0E]"
                   >
-                    <FiArrowRight className="h-3.5 w-3.5 text-[#C4A35A] opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+                    <FiArrowRight className="h-3.5 w-3.5 text-[#FF7F0E] opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
                     <span className="transition-transform group-hover:translate-x-0.5">{link.label}</span>
                   </Link>
                 </li>
@@ -140,14 +140,14 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
             <SectionTitle>Our Team</SectionTitle>
             <ul className="space-y-3">
               {TEAM.map((member) => (
-                <li key={member.name} className="rounded-xl border border-white/8 bg-white/[0.04] p-3 transition-colors hover:border-[#C4A35A]/25 hover:bg-white/[0.06]">
+                <li key={member.name} className="rounded-xl border border-white/8 bg-white/[0.04] p-3 transition-colors hover:border-[#FF7F0E]/25 hover:bg-white/[0.06]">
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
                       <FiUser className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-tight text-white">{member.name}</p>
-                      <p className="mt-0.5 text-[11px] font-medium text-[#C4A35A]">{member.role}</p>
+                      <p className="mt-0.5 text-[11px] font-medium text-[#FF7F0E]">{member.role}</p>
                       <a
                         href={`tel:${member.phone}`}
                         className="mt-1 inline-flex items-center gap-1.5 text-xs text-white/55 transition-colors hover:text-white"
@@ -172,12 +172,12 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
             <ul className="space-y-3">
               <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#C4A35A]/15 text-[#C4A35A]">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#FF7F0E]/15 text-[#FF7F0E]">
                     <FiPhone className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Help Line</p>
-                    <a href={`tel:${FIXED_CONTACT.helpline}`} className="text-sm font-semibold text-white transition-colors hover:text-[#C4A35A]">
+                    <a href={`tel:${FIXED_CONTACT.helpline}`} className="text-sm font-semibold text-white transition-colors hover:text-[#FF7F0E]">
                       {FIXED_CONTACT.helpline}
                     </a>
                   </div>
@@ -185,12 +185,12 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
               </li>
               <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
                     <FiMail className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Email</p>
-                    <a href={`mailto:${FIXED_CONTACT.email}`} className="break-all text-sm font-semibold text-white transition-colors hover:text-[#C4A35A]">
+                    <a href={`mailto:${FIXED_CONTACT.email}`} className="break-all text-sm font-semibold text-white transition-colors hover:text-[#FF7F0E]">
                       {FIXED_CONTACT.email}
                     </a>
                   </div>
@@ -198,7 +198,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
               </li>
               <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#1E4A85]/40 text-[#C4A35A]">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
                     <FiMapPin className="h-4 w-4" />
                   </span>
                   <div>
@@ -217,7 +217,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-white/45">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#C4A35A]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF7F0E]" />
               All services operational
             </span>
             <span className="hidden sm:inline text-white/20">|</span>

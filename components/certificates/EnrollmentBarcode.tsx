@@ -19,7 +19,7 @@ export const DIGIT_WORDS_MAP: Record<string, string> = {
   "9": "NINE",
 };
 
-/** Convert any numeric string into uppercase English digit words (e.g. "4739846" -> "FOUR  SEVEN  THREE  NINE  EIGHT  FOUR  SIX") */
+/** Convert any numeric string into uppercase English digit words */
 export function convertNumberToDigitWords(numStr: string | number | undefined | null): string {
   if (numStr === undefined || numStr === null) return "";
   const str = String(numStr).trim();
@@ -60,9 +60,6 @@ export function getDigitWordsArray(
   return words.length > 0 ? words : ["FOUR", "SEVEN", "THREE", "NINE", "EIGHT", "FOUR", "SIX"];
 }
 
-// -------------------------------------------------------------
-// STANDARD CODE 128 (ISO/IEC 15417) SYMBOL ENCODING PATTERNS
-// -------------------------------------------------------------
 const CODE128_PATTERNS = [
   "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
   "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
@@ -84,7 +81,7 @@ interface BarSegment {
 
 function generateCode128Bars(text: string): BarSegment[] {
   const clean = String(text || "4739846").trim();
-  const codes = [104]; // START_B
+  const codes = [104];
   let check = 104;
 
   for (let i = 0; i < clean.length; i++) {
@@ -95,7 +92,7 @@ function generateCode128Bars(text: string): BarSegment[] {
   }
 
   codes.push(check % 103);
-  codes.push(106); // STOP
+  codes.push(106);
 
   const pattern = codes.map((c) => CODE128_PATTERNS[c] || "111111").join("");
   const bars: BarSegment[] = [];
@@ -111,71 +108,67 @@ function generateCode128Bars(text: string): BarSegment[] {
 }
 
 export interface EnrollmentBarcodeProps {
-  /** The dynamic enrollment number (e.g. "4739846") */
   enrollmentNo: string | number | undefined | null;
-  /** Optional custom words representation override. If omitted, automatically generated from enrollmentNo */
   words?: string;
-  /** Whether to show the top "Enrollment No. : {number}" label (default: true) */
   showLabel?: boolean;
-  /** Custom label prefix (default: "Enrollment No. :") */
   label?: string;
-  /** Height of the barcode bars in px (default: 46) */
   barcodeHeight?: number;
-  /** Color of bars and text (default: "#000000") */
   color?: string;
-  /** Whether to show spelled-out words underneath (default: true) */
   showWords?: boolean;
-  /** Additional CSS class names */
   className?: string;
-  /** Inline style overrides */
   style?: CSSProperties;
-  /** Alignment (default: "center") */
   align?: "center" | "left" | "right";
-  /** Optional container width in px (default: 265) */
+  /** Outer width in px — bars/label/words always fit inside */
   containerWidth?: number;
 }
 
 /**
- * High-definition, authentic Enrollment Barcode Component matching the official certificate/marksheet specification:
- * - Top: "Enrollment No. : {dynamic_number}" with clean bottom margin
- * - Middle: Razor-sharp Code 128 vector barcode with crispEdges (never blurry)
- * - Bottom: Generously spaced spelled-out uppercase digit words (e.g. "FOUR  SEVEN  THREE  NINE  EIGHT  FOUR  SIX")
- * - Guaranteed ample padding so words NEVER touch or crowd the barcode bars
+ * Dynamic Code 128 enrollment barcode — regenerates from enrollmentNo.
+ * Label, bars and digit-words always fit inside containerWidth (no truncate / no overflow).
  */
 export default function EnrollmentBarcode({
   enrollmentNo,
   words,
   showLabel = true,
   label = "Enrollment No. :",
-  barcodeHeight = 46,
+  barcodeHeight = 40,
   color = "#000000",
   showWords = true,
   className = "",
   style,
   align = "center",
-  containerWidth = 265,
+  containerWidth = 220,
 }: EnrollmentBarcodeProps) {
-  const cleanNumber = String(enrollmentNo || "4739846").trim();
-
-  // Generate standard Code 128 bars
+  const cleanNumber = String(enrollmentNo ?? "").trim() || "0";
   const bars = useMemo(() => generateCode128Bars(cleanNumber), [cleanNumber]);
-
-  // Compute digit words
   const wordsArray = useMemo(
     () => getDigitWordsArray(cleanNumber, words),
     [cleanNumber, words]
   );
-
-  // SVG dimensions
   const totalModules = useMemo(
     () => bars.reduce((sum, b) => sum + b.width, 0),
     [bars]
   );
 
-  // Module width scaled to fit target width with 10px quiet zone margins
-  const targetBarWidth = Math.max(220, containerWidth - 24);
-  const moduleWidth = totalModules > 0 ? targetBarWidth / totalModules : 2.15;
-  const svgWidth = Math.round(totalModules * moduleWidth);
+  const boxW = Math.max(120, containerWidth);
+  const barAreaW = Math.max(96, boxW - 12);
+  const moduleWidth = totalModules > 0 ? barAreaW / totalModules : 1.4;
+  const svgWidth = Math.max(1, Math.round(totalModules * moduleWidth));
+  const barH = Math.max(24, Math.min(56, barcodeHeight));
+
+  // Full label always visible — scale font to fit one line (never "4739…")
+  const labelText = `${label} ${cleanNumber}`;
+  const labelFontPx = Math.max(
+    8,
+    Math.min(12.5, Math.floor((boxW - 4) / Math.max(labelText.length * 0.58, 1)))
+  );
+
+  // Digit words on ONE line — scale font so they never wrap awkwardly
+  const wordsJoinedLen = wordsArray.join(" ").length || 1;
+  const wordFontPx = Math.max(
+    5.5,
+    Math.min(8.5, Math.floor((boxW - 6) / Math.max(wordsJoinedLen * 0.62, 1)))
+  );
 
   let curX = 0;
   const barElements = bars.map((b, idx) => {
@@ -188,8 +181,8 @@ export default function EnrollmentBarcode({
         key={idx}
         x={Math.round(x * 10) / 10}
         y={0}
-        width={Math.max(1, Math.round(w * 10) / 10)}
-        height={barcodeHeight}
+        width={Math.max(0.7, Math.round(w * 10) / 10)}
+        height={barH}
         fill={color}
       />
     );
@@ -204,49 +197,59 @@ export default function EnrollmentBarcode({
 
   return (
     <div
-      className={`inline-flex flex-col select-none ${alignClass} ${className}`}
+      className={`inline-flex flex-col select-none overflow-hidden ${alignClass} ${className}`}
       style={{
-        width: containerWidth,
+        width: boxW,
+        maxWidth: "100%",
+        boxSizing: "border-box",
         ...style,
       }}
+      data-enrollment={cleanNumber}
     >
-      {/* 1. Top Header: "Enrollment No. : 4739846" with generous bottom margin */}
       {showLabel && (
-        <div className="mb-2 text-[13px] font-bold leading-tight" style={sans}>
-          <span style={{ color }}>{label} </span>
-          <span className="font-extrabold tracking-wide" style={{ color }}>
-            {cleanNumber}
-          </span>
+        <div
+          className="mb-1 w-full text-center font-bold leading-tight"
+          style={{
+            ...sans,
+            color,
+            fontSize: `${labelFontPx}px`,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span>{label} </span>
+          <span className="font-extrabold tracking-wide">{cleanNumber}</span>
         </div>
       )}
 
-      {/* 2. Middle: Dynamic Code 128 Barcode with crispEdges rendering */}
-      <div className="w-full flex items-center justify-center px-1">
+      <div className="flex w-full items-center justify-center overflow-hidden">
         <svg
-          width={svgWidth}
-          height={barcodeHeight}
-          viewBox={`0 0 ${svgWidth} ${barcodeHeight}`}
+          width={barAreaW}
+          height={barH}
+          viewBox={`0 0 ${svgWidth} ${barH}`}
+          preserveAspectRatio="none"
           shapeRendering="crispEdges"
-          className="overflow-visible block"
+          className="block"
+          style={{ width: barAreaW, maxWidth: "100%", height: barH }}
+          aria-label={`Barcode for enrollment ${cleanNumber}`}
         >
           {barElements}
         </svg>
       </div>
 
-      {/* 3. Bottom: Spelled-out digit words with generous vertical gap (mt-2.5) and clear word spacing */}
       {showWords && wordsArray.length > 0 && (
         <div
-          className="mt-2.5 flex items-center justify-between w-full px-1 text-[8.5px] font-black uppercase tracking-wider select-none"
+          className="mt-1 w-full text-center font-black uppercase select-none"
           style={{
             ...sans,
             color,
+            fontSize: `${wordFontPx}px`,
+            letterSpacing: "0.04em",
+            lineHeight: 1.2,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
           }}
         >
-          {wordsArray.map((w, idx) => (
-            <span key={idx} className="shrink-0 px-0.5">
-              {w}
-            </span>
-          ))}
+          {wordsArray.join("  ")}
         </div>
       )}
     </div>

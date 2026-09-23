@@ -96,8 +96,8 @@ Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in
     data.grade,
   ]);
 
-  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "Panditbhai Prajapati";
-  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[1]?.trim() || "Latkanben Prajapati";
+  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "—";
+  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[1]?.trim() || "—";
   const currentBannerH = data.bannerHeight || 54;
   const currentBannerW = data.bannerWidth || Math.round(currentBannerH * (609 / 85));
 
@@ -120,7 +120,7 @@ Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in
   const pctFont = Math.round(15 * fontScale);
   const gradeFont = Math.round(18 * fontScale);
 
-  const footerFont = Math.max(9, Math.round(10 * fontScale));
+  const footerFont = Math.max(9, Math.round((data.atcFontSize || 10) * fontScale));
   const footerSubFont = Math.max(8, Math.round(9.5 * fontScale));
 
   return (

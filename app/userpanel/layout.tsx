@@ -44,7 +44,7 @@ function FranchiseSiteGate({ children }: { children: React.ReactNode }) {
           </p>
           <Link
             href="/userpanel"
-            className="inline-flex items-center rounded-xl bg-[#1E4A85] px-6 py-3 text-sm font-semibold text-white hover:bg-[#163A6B]"
+            className="inline-flex items-center rounded-xl bg-[#003366] px-6 py-3 text-sm font-semibold text-white hover:bg-[#002244]"
           >
             Go to main site
           </Link>

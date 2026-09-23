@@ -28,6 +28,7 @@ import {
   ClipboardList,
   BarChart3,
   Inbox,
+  Layers,
   Printer,
   Eye,
 } from "lucide-react";
@@ -70,6 +71,7 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
         href: "/dashboard/course-categories",
       },
       { id: "manage-courses", label: "Manage Courses", icon: BookOpen, href: "/dashboard/courses" },
+      { id: "course-subjects", label: "Subjects", icon: Layers, href: "/dashboard/subjects" },
     ],
   },
   {
@@ -110,6 +112,7 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
     label: "4. Students & Learning",
     items: [
       { id: "all-students", label: "Students", icon: GraduationCap, href: "/students" },
+      { id: "student-marks", label: "Marks Entry", icon: ClipboardList, href: "/students/marks" },
       { id: "exams", label: "Exams", icon: ClipboardList, href: "/exams" },
       { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
     ],
@@ -218,7 +221,9 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
     label: "2. My Centre",
     items: [
       { id: "my-courses", label: "My Courses", icon: BookOpen, href: "/dashboard/franchise-courses" },
+      { id: "course-subjects", label: "Subjects", icon: Layers, href: "/dashboard/subjects" },
       { id: "my-students", label: "My Students", icon: GraduationCap, href: "/students" },
+      { id: "student-marks", label: "Marks Entry", icon: ClipboardList, href: "/students/marks" },
       { id: "attendance", label: "Attendance", icon: ClipboardCheck, href: "/attendance/manual" },
       { id: "fees-management", label: "Fees Management", icon: IndianRupee, href: "/fees" },
     ],
@@ -372,6 +377,7 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
     "/dashboard/franchise-inquiries",
     "/dashboard/courses",
     "/dashboard/course-categories",
+    "/dashboard/subjects",
     "/students",
     "/certificates",
     "/fees",
@@ -402,6 +408,7 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
     "/dashboard/franchise-inquiries",
     "/dashboard/courses",
     "/dashboard/course-categories",
+    "/dashboard/subjects",
     "/students",
     "/certificates",
     "/fees",
@@ -420,6 +427,7 @@ export const ROLE_ALLOWED_PATHS: Record<number, string[]> = {
   [ROLES.SUB_ADMIN]: [
     "/dashboard",
     "/dashboard/franchise-courses",
+    "/dashboard/subjects",
     "/students",
     "/fees",
     "/attendance",

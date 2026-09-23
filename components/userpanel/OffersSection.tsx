@@ -70,32 +70,32 @@ function offerPerks(offer: OfferItem): string[] {
 const THEMES = [
   {
     badge: "Seasonal Special",
-    accent: "#C4A35A",
-    accentLight: "#FBF7ED",
-    tagBg: "bg-amber-50 text-amber-800 border-amber-200",
-    buttonBg: "bg-gradient-to-r from-[#C4A35A] to-[#A88B48] text-slate-950 hover:brightness-105",
-    discountBadge: "bg-[#1E4A85] text-white",
-    cardRing: "hover:border-[#C4A35A]/60 hover:shadow-[0_16px_40px_rgba(196,163,90,0.18)]",
+    accent: "#FF7F0E",
+    accentLight: "#FFF4EB",
+    tagBg: "bg-[#FFF4EB] text-[#CC5500] border-[#FFD4A8]",
+    buttonBg: "bg-[#FF7F0E] text-white hover:bg-[#E66A00]",
+    discountBadge: "bg-[#003366] text-white",
+    cardRing: "hover:border-[#FF7F0E]/60 hover:shadow-[0_16px_40px_rgba(255,127,14,0.18)]",
     featured: true,
   },
   {
     badge: "Student Referral",
-    accent: "#10B981",
-    accentLight: "#ECFDF5",
-    tagBg: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    buttonBg: "bg-[#1E4A85] text-white hover:bg-[#163A6B]",
-    discountBadge: "bg-emerald-600 text-white",
-    cardRing: "hover:border-emerald-500/50 hover:shadow-[0_16px_40px_rgba(16,185,129,0.15)]",
+    accent: "#28A745",
+    accentLight: "#F0FFF4",
+    tagBg: "bg-[#F0FFF4] text-[#1E7E34] border-[#A3D9B1]",
+    buttonBg: "bg-[#28A745] text-white hover:bg-[#1E7E34]",
+    discountBadge: "bg-[#28A745] text-white",
+    cardRing: "hover:border-[#28A745]/50 hover:shadow-[0_16px_40px_rgba(40,167,69,0.15)]",
     featured: false,
   },
   {
     badge: "Priority Booking",
-    accent: "#1E4A85",
-    accentLight: "#EFF6FF",
-    tagBg: "bg-blue-50 text-blue-800 border-blue-200",
-    buttonBg: "bg-[#1E4A85] text-white hover:bg-[#163A6B]",
-    discountBadge: "bg-[#1E4A85] text-white",
-    cardRing: "hover:border-[#1E4A85]/50 hover:shadow-[0_16px_40px_rgba(30,74,133,0.15)]",
+    accent: "#0056b3",
+    accentLight: "#F0F7FF",
+    tagBg: "bg-[#F0F7FF] text-[#003366] border-[#B3D1F0]",
+    buttonBg: "bg-[#003366] text-white hover:bg-[#002244]",
+    discountBadge: "bg-[#0056b3] text-white",
+    cardRing: "hover:border-[#0056b3]/50 hover:shadow-[0_16px_40px_rgba(0,86,179,0.15)]",
     featured: false,
   },
 ];
@@ -134,8 +134,8 @@ function VoucherCard({
         className="h-2 w-full"
         style={{
           background: theme.featured
-            ? "linear-gradient(90deg, #1E4A85, #C4A35A, #163A6B)"
-            : `linear-gradient(90deg, ${theme.accent}, #1E4A85)`,
+            ? "linear-gradient(90deg, #FF7F0E, #FFFFFF, #28A745)"
+            : `linear-gradient(90deg, ${theme.accent}, #003366)`,
         }}
       />
 
@@ -151,7 +151,7 @@ function VoucherCard({
           </span>
 
           {theme.featured && (
-            <span className="rounded-full bg-[#C4A35A]/15 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-[#8C7340]">
+            <span className="rounded-full bg-[#FF7F0E]/15 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-[#CC5500]">
               Featured
             </span>
           )}
@@ -162,13 +162,13 @@ function VoucherCard({
           <span className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
             {offer.discount}%
           </span>
-          <span className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#C4A35A]">
+          <span className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#FF7F0E]">
             Discount
           </span>
         </div>
 
         {/* Offer Title & Description */}
-        <h3 className="mt-2 text-xl font-extrabold text-slate-900 group-hover:text-[#1E4A85] transition-colors">
+        <h3 className="mt-2 text-xl font-extrabold text-slate-900 group-hover:text-[#003366] transition-colors">
           {offer.title}
         </h3>
         <p className="mt-1 text-sm leading-relaxed text-slate-600 font-medium">
@@ -178,7 +178,7 @@ function VoucherCard({
         {/* Coupon Code Pill */}
         <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3.5 py-2.5">
           <div className="flex items-center gap-2">
-            <FiPercent className="h-4 w-4 text-[#C4A35A]" />
+            <FiPercent className="h-4 w-4 text-[#FF7F0E]" />
             <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700">
               {code}
             </span>
@@ -186,7 +186,7 @@ function VoucherCard({
           <button
             type="button"
             onClick={handleCopyCode}
-            className="flex items-center gap-1 text-xs font-semibold text-[#1E4A85] hover:text-[#163A6B] transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-[#003366] hover:text-[#002244] transition-colors"
           >
             {copied ? (
               <>
@@ -228,7 +228,7 @@ function VoucherCard({
 
         {/* Valid Date or Guarantee */}
         <div className="mt-5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <FiCalendar className="h-3.5 w-3.5 text-[#C4A35A]" />
+          <FiCalendar className="h-3.5 w-3.5 text-[#FF7F0E]" />
           <span>{offer.validUntil ? `Valid until: ${offer.validUntil}` : "Limited seats available this batch"}</span>
         </div>
 
@@ -260,16 +260,17 @@ export default function OffersSection({ config }: OffersSectionProps) {
     <>
       <section
         id="offers"
-        className="relative overflow-hidden bg-[#F8FAFC] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 border-y border-slate-200/80"
+        className="relative overflow-hidden bg-[#F8F9FA] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 border-y border-slate-200/80"
       >
-        <div className="relative mx-auto max-w-7xl">
+        <div className="up-wave-decor" aria-hidden />
+        <div className="relative z-[1] mx-auto max-w-7xl">
           {/* Section Header */}
           <div className="mb-10 text-center sm:mb-14">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3.5 py-1 text-xs font-bold text-amber-800 shadow-sm">
-              <FiTag className="h-3.5 w-3.5 text-[#C4A35A]" />
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#FFD4A8] bg-[#FFF4EB] px-3.5 py-1 text-xs font-bold text-[#CC5500] shadow-sm">
+              <FiTag className="h-3.5 w-3.5 text-[#FF7F0E]" />
               <span>Exclusive Student Privileges</span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#003366] sm:text-4xl lg:text-5xl">
               {offers.sectionTitle || "Current Offers"}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed">
@@ -292,7 +293,7 @@ export default function OffersSection({ config }: OffersSectionProps) {
           {/* Bottom Trust Guarantee Strip */}
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm text-xs sm:text-sm text-slate-700">
             <span className="flex items-center gap-2 font-semibold">
-              <FiCheckCircle className="h-4 w-4 text-[#1E4A85]" />
+              <FiCheckCircle className="h-4 w-4 text-[#003366]" />
               Instant Fee Concession
             </span>
             <span className="h-3 w-px bg-slate-300 hidden sm:block" />
@@ -302,7 +303,7 @@ export default function OffersSection({ config }: OffersSectionProps) {
             </span>
             <span className="h-3 w-px bg-slate-300 hidden sm:block" />
             <span className="flex items-center gap-2 font-semibold">
-              <FiCheckCircle className="h-4 w-4 text-[#C4A35A]" />
+              <FiCheckCircle className="h-4 w-4 text-[#FF7F0E]" />
               National Franchise Network
             </span>
           </div>

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
       fullName: s.user.fullName,
       email: s.user.email,
       phone: s.user.phone,
+      profileImageUrl: s.profileImageUrl || null,
       franchiseId: s.franchise.id.toString(),
       franchiseName: s.franchise.name,
       courseId: s.course?.id.toString() ?? null,
@@ -167,19 +169,24 @@ export async function POST(request: NextRequest) {
     const first = String(firstName || "").trim();
     const last = String(surname || "").trim();
     const fullName = [first, last].filter(Boolean).join(" ").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const rawPhone = phone != null ? String(phone).trim() : "";
+    const normalizedPhone = rawPhone
+      ? rawPhone.replace(/\D/g, "").replace(/^91/, "").slice(-10)
+      : "";
 
-    if (!first || !email || !franchiseId) {
+    if (!first || !normalizedEmail || !franchiseId) {
       return errorResponse("Missing required fields: firstName, email, franchiseId", 400);
     }
     if (password && confirmPassword && password !== confirmPassword) {
       return errorResponse("Password and confirm password do not match", 400);
     }
     const nameR = validateName(first);
-    const emailR = validateEmail(String(email).trim());
-    const phoneR = phone ? validatePhone(String(phone).trim()) : { valid: true };
-    if (!nameR.valid) return errorResponse(nameR.error!, 400);
-    if (!emailR.valid) return errorResponse(emailR.error!, 400);
-    if (!phoneR.valid) return errorResponse(phoneR.error!, 400);
+    const emailR = validateEmail(normalizedEmail);
+    const phoneR = normalizedPhone ? validatePhone(normalizedPhone) : { valid: true };
+    if (!nameR.valid) return errorResponse(nameR.error!, 400, "firstName");
+    if (!emailR.valid) return errorResponse(emailR.error!, 400, "email");
+    if (!phoneR.valid) return errorResponse(phoneR.error!, 400, "phone");
 
     const fid = BigInt(franchiseId);
 
@@ -187,15 +194,59 @@ export async function POST(request: NextRequest) {
       return errorResponse("Cannot add student to another franchise", 403);
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return errorResponse("Email already registered", 400);
+    // ——— Email check (separate from mobile) ———
+    const existingEmail = await prisma.user.findFirst({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        roleId: true,
+        phone: true,
+        student: { select: { id: true } },
+      },
+    });
+    if (existingEmail?.student) {
+      return errorResponse(
+        "This email is already registered. Please use a different email.",
+        400,
+        "email"
+      );
+    }
+    if (existingEmail && existingEmail.roleId !== ROLES.STUDENT) {
+      return errorResponse(
+        "This email is already registered. Please use a different email.",
+        400,
+        "email"
+      );
+    }
+
+    // ——— Mobile check (separate from email) ———
+    // users.phone is UNIQUE. Same parent number for siblings is common — if taken,
+    // keep login phone null and save number on student.alternateMobile (no fake email error).
+    let phoneVal: string | null = null;
+    let phoneSharedAsAlternate: string | null = null;
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: { phone: normalizedPhone },
+        select: { id: true, email: true },
+      });
+      if (existingPhone) {
+        phoneVal = null;
+        phoneSharedAsAlternate = normalizedPhone;
+      } else {
+        phoneVal = normalizedPhone;
+      }
+    }
+
+    const altFromForm = alternateMobile?.trim() || null;
+    const alternateMobileVal = altFromForm || phoneSharedAsAlternate;
 
     const hashedPassword = await hashPassword(password || "Student@123");
     const admission = admissionDate ? new Date(admissionDate) : new Date();
-    const studentCode = await generateStudentCode();
 
     let profileImageUrl: string | null = null;
     let signatureUrl: string | null = null;
+    // Generate code first for image paths; recreate inside txn if needed
+    let studentCode = await generateStudentCode();
     try {
       if (profileImageBase64) {
         profileImageUrl = await saveStudentImage(
@@ -225,45 +276,147 @@ export async function POST(request: NextRequest) {
       ? String(relationship).toUpperCase()
       : null;
 
-    const newUser = await prisma.user.create({
-      data: {
-        roleId: ROLES.STUDENT,
-        franchiseId: fid,
-        fullName,
-        email,
-        phone: phone || null,
-        password: hashedPassword,
-      },
-    });
+    // Atomic create — avoids orphan users (email stuck in users without student row)
+    let newUserId: bigint;
+    let newStudentId: bigint;
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        let userId: bigint;
 
-    const newStudent = await prisma.student.create({
-      data: {
-        studentCode,
-        userId: newUser.id,
-        franchiseId: fid,
-        courseId: null,
-        totalFee: 0,
-        paidFee: 0,
-        admissionDate: admission,
-        firstName: first,
-        surname: last || null,
-        relationship: relationVal,
-        fatherHusbandName: fatherHusbandName?.trim() || null,
-        motherName: motherName?.trim() || null,
-        alternateMobile: alternateMobile?.trim() || null,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-        gender: genderVal,
-        profileImageUrl,
-        signatureUrl,
-        showFatherOnCertificate: showFatherOnCertificate !== false,
-        showSurnameOnCertificate: showSurnameOnCertificate !== false,
-        address: address?.trim() || null,
-        area: area?.trim() || null,
-        pincode: pincode?.trim() || null,
-        city: city?.trim() || null,
-        state: state?.trim() || null,
-      },
-    });
+        if (existingEmail && !existingEmail.student && existingEmail.roleId === ROLES.STUDENT) {
+          // Reuse orphan student login row from a previous failed create
+          await tx.user.update({
+            where: { id: existingEmail.id },
+            data: {
+              franchiseId: fid,
+              fullName,
+              phone: phoneVal ?? existingEmail.phone,
+              password: hashedPassword,
+              status: "ACTIVE",
+            },
+          });
+          userId = existingEmail.id;
+        } else {
+          const createdUser = await tx.user.create({
+            data: {
+              roleId: ROLES.STUDENT,
+              franchiseId: fid,
+              fullName,
+              email: normalizedEmail,
+              phone: phoneVal,
+              password: hashedPassword,
+            },
+          });
+          userId = createdUser.id;
+        }
+
+        let code = studentCode;
+        let studentRow;
+        try {
+          studentRow = await tx.student.create({
+            data: {
+              studentCode: code,
+              userId,
+              franchiseId: fid,
+              courseId: null,
+              totalFee: 0,
+              paidFee: 0,
+              admissionDate: admission,
+              firstName: first,
+              surname: last || null,
+              relationship: relationVal,
+              fatherHusbandName: fatherHusbandName?.trim() || null,
+              motherName: motherName?.trim() || null,
+              alternateMobile: alternateMobileVal,
+              dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+              gender: genderVal,
+              profileImageUrl,
+              signatureUrl,
+              showFatherOnCertificate: showFatherOnCertificate !== false,
+              showSurnameOnCertificate: showSurnameOnCertificate !== false,
+              address: address?.trim() || null,
+              area: area?.trim() || null,
+              pincode: pincode?.trim() || null,
+              city: city?.trim() || null,
+              state: state?.trim() || null,
+            },
+          });
+        } catch (inner: unknown) {
+          // Rare student_code race — retry once with a fresh code
+          const isDup =
+            (inner instanceof Prisma.PrismaClientKnownRequestError && inner.code === "P2002") ||
+            (inner instanceof Error && /Duplicate|Unique/i.test(inner.message));
+          if (!isDup) throw inner;
+          code = await generateStudentCode();
+          studentCode = code;
+          studentRow = await tx.student.create({
+            data: {
+              studentCode: code,
+              userId,
+              franchiseId: fid,
+              courseId: null,
+              totalFee: 0,
+              paidFee: 0,
+              admissionDate: admission,
+              firstName: first,
+              surname: last || null,
+              relationship: relationVal,
+              fatherHusbandName: fatherHusbandName?.trim() || null,
+              motherName: motherName?.trim() || null,
+              alternateMobile: alternateMobileVal,
+              dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+              gender: genderVal,
+              profileImageUrl,
+              signatureUrl,
+              showFatherOnCertificate: showFatherOnCertificate !== false,
+              showSurnameOnCertificate: showSurnameOnCertificate !== false,
+              address: address?.trim() || null,
+              area: area?.trim() || null,
+              pincode: pincode?.trim() || null,
+              city: city?.trim() || null,
+              state: state?.trim() || null,
+            },
+          });
+        }
+
+        return { userId, studentId: studentRow.id, studentCode: code };
+      });
+
+      newUserId = created.userId;
+      newStudentId = created.studentId;
+      studentCode = created.studentCode;
+    } catch (txnErr: unknown) {
+      // Surface unique conflicts clearly (should be rare after phone-share handling)
+      if (txnErr instanceof Prisma.PrismaClientKnownRequestError && txnErr.code === "P2002") {
+        const target = txnErr.meta?.target;
+        const fields = Array.isArray(target)
+          ? target.map(String)
+          : typeof target === "string"
+            ? [target]
+            : [];
+        const joined = fields.join(" ").toLowerCase();
+        if (joined.includes("email")) {
+          return errorResponse(
+            "This email is already registered. Please use a different email.",
+            400,
+            "email"
+          );
+        }
+        if (joined.includes("phone")) {
+          return errorResponse(
+            "This mobile number is already registered. Please use a different mobile number.",
+            400,
+            "phone"
+          );
+        }
+        if (joined.includes("student_code") || joined.includes("studentcode")) {
+          return errorResponse("Could not generate unique student ID. Please try again.", 400);
+        }
+      }
+      throw txnErr;
+    }
+
+    void newUserId;
 
     const franchise = await prisma.franchise.findUnique({
       where: { id: fid },
@@ -275,9 +428,9 @@ export async function POST(request: NextRequest) {
         ? `${process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL}`}/login`
         : "/login";
 
-    const emailResult = await sendStudentWelcomeEmail(email, {
+    const emailResult = await sendStudentWelcomeEmail(normalizedEmail, {
       fullName,
-      email,
+      email: normalizedEmail,
       password: password || "Student@123",
       loginUrl,
       courseName: "Not assigned yet",
@@ -287,7 +440,7 @@ export async function POST(request: NextRequest) {
       pendingFee: 0,
       admissionDate: admission.toISOString().split("T")[0],
       studentCode,
-      phone: phone || null,
+      phone: phoneVal || alternateMobileVal,
       address: address?.trim() || null,
       area: area?.trim() || null,
       pincode: pincode?.trim() || null,
@@ -301,12 +454,15 @@ export async function POST(request: NextRequest) {
 
     return successResponse(
       {
-        id: newStudent.id.toString(),
+        id: newStudentId.toString(),
         studentCode,
         emailSent: emailResult.success,
         needsCourse: true,
+        phoneShared: !!phoneSharedAsAlternate,
       },
-      "Student added — assign a course next"
+      phoneSharedAsAlternate
+        ? "Student added — this phone was already used by another account, so it was saved as alternate mobile. Assign a course next."
+        : "Student added — assign a course next"
     );
   } catch (err: unknown) {
     console.error("Students POST:", err);
@@ -314,8 +470,55 @@ export async function POST(request: NextRequest) {
     if (msg.includes("Unknown column") || msg.includes("address") || msg.includes("area") || msg.includes("pincode")) {
       return errorResponse("Database schema outdated. Please run the student address migration (scripts/run-all-migrations.sql block 5).", 500);
     }
+
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const target = err.meta?.target;
+      const fields = Array.isArray(target)
+        ? target.map(String)
+        : typeof target === "string"
+          ? [target]
+          : [];
+      const joined = fields.join(" ").toLowerCase();
+      if (joined.includes("email")) {
+        return errorResponse(
+          "This email is already registered. Please use a different email.",
+          400,
+          "email"
+        );
+      }
+      if (joined.includes("phone")) {
+        return errorResponse(
+          "This mobile number is already registered. Please use a different mobile number.",
+          400,
+          "phone"
+        );
+      }
+      if (joined.includes("student_code") || joined.includes("studentcode")) {
+        return errorResponse("Could not generate unique student ID. Please try again.", 400);
+      }
+      return errorResponse("Duplicate data found. Check email and mobile separately.", 400);
+    }
+
     if (msg.includes("Duplicate entry") || msg.includes("Unique constraint")) {
-      return errorResponse("Email already registered", 400);
+      const lower = msg.toLowerCase();
+      if (lower.includes("phone")) {
+        return errorResponse(
+          "This mobile number is already registered. Please use a different mobile number.",
+          400,
+          "phone"
+        );
+      }
+      if (lower.includes("student_code") || lower.includes("studentcode")) {
+        return errorResponse("Could not generate unique student ID. Please try again.", 400);
+      }
+      if (lower.includes("email")) {
+        return errorResponse(
+          "This email is already registered. Please use a different email.",
+          400,
+          "email"
+        );
+      }
+      return errorResponse("Duplicate data found. Check email and mobile separately.", 400);
     }
     return errorResponse(msg || "Failed to add student", 500);
   }

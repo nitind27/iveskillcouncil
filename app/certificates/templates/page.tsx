@@ -167,10 +167,15 @@ export default function CertificateTemplatesPage() {
   };
 
   const handlePrint = () => {
+    const prevZoom = zoom;
+    setZoom(100);
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-    setTimeout(() => {
-      window.print();
-    }, 60);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.print();
+        setZoom(prevZoom);
+      }, 120);
+    });
   };
 
   const renderTemplate = () => {

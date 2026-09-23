@@ -205,6 +205,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Sync structured subjects from certificateSubject string
+    const { parseSubjectNames, syncCourseSubjects } = await import("@/lib/course-subjects");
+    const subjectNames = parseSubjectNames(course.certificateSubject);
+    if (subjectNames.length > 0) {
+      const defaultMax = course.objectiveMarks ?? course.practicalMarks ?? 100;
+      await syncCourseSubjects(
+        course.id,
+        subjectNames.map((n) => ({ name: n, maxMarks: defaultMax })),
+        defaultMax
+      );
+    }
+
     return NextResponse.json({ success: true, data: serializeCourse(course) });
   } catch (e) {
     console.error("POST /api/courses", e);

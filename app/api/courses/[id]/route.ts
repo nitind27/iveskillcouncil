@@ -103,6 +103,17 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       data,
     });
 
+    if (payload.certificateSubject !== undefined) {
+      const { parseSubjectNames, syncCourseSubjects } = await import("@/lib/course-subjects");
+      const names = parseSubjectNames(course.certificateSubject);
+      const defaultMax = course.objectiveMarks ?? course.practicalMarks ?? 100;
+      await syncCourseSubjects(
+        courseId,
+        names.map((n) => ({ name: n, maxMarks: defaultMax })),
+        defaultMax
+      );
+    }
+
     return NextResponse.json({ success: true, data: serializeCourse(course) });
   } catch (e) {
     console.error("PATCH /api/courses/[id]", e);

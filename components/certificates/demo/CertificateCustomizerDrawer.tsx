@@ -57,7 +57,7 @@ interface Props {
   className?: string;
 }
 
-type CategoryTab = "all" | "logos" | "typography" | "padding" | "student" | "signatures" | "marks" | "center";
+type CategoryTab = "all" | "logos" | "typography" | "padding" | "border" | "student" | "signatures" | "marks" | "center";
 
 // -------------------------------------------------------------
 // REUSABLE SOFT SIZE SLIDER WITH DIRECT NUDGE & PRESETS
@@ -914,10 +914,10 @@ function PaddingLayoutManager({
           <span className="text-[9.5px] font-semibold text-slate-400">Quick:</span>
           <button
             type="button"
-            onClick={() => onApplyUniform(35)}
+            onClick={() => onApplyUniform(72)}
             className="rounded px-2 py-0.5 text-[9.5px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition"
           >
-            Compact (35px)
+            Safe (72px)
           </button>
           <button
             type="button"
@@ -928,10 +928,10 @@ function PaddingLayoutManager({
           </button>
           <button
             type="button"
-            onClick={() => onApplyUniform(75)}
+            onClick={() => onApplyUniform(110)}
             className="rounded px-2 py-0.5 text-[9.5px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition"
           >
-            Spacious (75px)
+            Design (110px)
           </button>
         </div>
       </div>
@@ -949,14 +949,14 @@ function PaddingLayoutManager({
           label="All Sides Equal Padding"
           value={uniformVal}
           defaultValue={Math.round((defaultPaddingTop + defaultPaddingLeft) / 2)}
-          min={15}
-          max={120}
+          min={72}
+          max={140}
           step={1}
           quickPresets={[
-            { label: "Compact (35px)", value: 35 },
-            { label: "Default (52px)", value: 52 },
-            { label: "Spacious (75px)", value: 75 },
-            { label: "Deep (95px)", value: 95 },
+            { label: "Safe (72px)", value: 72 },
+            { label: "Design (110px)", value: 110 },
+            { label: "Spacious (120px)", value: 120 },
+            { label: "Deep (130px)", value: 130 },
           ]}
           onChange={(val) => {
             setUniformVal(val);
@@ -981,14 +981,14 @@ function PaddingLayoutManager({
           label="Top Margin / Padding (▲)"
           value={paddingTop}
           defaultValue={defaultPaddingTop}
-          min={10}
+          min={72}
           max={140}
           step={1}
           quickPresets={[
-            { label: "Tight (28px)", value: 28 },
+            { label: "Safe (72px)", value: 72 },
             { label: `Default (${defaultPaddingTop}px)`, value: defaultPaddingTop },
-            { label: "Spacious (75px)", value: 75 },
-            { label: "Deep (100px)", value: 100 },
+            { label: "Spacious (120px)", value: 120 },
+            { label: "Deep (130px)", value: 130 },
           ]}
           onChange={(val) => onPaddingChange("paddingTop", val)}
           onReset={() => onPaddingChange("paddingTop", undefined)}
@@ -1000,14 +1000,14 @@ function PaddingLayoutManager({
           label="Bottom Margin / Padding (▼)"
           value={paddingBottom}
           defaultValue={defaultPaddingBottom}
-          min={10}
+          min={72}
           max={140}
           step={1}
           quickPresets={[
-            { label: "Tight (24px)", value: 24 },
+            { label: "Safe (72px)", value: 72 },
             { label: `Default (${defaultPaddingBottom}px)`, value: defaultPaddingBottom },
-            { label: "Spacious (75px)", value: 75 },
-            { label: "Deep (100px)", value: 100 },
+            { label: "Spacious (120px)", value: 120 },
+            { label: "Deep (130px)", value: 130 },
           ]}
           onChange={(val) => onPaddingChange("paddingBottom", val)}
           onReset={() => onPaddingChange("paddingBottom", undefined)}
@@ -1029,14 +1029,14 @@ function PaddingLayoutManager({
           label="Left Margin / Padding (◀)"
           value={paddingLeft}
           defaultValue={defaultPaddingLeft}
-          min={10}
+          min={72}
           max={140}
           step={1}
           quickPresets={[
-            { label: "Narrow (35px)", value: 35 },
+            { label: "Safe (72px)", value: 72 },
             { label: `Default (${defaultPaddingLeft}px)`, value: defaultPaddingLeft },
-            { label: "Spacious (75px)", value: 75 },
-            { label: "Wide (95px)", value: 95 },
+            { label: "Spacious (120px)", value: 120 },
+            { label: "Wide (130px)", value: 130 },
           ]}
           onChange={(val) => onPaddingChange("paddingLeft", val)}
           onReset={() => onPaddingChange("paddingLeft", undefined)}
@@ -1048,14 +1048,14 @@ function PaddingLayoutManager({
           label="Right Margin / Padding (▶)"
           value={paddingRight}
           defaultValue={defaultPaddingRight}
-          min={10}
+          min={72}
           max={140}
           step={1}
           quickPresets={[
-            { label: "Narrow (35px)", value: 35 },
+            { label: "Safe (72px)", value: 72 },
             { label: `Default (${defaultPaddingRight}px)`, value: defaultPaddingRight },
-            { label: "Spacious (75px)", value: 75 },
-            { label: "Wide (95px)", value: 95 },
+            { label: "Spacious (120px)", value: 120 },
+            { label: "Wide (130px)", value: 130 },
           ]}
           onChange={(val) => onPaddingChange("paddingRight", val)}
           onReset={() => onPaddingChange("paddingRight", undefined)}
@@ -1243,16 +1243,16 @@ export default function CertificateCustomizerDrawer({
 
   // When user switches certificate type, reopen core sections for that template only
   useEffect(() => {
-    setActiveTab("all");
+    setActiveTab(isMarksheetV2 ? "border" : "all");
     setSearchQuery("");
     setOpenSections({
       logos: true,
       typography: true,
       padding: true,
-      watermark: !isMarksheetV2,
+      watermark: true,
       student: true,
       signatures: false,
-      border: false,
+      border: isMarksheetV2,
       candidate: true,
       marks: isMarksheet,
       center: false,
@@ -1369,16 +1369,17 @@ export default function CertificateCustomizerDrawer({
       if (activeTab === "signatures" && secId !== "signatures") return false;
       if (activeTab === "marks" && secId !== "marks") return false;
       if (activeTab === "center" && secId !== "center") return false;
+      if (activeTab === "border" && secId !== "border") return false;
     }
     if (!query) return true;
     return terms.some((t) => t.toLowerCase().includes(query));
   };
 
   // Dimensions & Defaults
-  const defaultLogoH = isMarksheetV2 ? 86 : isMarksheetV1 ? 92 : 84;
+  const defaultLogoH = isMarksheetV2 ? 159 : isMarksheetV1 ? 92 : 84;
   const currentLogoH = activeData.logoHeight || defaultLogoH;
 
-  const defaultLogoW = isMarksheetV2 ? 175 : isMarksheetV1 ? 195 : 180;
+  const defaultLogoW = isMarksheetV2 ? 220 : isMarksheetV1 ? 195 : 180;
   const currentLogoW = activeData.logoWidth || defaultLogoW;
 
   const defaultTitleFont = isMarksheetV2 ? 22 : isMarksheetV1 ? 20.5 : 20;
@@ -1390,19 +1391,19 @@ export default function CertificateCustomizerDrawer({
   const defaultPartnerH = isMarksheetV1 ? 46 : 44;
   const currentPartnerH = activeData.partnerLogosHeight || defaultPartnerH;
 
-  const defaultPhotoW = isMarksheetV2 ? 128 : isMarksheetV1 ? 138 : 72;
+  const defaultPhotoW = isMarksheetV2 ? 108 : isMarksheetV1 ? 138 : 72;
   const currentPhotoW = activeData.photoWidth || defaultPhotoW;
 
-  const defaultPhotoH = isMarksheetV2 ? 158 : isMarksheetV1 ? 152 : 86;
+  const defaultPhotoH = isMarksheetV2 ? 132 : isMarksheetV1 ? 152 : 86;
   const currentPhotoH = activeData.photoHeight || defaultPhotoH;
 
   const defaultStudentSigH = isMarksheetV1 ? 36 : 28;
   const currentStudentSigH = activeData.studentSigHeight || defaultStudentSigH;
 
-  const defaultStampSize = isMarksheetV2 ? 64 : isMarksheetV1 ? 82 : 84;
+  const defaultStampSize = isMarksheetV2 ? 90 : isMarksheetV1 ? 82 : 84;
   const currentStampSize = activeData.stampSize || defaultStampSize;
 
-  const defaultDirectorSigH = isMarksheetV2 ? 36 : isMarksheetV1 ? 44 : 48;
+  const defaultDirectorSigH = isMarksheetV2 ? 34 : isMarksheetV1 ? 44 : 48;
   const currentDirectorSigH = activeData.directorSigHeight || defaultDirectorSigH;
 
   const defaultGoldMedalSize = 125;
@@ -1412,27 +1413,27 @@ export default function CertificateCustomizerDrawer({
   const currentQrSize = activeData.qrCodeSize || defaultQrSize;
 
   // Padding & Layout Spacing Defaults
-  const defaultPaddingTop = isMarksheetV2 ? 67 : isMarksheet ? 48 : 66;
+  const defaultPaddingTop = isMarksheetV2 ? 110 : isMarksheet ? 48 : 66;
   const currentPaddingTop =
     activeData.paddingTop !== undefined ? activeData.paddingTop : defaultPaddingTop;
 
-  const defaultPaddingBottom = isMarksheetV2 ? 67 : isMarksheet ? 42 : 68;
+  const defaultPaddingBottom = isMarksheetV2 ? 116 : isMarksheet ? 42 : 68;
   const currentPaddingBottom =
     activeData.paddingBottom !== undefined ? activeData.paddingBottom : defaultPaddingBottom;
 
-  const defaultPaddingLeft = isMarksheetV2 ? 67 : isMarksheet ? 56 : 58;
+  const defaultPaddingLeft = isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
   const currentPaddingLeft =
     activeData.paddingLeft !== undefined ? activeData.paddingLeft : defaultPaddingLeft;
 
-  const defaultPaddingRight = isMarksheetV2 ? 67 : isMarksheet ? 56 : 58;
+  const defaultPaddingRight = isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
   const currentPaddingRight =
     activeData.paddingRight !== undefined ? activeData.paddingRight : defaultPaddingRight;
 
-  const defaultHeaderSpacing = isMarksheet ? 2 : 4;
+  const defaultHeaderSpacing = isMarksheetV2 ? 4 : isMarksheet ? 2 : 4;
   const currentHeaderSpacing =
     activeData.headerSpacing !== undefined ? activeData.headerSpacing : defaultHeaderSpacing;
 
-  const defaultContentSpacing = isMarksheet ? 4 : 8;
+  const defaultContentSpacing = isMarksheetV2 ? 6 : isMarksheet ? 4 : 8;
   const currentContentSpacing =
     activeData.contentSpacing !== undefined ? activeData.contentSpacing : defaultContentSpacing;
 
@@ -1604,7 +1605,9 @@ export default function CertificateCustomizerDrawer({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("padding")}
+          onClick={() => {
+            setActiveTab("padding");
+          }}
           className={cn(
             "rounded-lg px-2.5 py-1 text-[10.5px] font-bold transition whitespace-nowrap",
             activeTab === "padding"
@@ -1613,6 +1616,21 @@ export default function CertificateCustomizerDrawer({
           )}
         >
           Padding &amp; Layout
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("border");
+            setOpenSections((prev) => ({ ...prev, border: true }));
+          }}
+          className={cn(
+            "rounded-lg px-2.5 py-1 text-[10.5px] font-bold transition whitespace-nowrap",
+            activeTab === "border"
+              ? "bg-[#C4A35A] text-slate-950 shadow-sm"
+              : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+          )}
+        >
+          Border
         </button>
         <button
           type="button"
@@ -1687,49 +1705,87 @@ export default function CertificateCustomizerDrawer({
             onToggle={() => toggleSection("logos")}
             badge={`${logosControlCount} Controls`}
           >
-            {/* Institute Logo Upload + Height & Width Resizing */}
-            <ImageUploaderWithSizer
-              category="institute-logo"
-              label="Institute Header Logo"
-              description="Top-left institutional crest logo. Adjust height & container width smoothly."
-              currentValue={activeData.logoUrl}
-              defaultPreview="/cert/ivesdc-logo.png"
-              onUpload={(val) => onFieldChange("logoUrl", val)}
-              onResetAsset={() => onFieldChange("logoUrl", undefined)}
-              sizeControl={{
-                label: "Logo Image Height",
-                value: currentLogoH,
-                defaultValue: defaultLogoH,
-                min: 40,
-                max: 170,
-                step: 2,
-                quickPresets: [
-                  { label: "Compact", value: 65 },
-                  { label: "Default", value: defaultLogoH },
-                  { label: "Enlarged", value: 110 },
-                  { label: "Jumbo", value: 135 },
-                ],
-                onChange: (val) => onFieldChange("logoHeight", val),
-                onReset: () => onFieldChange("logoHeight", undefined),
-              }}
-              secondarySizeControl={{
-                label: "Logo Container Width",
-                value: currentLogoW,
-                defaultValue: defaultLogoW,
-                min: 120,
-                max: 300,
-                step: 5,
-                quickPresets: [
-                  { label: "Narrow", value: 160 },
-                  { label: "Standard", value: defaultLogoW },
-                  { label: "Wide", value: 240 },
-                ],
-                onChange: (val) => onFieldChange("logoWidth", val),
-                onReset: () => onFieldChange("logoWidth", undefined),
-              }}
-            />
+            {/* Result Form 2: fixed IVESDC_header.svg — not dynamic logo/title */}
+            {isMarksheetV2 ? (
+              <>
+                <ImageUploaderWithSizer
+                  category="header"
+                  label="Fixed Header (IVESDC_header.svg)"
+                  description="Full header is a fixed SVG — logo, title, ribbon & legal text are baked in. Replace only if you have a new header file."
+                  currentValue={activeData.customHeaderUrl}
+                  defaultPreview="/certificates/IVESDC_header.svg"
+                  onUpload={(val) => onFieldChange("customHeaderUrl", val)}
+                  onResetAsset={() =>
+                    onFieldChange("customHeaderUrl", "/certificates/IVESDC_header.svg")
+                  }
+                  sizeControl={{
+                    label: "Header Height",
+                    value: activeData.headerHeight || 128,
+                    defaultValue: 128,
+                    min: 80,
+                    max: 220,
+                    step: 2,
+                    quickPresets: [
+                      { label: "Compact", value: 100 },
+                      { label: "Default", value: 128 },
+                      { label: "Large", value: 160 },
+                      { label: "XL", value: 190 },
+                    ],
+                    onChange: (val) => onFieldChange("headerHeight", val),
+                    onReset: () => onFieldChange("headerHeight", undefined),
+                  }}
+                />
+                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-[10px] text-amber-100/90 leading-snug">
+                  Header height / photo / stamp / QR / padding all resize live inside the border.
+                  Use <span className="font-bold text-amber-200">Padding &amp; Layout</span> to keep
+                  content clear of the floral/Design frame.
+                </p>
+              </>
+            ) : (
+              <ImageUploaderWithSizer
+                category="institute-logo"
+                label="Institute Brand Lockup (Logo)"
+                description="Top-left institutional crest logo. Adjust height & container width smoothly."
+                currentValue={activeData.logoUrl}
+                defaultPreview="/cert/ivesdc-logo.png"
+                onUpload={(val) => onFieldChange("logoUrl", val)}
+                onResetAsset={() => onFieldChange("logoUrl", undefined)}
+                sizeControl={{
+                  label: "Logo Image Height",
+                  value: currentLogoH,
+                  defaultValue: defaultLogoH,
+                  min: 40,
+                  max: 170,
+                  step: 2,
+                  quickPresets: [
+                    { label: "Compact", value: 65 },
+                    { label: "Default", value: defaultLogoH },
+                    { label: "Enlarged", value: 110 },
+                    { label: "Jumbo", value: 135 },
+                  ],
+                  onChange: (val) => onFieldChange("logoHeight", val),
+                  onReset: () => onFieldChange("logoHeight", undefined),
+                }}
+                secondarySizeControl={{
+                  label: "Logo Container Width",
+                  value: currentLogoW,
+                  defaultValue: defaultLogoW,
+                  min: 120,
+                  max: 300,
+                  step: 5,
+                  quickPresets: [
+                    { label: "Narrow", value: 160 },
+                    { label: "Standard", value: defaultLogoW },
+                    { label: "Wide", value: 240 },
+                  ],
+                  onChange: (val) => onFieldChange("logoWidth", val),
+                  onReset: () => onFieldChange("logoWidth", undefined),
+                }}
+              />
+            )}
 
-            {/* Title Font Size Slider */}
+            {/* Title Font Size — not used on Result Form 2 (header is fixed SVG) */}
+            {!isMarksheetV2 && (
             <SizeSliderControl
               label="Institution Title Font Size"
               value={currentTitleFont}
@@ -1756,67 +1812,6 @@ export default function CertificateCustomizerDrawer({
               onReset={() => onFieldChange("titleFontSize", undefined)}
               colorTheme="gold"
             />
-
-            {/* Header text — Result - 2 blank-form editable copy */}
-            {isMarksheetV2 && (
-              <div className="space-y-2 rounded-xl border border-white/10 bg-black/30 p-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-[#C4A35A]">
-                  Header Text (matches official blank)
-                </p>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">
-                    Institute Title (2 lines auto-split on AND)
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={
-                      activeData.instituteName ||
-                      "INSTITUTE OF VOCATIONAL EDUCATION AND SKILL DEVELOPMENT COUNCIL"
-                    }
-                    onChange={(e) => onFieldChange("instituteName", e.target.value)}
-                    className="w-full rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-[11px] text-white outline-none focus:border-[#C4A35A] resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">
-                    Orange Ribbon Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={activeData.tagline || "Building a Skilled and Self-Reliant Nation"}
-                    onChange={(e) => onFieldChange("tagline", e.target.value)}
-                    className="w-full rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-[11px] text-white outline-none focus:border-[#C4A35A]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">
-                    Accreditation Line 1
-                  </label>
-                  <input
-                    type="text"
-                    value={
-                      activeData.accreditationLine1 ||
-                      "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,"
-                    }
-                    onChange={(e) => onFieldChange("accreditationLine1", e.target.value)}
-                    className="w-full rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-[11px] text-white outline-none focus:border-[#C4A35A]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">
-                    Accreditation Line 2
-                  </label>
-                  <input
-                    type="text"
-                    value={
-                      activeData.accreditationLine2 ||
-                      "Ministry of Corporate Affairs, Government of India, ISO 21001:2018 & ISO 9001:2015 Certified Organization"
-                    }
-                    onChange={(e) => onFieldChange("accreditationLine2", e.target.value)}
-                    className="w-full rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-[11px] text-white outline-none focus:border-[#C4A35A]"
-                  />
-                </div>
-              </div>
             )}
 
             {/* ISO seal — certificates + Result (V1) only; not on Result - 2 */}
@@ -2104,8 +2099,7 @@ export default function CertificateCustomizerDrawer({
         )}
 
         {/* ================= SECTION 4: WATERMARK & SECURITY PATTERN ================= */}
-        {!isMarksheetV2 &&
-          shouldShowSection("watermark", [
+        {shouldShowSection("watermark", [
           "watermark",
           "background",
           "pattern",
@@ -2113,11 +2107,21 @@ export default function CertificateCustomizerDrawer({
           "seal",
           "grid",
           "bich",
+          "flower",
+          "shadow",
         ]) && (
           <DropdownSection
             id="watermark"
-            title="4. Background Security Watermark & Pattern"
-            subtitle="Control background watermark style, opacity slider & color"
+            title={
+              isMarksheetV2
+                ? "4. Shadow Flower Background"
+                : "4. Background Security Watermark & Pattern"
+            }
+            subtitle={
+              isMarksheetV2
+                ? "Official bgcert geometric pattern inside floral border"
+                : "Control background watermark style, opacity slider & color"
+            }
             icon={<Sparkles className="h-4 w-4" />}
             isOpen={openSections.watermark}
             onToggle={() => toggleSection("watermark")}
@@ -2130,13 +2134,28 @@ export default function CertificateCustomizerDrawer({
                 <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
                   Watermark Pattern Style:
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className={cn("grid gap-2", isMarksheetV2 ? "grid-cols-2" : "grid-cols-3")}>
                   {[
+                    ...(isMarksheetV2
+                      ? [
+                          {
+                            id: "shadow-flower",
+                            label: "Shadow Flower",
+                            desc: "Official embossed geometric (bgcert)",
+                          },
+                        ]
+                      : []),
                     { id: "tiled-grid", label: "Tiled Grid", desc: "Repeating diagonal seal" },
                     { id: "crest", label: "Central Crest", desc: "Single large emblem" },
                     { id: "none", label: "None", desc: "Pure white background" },
                   ].map((wStyle) => {
-                    const isSelected = (activeData.watermarkType || (selectedType === "marksheet" ? "tiled-grid" : "crest")) === wStyle.id;
+                    const isSelected =
+                      (activeData.watermarkType ||
+                        (isMarksheetV2
+                          ? "shadow-flower"
+                          : selectedType === "marksheet"
+                            ? "tiled-grid"
+                            : "crest")) === wStyle.id;
                     return (
                       <button
                         key={wStyle.id}
@@ -2162,38 +2181,66 @@ export default function CertificateCustomizerDrawer({
                 <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                      Watermark Opacity:
+                      Background Pattern Opacity:
                     </span>
                     <span className="rounded bg-purple-100 px-2 py-0.5 font-mono text-[11px] font-black text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                      {Math.round((activeData.watermarkOpacity !== undefined ? activeData.watermarkOpacity : 0.04) * 100)}%
+                      {Math.round(
+                        (activeData.watermarkOpacity !== undefined
+                          ? activeData.watermarkOpacity
+                          : isMarksheetV2
+                            ? 0.55
+                            : 0.04) * 100
+                      )}
+                      %
                     </span>
                   </div>
 
                   <input
                     type="range"
                     min={0}
-                    max={0.20}
-                    step={0.005}
-                    value={activeData.watermarkOpacity !== undefined ? activeData.watermarkOpacity : 0.04}
-                    onChange={(e) => onFieldChange("watermarkOpacity", parseFloat(e.target.value))}
+                    max={isMarksheetV2 ? 1 : 0.2}
+                    step={isMarksheetV2 ? 0.01 : 0.005}
+                    value={
+                      activeData.watermarkOpacity !== undefined
+                        ? activeData.watermarkOpacity
+                        : isMarksheetV2
+                          ? 0.55
+                          : 0.04
+                    }
+                    onChange={(e) =>
+                      onFieldChange("watermarkOpacity", parseFloat(e.target.value))
+                    }
                     className="w-full accent-purple-600 cursor-pointer"
                   />
 
-                  {/* Quick Preset Buttons */}
                   <div className="flex items-center gap-1.5 pt-1">
-                    {[
-                      { label: "Off (0%)", val: 0 },
-                      { label: "Subtle (3%)", val: 0.03 },
-                      { label: "Default (5%)", val: 0.05 },
-                      { label: "Vivid (10%)", val: 0.10 },
-                    ].map((p) => (
+                    {(isMarksheetV2
+                      ? [
+                          { label: "Soft", val: 0.35 },
+                          { label: "Default", val: 0.55 },
+                          { label: "Strong", val: 0.75 },
+                          { label: "Full", val: 1 },
+                        ]
+                      : [
+                          { label: "Off (0%)", val: 0 },
+                          { label: "Subtle (3%)", val: 0.03 },
+                          { label: "Default (5%)", val: 0.05 },
+                          { label: "Vivid (10%)", val: 0.1 },
+                        ]
+                    ).map((p) => (
                       <button
                         key={p.label}
                         type="button"
                         onClick={() => onFieldChange("watermarkOpacity", p.val)}
                         className={cn(
                           "rounded-md border px-2 py-1 text-[10px] font-bold transition flex-1 text-center",
-                          Math.abs((activeData.watermarkOpacity !== undefined ? activeData.watermarkOpacity : 0.04) - p.val) < 0.01
+                          Math.abs(
+                            (activeData.watermarkOpacity !== undefined
+                              ? activeData.watermarkOpacity
+                              : isMarksheetV2
+                                ? 0.55
+                                : 0.04) - p.val
+                          ) < 0.02
                             ? "border-purple-600 bg-purple-600 text-white shadow-xs"
                             : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                         )}
@@ -2202,6 +2249,20 @@ export default function CertificateCustomizerDrawer({
                       </button>
                     ))}
                   </div>
+
+                  {isMarksheetV2 && (
+                    <ImageUploaderWithSizer
+                      category="bg-pattern"
+                      label="Background Pattern Image"
+                      description="Default is /certificates/bgcert.png (shadow flower). Upload to replace."
+                      currentValue={activeData.backgroundPatternUrl}
+                      defaultPreview="/certificates/bgcert.png"
+                      onUpload={(val) => onFieldChange("backgroundPatternUrl", val)}
+                      onResetAsset={() =>
+                        onFieldChange("backgroundPatternUrl", "/certificates/bgcert.png")
+                      }
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -2236,10 +2297,17 @@ export default function CertificateCustomizerDrawer({
                 label: "Photo Width",
                 value: currentPhotoW,
                 defaultValue: defaultPhotoW,
-                min: 50,
-                max: 180,
+                min: isMarksheetV2 ? 60 : 50,
+                max: isMarksheetV2 ? 200 : 180,
                 step: 2,
-                quickPresets: isMarksheet
+                quickPresets: isMarksheetV2
+                  ? [
+                      { label: "Compact (90px)", value: 90 },
+                      { label: "Default (108px)", value: 108 },
+                      { label: "Large (140px)", value: 140 },
+                      { label: "XL (170px)", value: 170 },
+                    ]
+                  : isMarksheet
                   ? [
                       { label: "Compact (95px)", value: 95 },
                       { label: "Standard (120px)", value: 120 },
@@ -2258,10 +2326,17 @@ export default function CertificateCustomizerDrawer({
                 label: "Photo Height",
                 value: currentPhotoH,
                 defaultValue: defaultPhotoH,
-                min: 60,
-                max: 200,
+                min: isMarksheetV2 ? 70 : 60,
+                max: isMarksheetV2 ? 240 : 200,
                 step: 2,
-                quickPresets: isMarksheet
+                quickPresets: isMarksheetV2
+                  ? [
+                      { label: "Compact (110px)", value: 110 },
+                      { label: "Default (132px)", value: 132 },
+                      { label: "Large (165px)", value: 165 },
+                      { label: "XL (200px)", value: 200 },
+                    ]
+                  : isMarksheet
                   ? [
                       { label: "Compact (115px)", value: 115 },
                       { label: "Standard (135px)", value: 135 },
@@ -2313,7 +2388,11 @@ export default function CertificateCustomizerDrawer({
           <DropdownSection
             id="signatures"
             title="6. Stamps, Signatures & Verification"
-            subtitle="Council stamp, Director signature, medals & QR size"
+            subtitle={
+              isMarksheetV2
+                ? "Upload Director stamp + signature (Result Form 2 footer). Resize live."
+                : "Council stamp, Director signature, medals & QR size"
+            }
             icon={<Award className="h-4 w-4" />}
             isOpen={openSections.signatures}
             onToggle={() => toggleSection("signatures")}
@@ -2322,24 +2401,35 @@ export default function CertificateCustomizerDrawer({
             {/* Official Stamp / Seal */}
             <ImageUploaderWithSizer
               category="stamp"
-              label="Council Blue Stamp"
-              description="Circular verification seal overlaid above director signature."
+              label={isMarksheetV2 ? "Director Stamp (Upload)" : "Council Blue Stamp"}
+              description={
+                isMarksheetV2
+                  ? "Circular stamp over Director Signature line (bottom-right). Upload PNG."
+                  : "Circular verification seal overlaid above director signature."
+              }
               currentValue={activeData.stampUrl}
               defaultPreview="/cert/stamp-blue.png"
               onUpload={(val) => onFieldChange("stampUrl", val)}
               onResetAsset={() => onFieldChange("stampUrl", undefined)}
               sizeControl={{
-                label: "Stamp Diameter",
+                label: isMarksheetV2 ? "Stamp Size" : "Stamp Diameter",
                 value: currentStampSize,
                 defaultValue: defaultStampSize,
-                min: 45,
-                max: 130,
+                min: isMarksheetV2 ? 50 : 45,
+                max: isMarksheetV2 ? 180 : 130,
                 step: 2,
-                quickPresets: [
-                  { label: "Compact", value: 60 },
-                  { label: "Standard", value: defaultStampSize },
-                  { label: "Large", value: 100 },
-                ],
+                quickPresets: isMarksheetV2
+                  ? [
+                      { label: "Small", value: 70 },
+                      { label: "Standard", value: 90 },
+                      { label: "Large", value: 120 },
+                      { label: "XL", value: 150 },
+                    ]
+                  : [
+                      { label: "Compact", value: 60 },
+                      { label: "Standard", value: defaultStampSize },
+                      { label: "Large", value: 100 },
+                    ],
                 onChange: (val) => onFieldChange("stampSize", val),
                 onReset: () => onFieldChange("stampSize", undefined),
               }}
@@ -2348,8 +2438,12 @@ export default function CertificateCustomizerDrawer({
             {/* Director Signature */}
             <ImageUploaderWithSizer
               category="director-sig"
-              label="Director Official Signature"
-              description="Official signature image of the director."
+              label={isMarksheetV2 ? "Director Signature (Upload)" : "Director Official Signature"}
+              description={
+                isMarksheetV2
+                  ? "Handwritten signature overlaid on the stamp (bottom-right). Upload PNG."
+                  : "Official signature image of the director."
+              }
               currentValue={activeData.directorSignatureUrl}
               defaultPreview="/cert/sig-director.png"
               onUpload={(val) => onFieldChange("directorSignatureUrl", val)}
@@ -2414,35 +2508,95 @@ export default function CertificateCustomizerDrawer({
 
             {/* Verification QR Code Size Slider */}
             <SizeSliderControl
-              label="Verification QR Code Size"
+              label={
+                isMarksheetV2
+                  ? "Verification QR + Barcode Size"
+                  : "Verification QR Code Size"
+              }
               value={currentQrSize}
               defaultValue={defaultQrSize}
-              min={35}
-              max={110}
+              min={isMarksheetV2 ? 40 : 35}
+              max={isMarksheetV2 ? 140 : 110}
               step={2}
-              quickPresets={[
-                { label: "Compact", value: 48 },
-                { label: "Standard", value: defaultQrSize },
-                { label: "Large", value: 85 },
-              ]}
+              quickPresets={
+                isMarksheetV2
+                  ? [
+                      { label: "Compact", value: 56 },
+                      { label: "Standard", value: 72 },
+                      { label: "Large", value: 96 },
+                      { label: "XL", value: 120 },
+                    ]
+                  : [
+                      { label: "Compact", value: 48 },
+                      { label: "Standard", value: defaultQrSize },
+                      { label: "Large", value: 85 },
+                    ]
+              }
               onChange={(val) => onFieldChange("qrCodeSize", val)}
               onReset={() => onFieldChange("qrCodeSize", undefined)}
               colorTheme="emerald"
             />
 
-            {/* Live Vector QR Preview with Quiet-Zone & Dynamic URL */}
+            {/* Hologram — manual sticker only (no upload) — Result Form 2 */}
+            {isMarksheetV2 && (
+              <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-3 space-y-2.5">
+                <div>
+                  <span className="text-[11px] font-bold text-amber-200 flex items-center gap-1.5">
+                    <Stamp className="h-3.5 w-3.5" />
+                    Security Hologram (manual 23 × 23 mm)
+                  </span>
+                  <p className="mt-0.5 text-[9.5px] text-slate-400 leading-snug">
+                    Upload nahi — print ke baad physical hologram sticker yahan paste karo.
+                    Box sirf placement guide hai (fixed 23×23 mm).
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={activeData.showHologramGuide !== false}
+                    onChange={(e) =>
+                      onFieldChange("showHologramGuide", e.target.checked)
+                    }
+                    className="rounded border-white/30"
+                  />
+                  Show hologram placement box on marksheet
+                </label>
+                <div className="flex items-center justify-center rounded-lg border border-dashed border-amber-400/40 bg-white/95 p-3">
+                  <div
+                    className="flex flex-col items-center justify-center border border-dashed border-slate-400 bg-slate-50 text-center"
+                    style={{ width: "23mm", height: "23mm", boxSizing: "border-box" }}
+                  >
+                    <span className="px-1 text-[8px] font-black uppercase text-slate-500 leading-tight">
+                      Hologram
+                    </span>
+                    <span className="mt-0.5 text-[7px] font-bold text-slate-500">
+                      23×23 mm
+                    </span>
+                    <span className="mt-0.5 text-[6px] font-semibold text-slate-400">
+                      Manual sticker
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Live Vector QR Preview — auto from enrollment */}
             <div className="rounded-xl border border-white/10 bg-[#06101E] p-3 shadow-inner space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                   <QrCode className="h-3.5 w-3.5" />
-                  <span>Ultra-Clear Vector QR Preview</span>
+                  <span>Dynamic QR (auto-generate)</span>
                 </span>
                 <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-mono text-emerald-300 border border-emerald-500/30">
-                  Crisp SVG Quiet Zone
+                  From enrollment
                 </span>
               </div>
+              <p className="text-[9.5px] text-slate-400 leading-snug">
+                Enrollment / marksheet number badalte hi QR naya generate hota hai — fixed image nahi.
+              </p>
               <div className="flex items-center justify-center p-3 bg-white/95 rounded-lg border border-slate-300 shadow-sm">
                 <CertificateQRCode
+                  key={`preview-qr-${activeData.registrationNumber}-${activeData.certificateNumber}-${currentQrSize}`}
                   docType={isMarksheet ? "marksheet" : "certificate"}
                   enrollmentNo={activeData.registrationNumber || "4739846"}
                   certificateNo={activeData.certificateNumber || activeData.serialNumber}
@@ -2471,11 +2625,11 @@ export default function CertificateCustomizerDrawer({
         )}
 
         {/* ================= SECTION 7: BORDER & CUSTOM FRAME ================= */}
-        {shouldShowSection("border", ["border", "frame", "guilloche", "ornate", "custom border"]) && (
+        {shouldShowSection("border", ["border", "frame", "guilloche", "ornate", "custom border", "design", "floral"]) && (
           <DropdownSection
             id="border"
             title="7. Official Border & Custom Frame"
-            subtitle="Choose pristine border or upload custom frame"
+            subtitle="Floral, Design.svg, or upload your own A4 frame"
             icon={<Layers className="h-4 w-4" />}
             isOpen={openSections.border}
             onToggle={() => toggleSection("border")}
@@ -2486,28 +2640,99 @@ export default function CertificateCustomizerDrawer({
                 Select Official Border
               </label>
               {isMarksheetV2 ? (
-                <div className="grid grid-cols-1 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onFieldChange("borderStyle", "guilloche");
-                      onFieldChange(
-                        "customBorderUrl",
-                        "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
-                      );
-                    }}
-                    className={cn(
-                      "rounded-lg p-2 text-[10.5px] font-bold transition border text-center",
-                      !activeData.customBorderUrl ||
-                        activeData.customBorderUrl.includes("ONLY_OUTSIDE_FLORAL_BORDER") ||
-                        activeData.customBorderUrl.includes("certificate_border_last_image")
-                        ? "border-[#C4A35A] bg-[#C4A35A] text-slate-950 shadow-sm ring-1 ring-white/30"
-                        : "border-white/10 bg-white/5 text-slate-300 hover:text-white"
-                    )}
-                  >
-                    Outside Floral Border (A4 SVG)
-                  </button>
-                </div>
+                (() => {
+                  const borderUrl = activeData.customBorderUrl || "";
+                  const isDesignBorder =
+                    borderUrl.includes("Design.svg") ||
+                    borderUrl.includes("DESIGN_BORDER");
+                  const isFloralBorder =
+                    !borderUrl ||
+                    borderUrl.includes("ONLY_OUTSIDE_FLORAL_BORDER") ||
+                    borderUrl.includes("certificate_border_last_image");
+                  return (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onFieldChange("borderStyle", "guilloche");
+                          onFieldChange(
+                            "customBorderUrl",
+                            "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
+                          );
+                        }}
+                        className={cn(
+                          "rounded-lg overflow-hidden text-left transition border",
+                          isFloralBorder && !isDesignBorder
+                            ? "border-[#C4A35A] bg-[#C4A35A]/15 ring-1 ring-[#C4A35A]/50"
+                            : "border-white/10 bg-white/5 hover:border-white/25"
+                        )}
+                      >
+                        <div className="relative h-16 w-full bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
+                            alt="Floral border"
+                            className="absolute inset-0 h-full w-full object-contain p-0.5"
+                            draggable={false}
+                          />
+                        </div>
+                        <div
+                          className={cn(
+                            "px-1.5 py-1.5 text-[10px] font-bold text-center leading-tight",
+                            isFloralBorder && !isDesignBorder
+                              ? "text-[#F4CF74]"
+                              : "text-slate-300"
+                          )}
+                        >
+                          Outside Floral
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onFieldChange("borderStyle", "guilloche");
+                          onFieldChange(
+                            "customBorderUrl",
+                            "/certificates/Design.svg"
+                          );
+                          // Design.svg has a thick lace — keep content clear of ornament
+                          const curT = activeData.paddingTop ?? 0;
+                          const curB = activeData.paddingBottom ?? 0;
+                          const curL = activeData.paddingLeft ?? 0;
+                          const curR = activeData.paddingRight ?? 0;
+                          if (curT < 110) onFieldChange("paddingTop", 110);
+                          if (curB < 116) onFieldChange("paddingBottom", 116);
+                          if (curL < 110) onFieldChange("paddingLeft", 110);
+                          if (curR < 110) onFieldChange("paddingRight", 110);
+                        }}
+                        className={cn(
+                          "rounded-lg overflow-hidden text-left transition border",
+                          isDesignBorder
+                            ? "border-[#C4A35A] bg-[#C4A35A]/15 ring-1 ring-[#C4A35A]/50"
+                            : "border-white/10 bg-white/5 hover:border-white/25"
+                        )}
+                      >
+                        <div className="relative h-16 w-full bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/certificates/Design.svg"
+                            alt="Design border"
+                            className="absolute inset-0 h-full w-full object-contain p-0.5"
+                            draggable={false}
+                          />
+                        </div>
+                        <div
+                          className={cn(
+                            "px-1.5 py-1.5 text-[10px] font-bold text-center leading-tight",
+                            isDesignBorder ? "text-[#F4CF74]" : "text-slate-300"
+                          )}
+                        >
+                          Design Border
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
@@ -2542,6 +2767,11 @@ export default function CertificateCustomizerDrawer({
                   </button>
                 </div>
               )}
+              {isMarksheetV2 && (
+                <p className="mt-1.5 text-[10px] text-slate-400 leading-snug">
+                  Design Border uses <span className="font-mono text-slate-300">/certificates/Design.svg</span> (A4 frame). You can still upload a custom frame below.
+                </p>
+              )}
             </div>
 
             {/* Custom Border Image Upload */}
@@ -2552,7 +2782,9 @@ export default function CertificateCustomizerDrawer({
               currentValue={activeData.customBorderUrl}
               defaultPreview={
                 isMarksheetV2
-                  ? "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
+                  ? activeData.customBorderUrl?.includes("Design.svg")
+                    ? "/certificates/Design.svg"
+                    : "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
                   : "/cert/res-border-pristine.png"
               }
               onUpload={(val) => onFieldChange("customBorderUrl", val)}
@@ -2969,6 +3201,43 @@ export default function CertificateCustomizerDrawer({
                 </button>
               </div>
 
+              <SizeSliderControl
+                label="Grade System Font Size"
+                value={activeData.gradeSystemFontSize || 9.5}
+                defaultValue={9.5}
+                min={7}
+                max={16}
+                step={0.5}
+                unit="px"
+                colorTheme="gold"
+                quickPresets={[
+                  { label: "Small", value: 8 },
+                  { label: "Standard", value: 9.5 },
+                  { label: "Large", value: 12 },
+                  { label: "XL", value: 14 },
+                ]}
+                onChange={(val) => onFieldChange("gradeSystemFontSize", val)}
+                onReset={() => onFieldChange("gradeSystemFontSize", undefined)}
+              />
+              <SizeSliderControl
+                label="RESULT Box Font Size"
+                value={activeData.resultFontSize || 13}
+                defaultValue={13}
+                min={10}
+                max={20}
+                step={0.5}
+                unit="px"
+                colorTheme="emerald"
+                quickPresets={[
+                  { label: "Small", value: 11 },
+                  { label: "Standard", value: 13 },
+                  { label: "Large", value: 16 },
+                  { label: "XL", value: 18 },
+                ]}
+                onChange={(val) => onFieldChange("resultFontSize", val)}
+                onReset={() => onFieldChange("resultFontSize", undefined)}
+              />
+
               <div className="space-y-1.5">
                 {(activeData.gradeSystem || defaultGradeSystem).map((item, idx) => (
                   <div
@@ -3018,6 +3287,80 @@ export default function CertificateCustomizerDrawer({
             isOpen={openSections.center}
             onToggle={() => toggleSection("center")}
           >
+            {/* Font sizes for ATC / legal / office block */}
+            <SizeSliderControl
+              label="ATC Details Font Size"
+              value={activeData.atcFontSize || (isMarksheetV2 ? 9 : 10)}
+              defaultValue={isMarksheetV2 ? 9 : 10}
+              min={7}
+              max={16}
+              step={0.5}
+              unit="px"
+              colorTheme="blue"
+              quickPresets={[
+                { label: "Small", value: 8 },
+                { label: "Standard", value: isMarksheetV2 ? 9 : 10 },
+                { label: "Large", value: 12 },
+                { label: "XL", value: 14 },
+              ]}
+              onChange={(val) => onFieldChange("atcFontSize", val)}
+              onReset={() => onFieldChange("atcFontSize", undefined)}
+            />
+            <SizeSliderControl
+              label="Govt / Legal Text Font Size"
+              value={activeData.govOrderFontSize || 8}
+              defaultValue={8}
+              min={6}
+              max={14}
+              step={0.5}
+              unit="px"
+              colorTheme="blue"
+              quickPresets={[
+                { label: "Small", value: 7 },
+                { label: "Standard", value: 8 },
+                { label: "Large", value: 10 },
+                { label: "XL", value: 12 },
+              ]}
+              onChange={(val) => onFieldChange("govOrderFontSize", val)}
+              onReset={() => onFieldChange("govOrderFontSize", undefined)}
+            />
+            <SizeSliderControl
+              label="Registered Office Font Size"
+              value={activeData.registeredOfficeFontSize || 7.5}
+              defaultValue={7.5}
+              min={6}
+              max={13}
+              step={0.5}
+              unit="px"
+              colorTheme="blue"
+              quickPresets={[
+                { label: "Small", value: 7 },
+                { label: "Standard", value: 7.5 },
+                { label: "Large", value: 9 },
+                { label: "XL", value: 11 },
+              ]}
+              onChange={(val) => onFieldChange("registeredOfficeFontSize", val)}
+              onReset={() => onFieldChange("registeredOfficeFontSize", undefined)}
+            />
+            <SizeSliderControl
+              label="Signature Label Font Size"
+              value={activeData.signLabelFontSize || 10.5}
+              defaultValue={10.5}
+              min={8}
+              max={16}
+              step={0.5}
+              unit="px"
+              colorTheme="emerald"
+              quickPresets={[
+                { label: "Small", value: 9 },
+                { label: "Standard", value: 10.5 },
+                { label: "Large", value: 12 },
+                { label: "XL", value: 14 },
+              ]}
+              onChange={(val) => onFieldChange("signLabelFontSize", val)}
+              onReset={() => onFieldChange("signLabelFontSize", undefined)}
+            />
+
             {/* ATC Name */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">

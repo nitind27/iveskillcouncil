@@ -27,7 +27,7 @@ export default function OfferModal({ offer, onClose, onApplyNow }: OfferModalPro
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", delay: 0.1, stiffness: 300 }}
-            className="inline-block rounded-2xl bg-[#C4A35A] px-6 py-3 text-lg font-bold text-[#1A1408] mb-6 shadow-[0_0_16px_rgba(196,163,90,0.4)]"
+            className="inline-block rounded-2xl bg-[#FF7F0E] px-6 py-3 text-lg font-bold text-white mb-6 shadow-[0_0_16px_rgba(255,127,14,0.4)]"
           >
             {offer.discount}% OFF
           </motion.span>

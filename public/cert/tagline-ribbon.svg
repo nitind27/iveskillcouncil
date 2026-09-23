@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 34" width="520" height="34" fill="none">
+  <defs>
+    <linearGradient id="ribbonFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF9A3C"/>
+      <stop offset="45%" stop-color="#F58220"/>
+      <stop offset="100%" stop-color="#D45A00"/>
+    </linearGradient>
+    <linearGradient id="ribbonEdge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFB56A"/>
+      <stop offset="100%" stop-color="#C24A00"/>
+    </linearGradient>
+  </defs>
+  <!-- Fishtail / swallowtail ribbon -->
+  <path
+    fill="url(#ribbonFill)"
+    stroke="url(#ribbonEdge)"
+    stroke-width="0.8"
+    d="M 18 1
+       H 502
+       L 518 17
+       L 502 33
+       H 18
+       L 2 17
+       Z"
+  />
+  <text
+    x="260"
+    y="22"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="13"
+    font-weight="700"
+    letter-spacing="0.4"
+  >Building a Skilled and Self-Reliant Nation</text>
+</svg>

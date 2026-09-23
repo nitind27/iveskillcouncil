@@ -67,7 +67,7 @@ function PaymentStatusContent() {
           <FiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-[#1A1A1A] mb-2">Verification Error</h2>
           <p className="text-[#6B7280] mb-6">{error}</p>
-          <Link href="/userpanel/franchise-plans" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold">
+          <Link href="/userpanel/franchise-plans" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0056b3] text-white font-semibold">
             Try Again <FiArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -86,7 +86,7 @@ function PaymentStatusContent() {
         className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-[#E5E7EB] overflow-hidden"
       >
         {/* top bar */}
-        <div className={`h-2 ${isPaid ? "bg-gradient-to-r from-[#A8C63A] to-[#2D5DA8]" : "bg-red-400"}`} />
+        <div className={`h-2 ${isPaid ? "bg-gradient-to-r from-[#A8C63A] to-[#0056b3]" : "bg-red-400"}`} />
 
         <div className="p-8 text-center">
           {isPaid ? (
@@ -120,7 +120,7 @@ function PaymentStatusContent() {
             {isPaid ? (
               <Link
                 href="/userpanel"
-                className="w-full py-3 rounded-xl bg-[#2D5DA8] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#1E4A85] transition-all"
+                className="w-full py-3 rounded-xl bg-[#0056b3] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#003366] transition-all"
               >
                 Back to Home <FiArrowRight className="w-4 h-4" />
               </Link>

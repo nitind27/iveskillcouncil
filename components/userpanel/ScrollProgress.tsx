@@ -23,7 +23,7 @@ export default function ScrollProgress() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[99] h-1 origin-left bg-[var(--up-accent)]"
+      className="fixed top-0 left-0 right-0 z-[99] h-1 origin-left bg-[var(--up-orange)]"
       style={{ transform: `scaleX(${progress})` }}
     />
   );

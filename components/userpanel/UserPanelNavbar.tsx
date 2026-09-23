@@ -87,9 +87,13 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-[100] isolate bg-white shadow-[0_1px_0_rgba(15,23,42,0.06)]">
+      <div className="fixed top-0 left-0 right-0 z-[100] isolate bg-white shadow-[0_4px_20px_rgba(0,51,102,0.06)]">
         <nav className="w-full bg-white">
-          <div className="h-[2px] bg-[#1E4A85]" />
+          <div className="flex h-[3px] w-full">
+            <span className="flex-1 bg-[#FF9933]" />
+            <span className="flex-1 bg-white" />
+            <span className="flex-1 bg-[#138808]" />
+          </div>
 
           <div className={cn(
             "mx-auto flex h-[var(--up-header-height)] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8",
@@ -111,18 +115,18 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                   />
                 ) : null}
                 <span
-                  className="h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#2D5DA8] to-[#1E4A85] text-sm font-black text-white shadow-sm sm:h-10 sm:w-10 sm:text-base"
+                  className="h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7F0E] to-[#E66A00] text-sm font-black text-white shadow-sm sm:h-10 sm:w-10 sm:text-base"
                   style={{ display: site.logoUrl ? "none" : "flex" }}
                 >
                   {site.logoLetter}
                 </span>
               </div>
               <span className="hidden min-w-0 sm:block">
-                <span className="block truncate text-[15px] font-extrabold leading-tight tracking-tight text-[#1A1A1A]">
+                <span className="block truncate text-[15px] font-extrabold leading-tight tracking-tight text-[#003366]">
                   {site.name}
                 </span>
                 {site.tagline ? (
-                  <span className="mt-0.5 hidden max-w-[220px] truncate text-[10px] font-medium text-[#6B7280] lg:block">
+                  <span className="mt-0.5 hidden max-w-[220px] truncate text-[10px] font-medium text-[#64748B] lg:block">
                     {site.tagline}
                   </span>
                 ) : null}
@@ -130,7 +134,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             </Link>
 
             <div className="hidden flex-1 items-center justify-center md:flex">
-              <div className="flex items-center gap-0.5 rounded-full border border-[#E5E7EB] bg-[#F8FAFC] p-1">
+              <div className="flex items-center gap-1 rounded-xl bg-[#F8F9FA] p-1">
                 {links.map((link) => {
                   const href = up(link.href);
                   const isActive =
@@ -141,13 +145,13 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                       key={link.label}
                       href={href}
                       className={cn(
-                        "relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors duration-200",
+                        "relative flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-all duration-200",
                         isActive
-                          ? "bg-white text-[#2D5DA8] shadow-sm"
-                          : "text-[#6B7280] hover:bg-white/80 hover:text-[#1A1A1A]"
+                          ? "bg-[#FF7F0E] text-white shadow-[0_4px_12px_rgba(255,127,14,0.35)]"
+                          : "text-[#64748B] hover:bg-white hover:text-[#003366]"
                       )}
                     >
-                      <span className={isActive ? "text-[#2D5DA8]" : "text-[#9CA3AF]"}>
+                      <span className={isActive ? "text-white" : "text-[#94A3B8]"}>
                         {NAV_ICONS[link.label]}
                       </span>
                       {t(NAV_LABEL_KEYS[link.label] ?? "nav.home", link.label)}
@@ -162,14 +166,14 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
 
               <Link
                 href={dashboardOrLoginHref}
-                className="hidden items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#374151] shadow-sm transition-all hover:border-[#2D5DA8]/40 hover:text-[#2D5DA8] sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-lg border border-[#0056b3]/30 bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#0056b3] shadow-sm transition-all hover:border-[#0056b3] hover:bg-[#F0F7FF] sm:inline-flex"
               >
                 <FiLogIn className="h-3.5 w-3.5" />
                 {userName ? t("menu.dashboard", "Dashboard") : t("nav.login", "Login")}
               </Link>
 
               <Link href={up("/userpanel/courses")} className="hidden sm:block">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1E4A85] px-4 py-1.5 text-[13px] font-bold text-white shadow-sm transition-colors hover:bg-[#163A6B]">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF7F0E] px-4 py-1.5 text-[13px] font-bold text-white shadow-[0_4px_12px_rgba(255,127,14,0.3)] transition-colors hover:bg-[#E66A00]">
                   Enroll Now
                   <FiArrowRight className="h-3.5 w-3.5" />
                 </span>
@@ -178,7 +182,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2D5DA8] text-white shadow-sm md:hidden"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF7F0E] text-white shadow-sm md:hidden"
                 aria-label="Open menu"
               >
                 <FiMenu className="h-4 w-4" />
@@ -188,14 +192,14 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
         </nav>
 
         <div
-          className="relative w-full overflow-hidden bg-[#163A6B]"
+          className="relative w-full overflow-hidden bg-[#003366]"
           style={{ height: "var(--up-marquee-height)" }}
         >
           <div className="flex h-full items-center gap-3 overflow-hidden px-4 sm:px-6 lg:px-8">
-            <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
+            <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-md bg-[#FF7F0E] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-sm">
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C4A35A] opacity-80" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C4A35A]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
               </span>
               Live
             </span>
@@ -206,7 +210,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                     <span>{marqueeText}</span>
                     <span className="flex items-center gap-2 text-white/40">
                       <span className="h-px w-5 rounded-full bg-white/30" />
-                      <span className="h-1 w-1 rounded-full bg-[#C4A35A]" />
+                      <span className="h-1 w-1 rounded-full bg-[#FF7F0E]" />
                       <span className="h-px w-5 rounded-full bg-white/30" />
                     </span>
                   </span>
@@ -243,16 +247,16 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                   {site.logoUrl ? (
                     <img src={site.logoUrl} alt={site.name} className="h-8 w-auto max-w-[100px] object-contain" />
                   ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#2D5DA8] to-[#1E4A85] text-xs font-black text-white">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#FF7F0E] to-[#E66A00] text-xs font-black text-white">
                       {site.logoLetter}
                     </span>
                   )}
-                  <span className="text-sm font-bold text-[#1A1A1A]">{site.name}</span>
+                  <span className="text-sm font-bold text-[#003366]">{site.name}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8FAFC] text-[#6B7280]"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[#64748B]"
                 >
                   <FiX className="h-4 w-4" />
                 </button>
@@ -270,11 +274,11 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors",
                         isActive
-                          ? "bg-[#2D5DA8] text-white shadow-sm"
-                          : "text-[#374151] hover:bg-[#EEF2F7] hover:text-[#2D5DA8]"
+                          ? "bg-[#FF7F0E] text-white shadow-sm"
+                          : "text-[#374151] hover:bg-[#FFF4EB] hover:text-[#FF7F0E]"
                       )}
                     >
-                      <span className={isActive ? "text-white" : "text-[#2D5DA8]"}>
+                      <span className={isActive ? "text-white" : "text-[#FF7F0E]"}>
                         {NAV_ICONS[link.label] ?? <FiHome className="h-3.5 w-3.5" />}
                       </span>
                       {t(NAV_LABEL_KEYS[link.label] ?? "nav.home", link.label)}
@@ -286,12 +290,12 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
 
               <div className="space-y-2 border-t border-[#E5E7EB] px-3 pb-5 pt-3">
                 <Link href={dashboardOrLoginHref} onClick={() => setMobileOpen(false)}>
-                  <span className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#2D5DA8] py-2.5 text-sm font-bold text-[#2D5DA8]">
+                  <span className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#0056b3] py-2.5 text-sm font-bold text-[#0056b3]">
                     <FiLogIn className="h-4 w-4" /> Login
                   </span>
                 </Link>
                 <Link href={up("/userpanel/courses")} onClick={() => setMobileOpen(false)}>
-                  <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1E4A85] py-2.5 text-sm font-bold text-white">
+                  <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF7F0E] py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgba(255,127,14,0.3)]">
                     Enroll Now <FiArrowRight className="h-4 w-4" />
                   </span>
                 </Link>

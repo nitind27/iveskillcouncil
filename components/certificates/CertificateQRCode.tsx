@@ -70,7 +70,7 @@ export default function CertificateQRCode({
 }: CertificateQRCodeProps) {
   const [svgXml, setSvgXml] = useState<string | null>(null);
 
-  const cleanEnr = String(enrollmentNo || "4739846").trim();
+  const cleanEnr = String(enrollmentNo ?? "").trim() || "0";
   const cleanCert = String(certificateNo || "").trim();
   const cleanWebsite = verificationWebsite.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 
@@ -114,56 +114,58 @@ export default function CertificateQRCode({
 
   // Marksheet layout: Square white card containing ONLY the QR code, with text positioned underneath
   if (mode === "marksheet") {
+    const frame = size + 10;
     return (
       <div
         className={`inline-flex flex-col items-center select-none ${className}`}
-        style={style}
+        style={{ ...style, maxWidth: frame + 4 }}
       >
-        {/* Square framed QR box with clean border, subtle shadow and generous padding */}
+        {/* Dynamic QR — regenerates from enrollment/cert; full border visible (no clip) */}
         <div
-          className="flex items-center justify-center rounded border border-[#0E2A54]/35 bg-white p-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+          className="flex shrink-0 items-center justify-center bg-white"
           style={{
-            width: size + 12,
-            height: size + 12,
+            width: frame,
+            height: frame,
+            boxSizing: "border-box",
+            border: "1.25px solid #6B6B6B",
+            borderRadius: 3,
+            padding: 5,
+            overflow: "visible",
           }}
         >
           {svgXml ? (
             <div
-              className="h-full w-full flex items-center justify-center [&>svg]:h-full [&>svg]:w-full [&>svg]:block overflow-hidden"
+              className="flex items-center justify-center overflow-hidden bg-white [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
+              style={{ width: size, height: size }}
               dangerouslySetInnerHTML={{ __html: svgXml }}
             />
           ) : (
             <div
-              className="flex h-full w-full items-center justify-center rounded border border-dashed border-slate-300 bg-slate-50 text-[9px] text-slate-400 font-mono"
+              className="flex items-center justify-center rounded border border-dashed border-slate-300 bg-slate-50 text-[9px] font-mono text-slate-400"
+              style={{ width: size, height: size }}
             >
-              QR Code
+              Generating…
             </div>
           )}
         </div>
 
-        {/* Clean, spacious instruction text positioned underneath the box */}
         {(captionLine1 || captionLine2) && (
           <div
-            className="mt-1.5 flex flex-col items-center text-center leading-tight tracking-normal"
-            style={{ ...sans, color: "#0E2A54" }}
+            className="mt-1.5 flex min-h-[22px] flex-col items-center justify-start text-center leading-tight"
+            style={{ ...sans, color: "#0E2A54", width: frame }}
           >
             {captionLine1 && (
-              <span className="text-[8.5px] font-bold">
-                {captionLine1}
-              </span>
+              <span className="text-[8px] font-bold">{captionLine1}</span>
             )}
             {captionLine2 && (
-              <span className="text-[8.5px] font-bold mt-0.5">
-                {captionLine2}
-              </span>
+              <span className="mt-0.5 text-[8px] font-bold">{captionLine2}</span>
             )}
           </div>
         )}
 
-        {/* Optional dynamic enrollment tag */}
         {showEnrollmentTag && cleanEnr && (
           <div
-            className="mt-1 rounded bg-[#0E2A54]/10 border border-[#0E2A54]/20 px-1.5 py-0.5 text-[8px] font-mono font-bold"
+            className="mt-1 rounded border border-[#0E2A54]/20 bg-[#0E2A54]/10 px-1.5 py-0.5 font-mono text-[8px] font-bold"
             style={{ color: "#0E2A54" }}
           >
             Enr: {cleanEnr}

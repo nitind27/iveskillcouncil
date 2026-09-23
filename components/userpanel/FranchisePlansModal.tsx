@@ -22,7 +22,7 @@ type Step = "plans" | "personal" | "business" | "documents" | "review" | "proces
 const PLAN_META: Record<string, { icon: React.ReactNode; tagline: string; color: string; border: string; badge: string; badgeBg: string; features: string[]; popular?: boolean }> = {
   SILVER:  { icon: <FiShield className="w-6 h-6"/>, tagline: "Perfect to get started",       color: "text-[#6B7280]",  border: "border-[#E5E7EB]",  badge: "Starter",      badgeBg: "bg-[#F3F4F6] text-[#374151]",  features: ["Up to 50 students","Basic course management","Attendance tracking","Fee reports","Email support"] },
   GOLD:    { icon: <FiStar   className="w-6 h-6"/>, tagline: "Most popular choice",          color: "text-[#F39C12]",  border: "border-[#F39C12]",  badge: "Most Popular", badgeBg: "bg-[#F39C12] text-white",       features: ["Up to 200 students","Advanced courses","Staff management","Certificates","Analytics","Priority support"], popular: true },
-  DIAMOND: { icon: <FiZap    className="w-6 h-6"/>, tagline: "For large-scale operations",   color: "text-[#2D5DA8]",  border: "border-[#2D5DA8]",  badge: "Enterprise",   badgeBg: "bg-[#2D5DA8] text-white",       features: ["Unlimited students","Full system access","Multi-branch","Custom branding","Dedicated manager","24/7 support"] },
+  DIAMOND: { icon: <FiZap    className="w-6 h-6"/>, tagline: "For large-scale operations",   color: "text-[#0056b3]",  border: "border-[#0056b3]",  badge: "Enterprise",   badgeBg: "bg-[#0056b3] text-white",       features: ["Unlimited students","Full system access","Multi-branch","Custom branding","Dedicated manager","24/7 support"] },
 };
 
 // ── Document lists ───────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ const ENTITY_DOCS = [
 const STEPS: Step[] = ["plans","personal","business","documents","review"];
 const STEP_LABELS = ["Plan","Personal","Business","Documents","Review"];
 
-const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] bg-white focus:border-[#2D5DA8] focus:ring-2 focus:ring-[#2D5DA8]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
+const inputCls = "w-full px-4 py-3 rounded-xl border border-[#E5E7EB] bg-white focus:border-[#0056b3] focus:ring-2 focus:ring-[#0056b3]/15 outline-none transition-all text-sm text-[#1A1A1A] placeholder-[#9CA3AF]";
 const labelCls = "block text-sm font-semibold text-[#374151] mb-1.5";
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -258,7 +258,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                       {STEPS.slice(1).map((s, i) => (
                         <div key={s} className={`h-1.5 rounded-full transition-all duration-300 ${
                           STEPS.indexOf(step) > i + 1 ? "w-4 bg-[#A8C63A]" :
-                          STEPS.indexOf(step) === i + 1 ? "w-6 bg-[#2D5DA8]" : "w-1.5 bg-[#E5E7EB]"
+                          STEPS.indexOf(step) === i + 1 ? "w-6 bg-[#0056b3]" : "w-1.5 bg-[#E5E7EB]"
                         }`} />
                       ))}
                     </div>
@@ -279,7 +279,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                     <motion.div key="plans" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-5">
                       {loadingPlans ? (
                         <div className="flex items-center justify-center py-16 gap-3">
-                          <FiLoader className="w-6 h-6 text-[#2D5DA8] animate-spin" />
+                          <FiLoader className="w-6 h-6 text-[#0056b3] animate-spin" />
                           <span className="text-[#6B7280] font-medium">Loading plans...</span>
                         </div>
                       ) : (
@@ -309,7 +309,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                                   </ul>
                                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                                     onClick={() => { setSelectedPlan(plan); setError(""); setStep("personal"); }}
-                                    className={`w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${meta.popular ? "bg-[#F39C12] text-white hover:bg-[#D68910]" : "bg-[#2D5DA8] text-white hover:bg-[#1E4A85]"}`}>
+                                    className={`w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md ${meta.popular ? "bg-[#F39C12] text-white hover:bg-[#D68910]" : "bg-[#0056b3] text-white hover:bg-[#003366]"}`}>
                                     Select Plan <FiArrowRight className="w-4 h-4" />
                                   </motion.button>
                                 </div>
@@ -355,7 +355,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                         <div className="grid grid-cols-2 gap-3">
                           {[{v:"INDIVIDUAL",l:"Individual / Proprietor"},{v:"ENTITY",l:"Registered Entity"}].map(({v,l}) => (
                             <button key={v} type="button" onClick={() => setBusinessType(v)}
-                              className={`p-3.5 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${businessType===v ? "border-[#2D5DA8] bg-[#2D5DA8]/05 text-[#2D5DA8]" : "border-[#E5E7EB] text-[#374151] hover:border-[#2D5DA8]/40"}`}>
+                              className={`p-3.5 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${businessType===v ? "border-[#0056b3] bg-[#0056b3]/05 text-[#0056b3]" : "border-[#E5E7EB] text-[#374151] hover:border-[#0056b3]/40"}`}>
                               <FiBriefcase className="w-4 h-4 mb-1" />{l}
                             </button>
                           ))}
@@ -385,7 +385,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                           const isImg    = uploaded?.type?.startsWith("image/");
                           const isUp     = uploading === doc.key;
                           return (
-                            <div key={doc.key} className={`rounded-2xl border-2 overflow-hidden transition-all ${uploaded ? "border-[#A8C63A]" : "border-[#E5E7EB] hover:border-[#2D5DA8]/30"}`}>
+                            <div key={doc.key} className={`rounded-2xl border-2 overflow-hidden transition-all ${uploaded ? "border-[#A8C63A]" : "border-[#E5E7EB] hover:border-[#0056b3]/30"}`}>
                               {/* Preview area */}
                               {uploaded && isImg && (
                                 <div className="relative group">
@@ -414,16 +414,16 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                                 </div>
                                 {uploaded && !isImg ? (
                                   <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-                                    <FiFile className="w-4 h-4 text-[#2D5DA8]" />
+                                    <FiFile className="w-4 h-4 text-[#0056b3]" />
                                     <span className="truncate">{uploaded.name}</span>
-                                    <a href={uploaded.url} target="_blank" rel="noopener noreferrer" className="ml-auto text-[#2D5DA8] hover:underline flex-shrink-0">View</a>
+                                    <a href={uploaded.url} target="_blank" rel="noopener noreferrer" className="ml-auto text-[#0056b3] hover:underline flex-shrink-0">View</a>
                                   </div>
                                 ) : !uploaded ? (
                                   <label className="cursor-pointer">
                                     <input type="file" accept={doc.accept} className="hidden"
                                       ref={el => { fileRefs.current[doc.key] = el; }}
                                       onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(doc.key, doc.label, f); }} />
-                                    <span className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all w-fit ${isUp ? "bg-[#EEF2F7] text-[#6B7280]" : "bg-[#2D5DA8]/10 text-[#2D5DA8] hover:bg-[#2D5DA8]/20"}`}>
+                                    <span className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all w-fit ${isUp ? "bg-[#EEF2F7] text-[#6B7280]" : "bg-[#0056b3]/10 text-[#0056b3] hover:bg-[#0056b3]/20"}`}>
                                       {isUp ? <FiLoader className="w-3.5 h-3.5 animate-spin" /> : <FiUpload className="w-3.5 h-3.5" />}
                                       {isUp ? "Uploading..." : "Choose File"}
                                     </span>
@@ -457,7 +457,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                                 {d.type?.startsWith("image/") ? (
                                   <img src={d.url} alt={d.label} className="w-full h-16 object-cover" />
                                 ) : (
-                                  <div className="w-full h-16 bg-[#EEF2F7] flex items-center justify-center"><FiFile className="w-6 h-6 text-[#2D5DA8]" /></div>
+                                  <div className="w-full h-16 bg-[#EEF2F7] flex items-center justify-center"><FiFile className="w-6 h-6 text-[#0056b3]" /></div>
                                 )}
                                 <p className="text-[10px] font-semibold text-[#6B7280] px-2 py-1 truncate">{d.label}</p>
                               </div>
@@ -465,9 +465,9 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                           </div>
                         </div>
                       )}
-                      <div className="p-4 rounded-2xl bg-[#EEF2F7] border border-[#2D5DA8]/15 flex items-center justify-between">
+                      <div className="p-4 rounded-2xl bg-[#EEF2F7] border border-[#0056b3]/15 flex items-center justify-between">
                         <div><p className="text-xs text-[#6B7280]">Selected Plan</p><p className="font-bold text-[#1A1A1A]">{selectedPlan.name}</p></div>
-                        <div className="text-right"><p className="text-xs text-[#6B7280]">Total</p><p className="text-2xl font-black text-[#2D5DA8]">₹{selectedPlan.price.toLocaleString("en-IN")}</p></div>
+                        <div className="text-right"><p className="text-xs text-[#6B7280]">Total</p><p className="text-2xl font-black text-[#0056b3]">₹{selectedPlan.price.toLocaleString("en-IN")}</p></div>
                       </div>
                       {error && (
                         <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -486,8 +486,8 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                   {step === "processing" && (
                     <motion.div key="proc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 gap-5">
                       <div className="relative">
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-16 h-16 rounded-full border-4 border-[#2D5DA8]/20 border-t-[#2D5DA8]" />
-                        <FiAward className="w-6 h-6 text-[#2D5DA8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-16 h-16 rounded-full border-4 border-[#0056b3]/20 border-t-[#0056b3]" />
+                        <FiAward className="w-6 h-6 text-[#0056b3] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                       </div>
                       <div className="text-center">
                         <p className="font-bold text-[#1A1A1A] text-lg">Redirecting to payment...</p>
@@ -523,7 +523,7 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                     </div>
                   )}
                   <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={goNext}
-                    className="ml-auto flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-bold text-sm hover:bg-[#1E4A85] transition-all shadow-md">
+                    className="ml-auto flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0056b3] text-white font-bold text-sm hover:bg-[#003366] transition-all shadow-md">
                     Continue <FiArrowRight className="w-4 h-4" />
                   </motion.button>
                 </div>
@@ -543,11 +543,11 @@ export default function FranchisePlansModal({ open, onClose }: Props) {
                   <img src={previewDoc.url} alt={previewDoc.label} className="max-w-full max-h-[85vh] object-contain rounded-xl" onClick={e => e.stopPropagation()} />
                 ) : (
                   <div className="bg-white rounded-2xl p-8 text-center" onClick={e => e.stopPropagation()}>
-                    <FiFile className="w-16 h-16 text-[#2D5DA8] mx-auto mb-4" />
+                    <FiFile className="w-16 h-16 text-[#0056b3] mx-auto mb-4" />
                     <p className="font-bold text-[#1A1A1A] mb-2">{previewDoc.label}</p>
                     <p className="text-[#6B7280] text-sm mb-4">{previewDoc.name}</p>
                     <a href={previewDoc.url} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#2D5DA8] text-white font-semibold hover:bg-[#1E4A85] transition-all">
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0056b3] text-white font-semibold hover:bg-[#003366] transition-all">
                       Open PDF <FiArrowRight className="w-4 h-4" />
                     </a>
                   </div>
