@@ -78,7 +78,7 @@
     "gradeLabel": "Excellent (85% & Above)",
     "marksPercent": 85.13,
     "status": "ISSUED",
-    "borderStyle": "ornate",
+    "borderStyle": "guilloche",
     "instituteName": "INSTITUTE OF VOCATIONAL EDUCATION AND SKILL DEVELOPMENT COUNCIL",
     "tagline": "Building a Skilled and Self-Reliant Nation",
     "accreditationLine1": "An Autonomous Body Registered under Section 8 of the Companies Act, 2013",
@@ -127,7 +127,8 @@
     "contentSpacing": 8,
     "watermarkType": "none",
     "watermarkOpacity": 0.04,
-    "watermarkColor": "#0E2A54"
+    "watermarkColor": "#0E2A54",
+    "logoHeight": 72
   },
   "diploma": {
     "id": "demo-diploma",
@@ -271,7 +272,7 @@
         "range": "Below 40%"
       }
     ],
-    "logoHeight": 142,
+    "logoHeight": 146,
     "logoWidth": 265,
     "isoSealSize": 132,
     "partnerLogosHeight": 75,
@@ -823,7 +824,8 @@
     "gradeLabel": "Verified ATC",
     "marksPercent": 100,
     "accreditationLevel": "Grade 'A' National Vocational Centre",
-    "status": "ISSUED"
+    "status": "ISSUED",
+    "isoSealSize": 126
   },
   "merit": {
     "id": "demo-merit",
