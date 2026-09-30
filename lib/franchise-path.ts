@@ -36,6 +36,7 @@ export const RESERVED_FRANCHISE_PATH_SEGMENTS = new Set([
   "announcements",
   "profile",
   "account",
+  "verify",
   "f",
   "api",
   "_next",

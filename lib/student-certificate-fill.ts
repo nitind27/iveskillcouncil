@@ -214,7 +214,7 @@ function enrollmentDigits(s: StudentCertificateSource): string {
 export function fillCertificateFromStudent(
   layout: CertificateDemoData,
   student: StudentCertificateSource,
-  kind: "vocational" | "marksheet" | "marksheet2"
+  kind: "vocational" | "marksheet" | "marksheet2" | "marksheet3"
 ): CertificateDemoData {
   const name = studentDisplayName(student);
   const { father, mother, parentName } = parentLine(student);

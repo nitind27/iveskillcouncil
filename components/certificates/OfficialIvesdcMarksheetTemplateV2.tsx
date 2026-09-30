@@ -4,6 +4,7 @@ import React, { type CSSProperties } from "react";
 import type { CertificateDemoData, MarksheetSubject } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import CertificateQRCode from "./CertificateQRCode";
+import { isDefaultStatementBanner } from "./StatementOfMarksBanner";
 
 interface Props {
   data: CertificateDemoData;
@@ -108,13 +109,23 @@ export default function OfficialIvesdcMarksheetTemplateV2({
     Math.min(Math.round(stampPx * 0.55), data.directorSigHeight || 34)
   );
 
-  const bannerH = Math.max(28, Math.min(72, data.bannerHeight || 42));
-  const bannerW = Math.min(
-    Math.round(contentW * 0.4),
-    Math.max(150, data.bannerWidth || Math.round(bannerH * (640 / 72)))
+  // statement.png — true page-center; Marksheet No. in left safe zone (never overlaps)
+  const STATEMENT_ASPECT_W = 2171;
+  const STATEMENT_ASPECT_H = 724;
+  const msNoFont = Math.max(
+    8,
+    Math.min(13, data.marksheetNoFontSize ?? 9.5)
   );
-  const bannerSrc =
-    data.customBannerUrl || "/cert/statement-of-marks-banner.svg";
+  /** Banner never wider than ~56% so left/right stay clear for Marksheet No. */
+  const bannerMaxW = Math.max(220, Math.round(contentW * 0.56));
+  const defaultBannerW = Math.min(bannerMaxW, Math.round(contentW * 0.52));
+  const bannerW = Math.min(bannerMaxW, Math.max(220, data.bannerWidth || defaultBannerW));
+  const bannerH = Math.round((bannerW * STATEMENT_ASPECT_H) / STATEMENT_ASPECT_W);
+  const leftSafeW = Math.max(120, Math.round((contentW - bannerW) / 2) - 6);
+  const EXACT_BANNER = "/certificates/statement.png?v=6";
+  const bannerSrc = isDefaultStatementBanner(data.customBannerUrl)
+    ? EXACT_BANNER
+    : `${data.customBannerUrl}${data.customBannerUrl!.includes("?") ? "&" : "?"}v=6`;
   const verifyWebsite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
   const nsqfFont = Math.max(8.2, Math.round(8.8 * fontScale * 10) / 10);
   const rowH = Math.max(22, Math.round(28 * fontScale));
@@ -123,7 +134,7 @@ export default function OfficialIvesdcMarksheetTemplateV2({
     Math.round(contentW * 0.42),
     Math.max(qrPx + 96, 190)
   );
-  const resultBoxW = Math.min(268, Math.round(contentW * 0.34));
+  const resultBoxW = Math.min(292, Math.round(contentW * 0.38));
 
   const defaultSubjects: MarksheetSubject[] = [
     { code: "SUB-01", name: "Fundamentals of Computer", maxTheory: 100, marksTheory: 0, maxPractical: 0, marksPractical: 0, totalMax: 100, totalObtained: 0, grade: "" },
@@ -343,44 +354,53 @@ export default function OfficialIvesdcMarksheetTemplateV2({
           </div>
         </div>
 
-        {/* ===== TITLE ROW ===== */}
-        <div className="shrink-0" style={{ marginTop: blockGap, marginBottom: blockGap }}>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div
-              className="font-bold"
-              style={{ ...serif, color: INK, fontSize: `${Math.max(9, candidateFont - 1)}px` }}
-            >
+        {/* ===== TITLE ROW: Marksheet No. left safe zone + STATEMENT true-centered ===== */}
+        <div
+          className="relative shrink-0"
+          style={{
+            marginTop: blockGap,
+            marginBottom: blockGap,
+            maxWidth: contentW,
+            height: bannerH,
+          }}
+        >
+          {/* Centered banner (absolute center of full content width) */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={bannerSrc}
+              alt="STATEMENT OF MARKS"
+              style={{
+                width: bannerW,
+                height: bannerH,
+                maxWidth: "100%",
+              }}
+              className="block select-none object-contain drop-shadow-sm"
+              draggable={false}
+            />
+          </div>
+
+          {/* Left: Marksheet No. — only in the clear zone beside the banner */}
+          <div
+            className="absolute left-0 top-1/2 z-[2] -translate-y-1/2 overflow-hidden font-bold leading-none"
+            style={{
+              ...serif,
+              color: INK,
+              fontSize: `${msNoFont}px`,
+              width: leftSafeW,
+              maxWidth: leftSafeW,
+              paddingRight: 4,
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.97) 70%, rgba(255,255,255,0) 100%)",
+            }}
+            title={`Marksheet No. : ${marksheetNo}`}
+          >
+            <span className="whitespace-nowrap">
               Marksheet No. :{" "}
               <span className="font-semibold tracking-wide" style={sans}>
                 {marksheetNo}
               </span>
-            </div>
-
-            {/* Authentic ornate STATEMENT OF MARKS cartouche (SVG / custom upload) */}
-            <div className="flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={bannerSrc}
-                alt="STATEMENT OF MARKS"
-                style={{
-                  height: bannerH,
-                  width: bannerW,
-                  maxWidth: "100%",
-                }}
-                className="object-contain select-none drop-shadow-sm"
-                draggable={false}
-              />
-            </div>
-
-            <div
-              className="text-right font-bold"
-              style={{ ...serif, color: INK, fontSize: `${Math.max(9, candidateFont - 1)}px` }}
-            >
-              Enrollment No. :{" "}
-              <span className="font-semibold tracking-wide" style={sans}>
-                {enrollmentNo}
-              </span>
-            </div>
+            </span>
           </div>
         </div>
 
@@ -616,34 +636,94 @@ export default function OfficialIvesdcMarksheetTemplateV2({
             </div>
           </div>
 
-          <div
-            className="flex shrink-0 items-stretch overflow-hidden rounded-[6px]"
-            style={{ width: resultBoxW }}
-          >
+          {/* RESULT — premium certificate card */}
+          <div className="shrink-0" style={{ width: resultBoxW, ...sans }}>
             <div
-              className="flex items-center justify-center px-3 font-black uppercase tracking-[0.14em] text-white"
+              className="overflow-hidden rounded-[8px]"
               style={{
-                backgroundColor: TABLE_HEAD,
-                minWidth: 86,
-                fontSize: `${Math.max(9, Math.round(resultValFont * 0.85))}px`,
+                border: `1.5px solid ${TITLE_BLUE}`,
+                boxShadow: "0 1px 0 rgba(26,54,115,0.12)",
+                minHeight: Math.max(52, resultValFont + 36),
               }}
             >
-              RESULT
-            </div>
-            <div
-              className="flex flex-1 items-center justify-center border border-l-0 bg-white/90 px-2"
-              style={{ borderColor: "#7A7A7A", minHeight: Math.max(34, resultValFont + 18) }}
-            >
-              {hasMarks ? (
+              {/* Header ribbon */}
+              <div
+                className="flex items-center justify-between gap-2 px-2.5 py-[5px]"
+                style={{
+                  background: `linear-gradient(90deg, #0B1F3A 0%, ${TITLE_BLUE} 55%, #163A6B 100%)`,
+                }}
+              >
                 <span
-                  className="font-black tracking-wide"
-                  style={{ color: TITLE_BLUE, fontSize: `${resultValFont}px` }}
+                  className="font-black uppercase tracking-[0.18em] text-white"
+                  style={{ fontSize: `${Math.max(8.5, Math.round(resultValFont * 0.72))}px` }}
                 >
-                  {data.status || "PASS"}
-                  {data.grade ? `  ${data.grade}` : ""}
-                  {displayPercent ? `  ${displayPercent}%` : ""}
+                  Result
                 </span>
-              ) : null}
+                {hasMarks ? (
+                  <span
+                    className="rounded-[4px] px-2 py-[2px] font-black uppercase tracking-wide"
+                    style={{
+                      backgroundColor: "#C4A35A",
+                      color: "#0B132B",
+                      fontSize: `${Math.max(8, Math.round(resultValFont * 0.7))}px`,
+                    }}
+                  >
+                    {data.status || "PASS"}
+                  </span>
+                ) : (
+                  <span
+                    className="rounded-[4px] border border-white/35 px-2 py-[2px] font-bold uppercase tracking-wide text-white/80"
+                    style={{ fontSize: `${Math.max(7.5, Math.round(resultValFont * 0.65))}px` }}
+                  >
+                    Pending
+                  </span>
+                )}
+              </div>
+
+              {/* Grade + % split */}
+              <div
+                className="grid bg-white"
+                style={{
+                  gridTemplateColumns: "1fr 1px 1fr",
+                  minHeight: Math.max(34, resultValFont + 16),
+                }}
+              >
+                <div className="flex flex-col items-center justify-center px-1.5 py-1.5 text-center">
+                  <span
+                    className="font-black leading-none tabular-nums"
+                    style={{
+                      color: TITLE_BLUE,
+                      fontSize: `${Math.max(14, Math.round(resultValFont * 1.35))}px`,
+                    }}
+                  >
+                    {hasMarks ? data.grade || "—" : ""}
+                  </span>
+                  <span
+                    className="mt-0.5 font-bold uppercase tracking-[0.12em]"
+                    style={{ color: "#6B7280", fontSize: `${Math.max(7, Math.round(resultValFont * 0.58))}px` }}
+                  >
+                    Grade
+                  </span>
+                </div>
+                <div style={{ backgroundColor: "rgba(26,54,115,0.18)" }} />
+                <div className="flex flex-col items-center justify-center px-1.5 py-1.5 text-center">
+                  <span
+                    className="font-black leading-none tabular-nums"
+                    style={{
+                      color: TITLE_BLUE,
+                      fontSize: `${Math.max(14, Math.round(resultValFont * 1.35))}px`,
+                    }}
+                  >
+                    {hasMarks && displayPercent ? `${displayPercent}%` : hasMarks ? "—" : ""}
+                  </span>
+                  <span
+                    className="mt-0.5 font-bold uppercase tracking-[0.12em]"
+                    style={{ color: "#6B7280", fontSize: `${Math.max(7, Math.round(resultValFont * 0.58))}px` }}
+                  >
+                    Marks
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

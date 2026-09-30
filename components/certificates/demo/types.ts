@@ -3,6 +3,7 @@ export type CertificateTypeId =
   | "diploma"
   | "marksheet"
   | "marksheet2"
+  | "marksheet3"
   | "affiliation"
   | "merit"
   | "workshop";
@@ -34,6 +35,39 @@ export interface GradeSystemRow {
   grade: string;
   label: string;
   range: string;
+}
+
+/** Default % bands — A+ Excellent · A Very Good · B Good · C Average */
+export const DEFAULT_GRADE_SYSTEM: GradeSystemRow[] = [
+  { grade: "A+", label: "Excellent", range: "85% & Above" },
+  { grade: "A", label: "Very Good", range: "70% to 84%" },
+  { grade: "B", label: "Good", range: "55% to 69%" },
+  { grade: "C", label: "Average", range: "40% to 54%" },
+  { grade: "D", label: "Below Average", range: "Below 40%" },
+];
+
+/**
+ * Resolve performance remark from percentage (no letter grades on Result Form 3).
+ * Uses gradeSystem labels: A+→Excellent, A→Very Good, B→Good, C→Average.
+ */
+export function performanceLabelFromPercent(
+  pct: number,
+  gradeSystem?: GradeSystemRow[] | null
+): string {
+  if (!Number.isFinite(pct) || pct < 0) return "";
+  const system =
+    gradeSystem && gradeSystem.length > 0 ? gradeSystem : DEFAULT_GRADE_SYSTEM;
+  const pick = (letter: string, fallback: string) => {
+    const row = system.find(
+      (g) => g.grade.replace(/\s/g, "").toUpperCase() === letter.toUpperCase()
+    );
+    return (row?.label || fallback).trim();
+  };
+  if (pct >= 85) return pick("A+", "Excellent");
+  if (pct >= 70) return pick("A", "Very Good");
+  if (pct >= 55) return pick("B", "Good");
+  if (pct >= 40) return pick("C", "Average");
+  return pick("D", pick("F", "Below Average"));
 }
 
 export interface PartnerLogoItem {
@@ -141,6 +175,8 @@ export interface CertificateDemoData {
   // Dynamic Inner Content Font Sizing & Typography
   innerFontScale?: number;
   candidateFontSize?: number;
+  /** Result Form 2 — Marksheet No. line font (inline) */
+  marksheetNoFontSize?: number;
   tableFontSize?: number;
   certBodyFontSize?: number;
   studentNameFontSize?: number;
@@ -179,21 +215,25 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     serialNumber: "IVESDC/CERT/2025/000123",
     certificateNumber: "IVESDC/CERT/2025/000123",
     registrationNumber: "4739846",
-    studentName: "Demo Student",
-    parentName: "Demo Father Name and Demo Mother Name",
-    fatherName: "Demo Father Name",
-    motherName: "Demo Mother Name",
+    studentName: "Rahul Maheshbhai Patel",
+    parentName: "Maheshbhai Ramanbhai Patel and Kiranben Maheshbhai Patel",
+    fatherName: "Maheshbhai Ramanbhai Patel",
+    motherName: "Kiranben Maheshbhai Patel",
     place: "Gandhinagar, Gujarat",
     photoUrl: "/cert/sample-student-photo.png",
     studentSignatureUrl: "/cert/sample-student-sig.png",
-    directorSignatureUrl: "/cert/sig-director.png",
-    directorTitle: "Director",
-    stampUrl: "/cert/stamp-blue.png",
-    logoUrl: "/cert/ivesdc-logo.png?v=clean",
+    directorSignatureUrl: "/certificates/signature.png",
+    directorTitle: "Director Signature",
+    stampUrl: "/certificates/stamp.png",
+    logoUrl: "/logo/IVESDC LOGO-01.png",
+    customHeaderUrl: "/certificates/IVESDC_header.svg",
+    headerHeight: 118,
     isoSealUrl: "/cert/iso-seal.png",
     partnerLogosUrl: "/cert/partner-logos.png",
     partnerLogos: DEFAULT_PARTNER_LOGOS,
     goldMedalUrl: "/cert/seal-gold-medal.png",
+    /** Match printed Certificate of Completion — Design.svg ornate frame */
+    customBorderUrl: "/certificates/Design.svg",
     courseName: "Computer Diploma Course",
     courseCode: "CDC-04M",
     duration: "4 Months (03 Jan 2025 to 02 May 2025)",
@@ -206,7 +246,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     trainingEnd: "02 May 2025",
     issueDate: "02 May 2025",
     grade: "A+",
-    gradeLabel: "Distinction (85% & Above)",
+    gradeLabel: "Excellent (85% & Above)",
     marksPercent: 85.13,
     status: "ISSUED",
     borderStyle: "ornate",
@@ -216,17 +256,31 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     accreditationLine2: "Ministry of Corporate Affairs, Government of India",
     accreditationLine3: "ISO 9001:2015 & ISO 21001:2018 Certified Organization",
     registeredOffice: "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
+    govOrderText:
+      "Under The General Administration Department Govt. of Gujarat vide it's Resolution GR No. CRR/12/2007/120320/G5, Dt : 13-8-2008 by Sachivalay Gandhinagar",
     verificationWebsite: "www.iveskillcouncil.edu.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
+    gradeSystem: [
+      { grade: "A+", label: "Excellent", range: "85% & Above" },
+      { grade: "A", label: "Very Good", range: "70% to 84%" },
+      { grade: "B", label: "Good", range: "55% to 69%" },
+      { grade: "C", label: "Average", range: "40% to 54%" },
+    ],
+    photoWidth: 92,
+    photoHeight: 112,
+    stampSize: 88,
+    qrCodeSize: 56,
+    partnerLogosHeight: 90,
+    directorSigHeight: 36,
     innerFontScale: 100,
-    certBodyFontSize: 15.5,
-    studentNameFontSize: 44,
-    paddingTop: 66,
-    paddingBottom: 68,
-    paddingLeft: 58,
-    paddingRight: 58,
-    headerSpacing: 8,
-    contentSpacing: 10,
+    certBodyFontSize: 13.5,
+    studentNameFontSize: 36,
+    paddingTop: 100,
+    paddingBottom: 104,
+    paddingLeft: 100,
+    paddingRight: 100,
+    headerSpacing: 6,
+    contentSpacing: 8,
     watermarkType: "none",
     watermarkOpacity: 0.04,
     watermarkColor: "#0E2A54",
@@ -496,12 +550,13 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     stampSize: 90,
     qrCodeSize: 70,
     titleFontSize: 18.5,
-    customBannerUrl: "/cert/statement-of-marks-banner.svg",
-    bannerHeight: 42,
-    bannerWidth: 372,
+    customBannerUrl: "/certificates/statement.png",
+    bannerHeight: 160,
+    bannerWidth: 480,
     barcodeTextWords: "FOUR  SEVEN  THREE  NINE  EIGHT  FOUR  SIX",
     innerFontScale: 100,
     candidateFontSize: 12,
+    marksheetNoFontSize: 9.5,
     tableFontSize: 10.5,
     studentNameFontSize: 13,
     atcFontSize: 9,
@@ -611,6 +666,179 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
       },
     ],
   },
+  marksheet3: {
+    id: "demo-marksheet3",
+    serialNumber: "IVESDC/MS/2025/004781",
+    certificateNumber: "IVESDC/MS/2025/004781",
+    registrationNumber: "IVESDC2504781",
+    barcodeNumber: "IVESDC2504781",
+    rollNumber: "CDC/25/04781",
+    session: "February 2025 – May 2025",
+    studentName: "Priya Kumari Sharma",
+    parentName: "Ramesh Chandra Sharma and Sunita Devi Sharma",
+    fatherName: "Ramesh Chandra Sharma",
+    motherName: "Sunita Devi Sharma",
+    place: "Gandhinagar, Gujarat",
+    photoUrl: "/cert/sample-student-photo.png",
+    directorSignatureUrl: "/certificates/signature.png",
+    directorTitle: "Authorised Signatory",
+    stampUrl: "/certificates/stamp.png",
+    goldMedalUrl: "/cert/seal-gold-medal.png",
+    showHologramGuide: true,
+    logoUrl: "/logo/IVESDC LOGO-01.png",
+    logoHeight: 122,
+    logoWidth: 248,
+    partnerLogos: DEFAULT_PARTNER_LOGOS,
+    partnerLogosUrl: "/cert/partner-logos.png",
+    partnerLogosHeight: 46,
+    courseName: "Diploma in Computer Applications (DCA)",
+    courseCode: "DCA-03M",
+    duration: "03 Months",
+    atcCode: "IVESDC/ATC/GJ/0142",
+    atcName: "Shree Skill Development & Computer Academy",
+    trainingCentre: "Near Bus Stand, Station Road, Songadh, Dist. Tapi, Gujarat – 394670",
+    trainingCentreName: "Shree Skill Development & Computer Academy",
+    franchiseAddress: "Near Bus Stand, Station Road, Songadh, Dist. Tapi, Gujarat – 394670",
+    trainingStart: "03 February 2025",
+    trainingEnd: "02 May 2025",
+    issueDate: "15 May 2025",
+    grade: "Excellent",
+    gradeLabel: "Excellent",
+    marksPercent: 86.25,
+    status: "PASS",
+    borderStyle: "ornate",
+    instituteName: "INSTITUTE OF VOCATIONAL EDUCATION AND SKILL DEVELOPMENT COUNCIL",
+    tagline: "Building a Skilled and Self-Reliant Nation",
+    accreditationLine1:
+      "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,",
+    accreditationLine2:
+      "Ministry of Corporate Affairs, Government of India, ISO 21001:2018 & ISO 9001:2015 Certified Organization",
+    accreditationLine3: "",
+    registeredOffice:
+      "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680",
+    verificationWebsite: "www.iveskillcouncil.edu.in",
+    verificationEmail: "official.iveskillcouncil@gmail.com",
+    barcodeTextWords:
+      "I V E S D C  TWO  FIVE  ZERO  FOUR  SEVEN  EIGHT  ONE",
+    showEnrollmentBarcode: true,
+    innerFontScale: 115,
+    govOrderText:
+      "Under The General Administration Department\nGovt. of Gujarat vide its Resolution\nGR No. CRR /10/2007/120320/G5, Dt :13-8-2008\nby Sachivalay Gandhinagar",
+    directorSigHeight: 38,
+    stampSize: 84,
+    goldMedalSize: 90,
+    qrCodeSize: 56,
+    watermarkOpacity: 0.22,
+    backgroundPatternUrl: "/certificates/bgcert.png",
+    watermarkType: "crest",
+    paddingTop: 50,
+    paddingBottom: 50,
+    paddingLeft: 52,
+    paddingRight: 52,
+    photoWidth: 90,
+    photoHeight: 108,
+    tableFontSize: 11,
+    candidateFontSize: 11.5,
+    studentNameFontSize: 14,
+    gradeSystemFontSize: 9.5,
+    resultFontSize: 13,
+    gradeSystem: [
+      { grade: "A+", label: "Excellent", range: "85% & Above" },
+      { grade: "A", label: "Very Good", range: "70% to 84%" },
+      { grade: "B", label: "Good", range: "55% to 69%" },
+      { grade: "C", label: "Average", range: "40% to 54%" },
+    ],
+    subjects: [
+      {
+        code: "DCA-101",
+        name: "Fundamentals of Computer",
+        maxTheory: 100,
+        marksTheory: 88,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 88,
+        grade: "Excellent",
+      },
+      {
+        code: "DCA-102",
+        name: "Operating System (Windows)",
+        maxTheory: 100,
+        marksTheory: 84,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 84,
+        grade: "Very Good",
+      },
+      {
+        code: "DCA-103",
+        name: "MS Word – Document Processing",
+        maxTheory: 100,
+        marksTheory: 91,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 91,
+        grade: "Excellent",
+      },
+      {
+        code: "DCA-104",
+        name: "MS Excel – Spreadsheet & Analysis",
+        maxTheory: 100,
+        marksTheory: 89,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 89,
+        grade: "Excellent",
+      },
+      {
+        code: "DCA-105",
+        name: "MS PowerPoint – Presentation Skills",
+        maxTheory: 100,
+        marksTheory: 87,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 87,
+        grade: "Excellent",
+      },
+      {
+        code: "DCA-106",
+        name: "Internet, Email & Digital Tools",
+        maxTheory: 100,
+        marksTheory: 82,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 82,
+        grade: "Very Good",
+      },
+      {
+        code: "DCA-107",
+        name: "Digital Financial Literacy",
+        maxTheory: 100,
+        marksTheory: 79,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 79,
+        grade: "Very Good",
+      },
+      {
+        code: "DCA-108",
+        name: "Practical / Project Work",
+        maxTheory: 100,
+        marksTheory: 90,
+        maxPractical: 0,
+        marksPractical: 0,
+        totalMax: 100,
+        totalObtained: 90,
+        grade: "Excellent",
+      },
+    ],
+  },
   affiliation: {
     id: "demo-affiliation",
     serialNumber: "ATC-AFF-0428",
@@ -712,6 +940,16 @@ export const CERTIFICATE_TYPE_CONFIGS: CertificateTypeConfig[] = [
     description: "Classic silver lace border Statement of Marks form with Gothic title, NSQF bar, GRADE OBTAINED row, and Examination Coordinator signature.",
     orientation: "portrait",
     sampleData: SAMPLE_CERTIFICATE_PRESETS.marksheet2,
+  },
+  {
+    id: "marksheet3",
+    title: "Statement of Marks (Result) - 3",
+    badge: "Result Form 3",
+    badgeColor: "bg-[#C4A35A]/20 text-[#0B1F3A] border-[#C4A35A]/40 dark:bg-[#C4A35A]/15 dark:text-[#F4CF74]",
+    category: "Premium Certificate Layout",
+    description: "Board-style Result Form 3 — gold frame, subject marks table with auto remarks (Excellent / Very Good / Good / Average from %), stamp, QR & barcode.",
+    orientation: "portrait",
+    sampleData: SAMPLE_CERTIFICATE_PRESETS.marksheet3,
   },
   {
     id: "diploma",

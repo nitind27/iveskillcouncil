@@ -39,6 +39,7 @@ export default function AdminLayout({
   const [authChecked, setAuthChecked] = useState(false);
 
   const isLoginPage = pn === "/login";
+  const isVerifyPage = pn === "/verify" || pn.startsWith("/verify/");
   const appPath = isFranchiseAdminPath(pn) ? stripFranchiseAppPrefix(pn) : pn;
   const franchiseSlug = user?.franchise?.slug || null;
   const franchiseHome = franchiseDashboardPath(franchiseSlug);
@@ -47,7 +48,12 @@ export default function AdminLayout({
   const isUserPanelPage = pn === "/" || pn === "/userpanel" || pn.startsWith("/userpanel/");
   const isCertificateStudioPage = appPath.startsWith("/certificates/templates");
   const isFranchisePortalPage = pn === "/f" || pn.startsWith("/f/") || isFranchisePublicSitePath(pn);
-  const isPublicPage = isLoginPage || isUserPanelPage || isCertificateStudioPage || isFranchisePortalPage;
+  const isPublicPage =
+    isLoginPage ||
+    isVerifyPage ||
+    isUserPanelPage ||
+    isCertificateStudioPage ||
+    isFranchisePortalPage;
 
   // Confirm session (with refresh) before hard-redirecting to login
   useEffect(() => {

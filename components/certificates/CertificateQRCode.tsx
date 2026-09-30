@@ -74,15 +74,44 @@ export default function CertificateQRCode({
   const cleanCert = String(certificateNo || "").trim();
   const cleanWebsite = verificationWebsite.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 
-  // Streamlined authentic verification URL (optimal 33-module QR matrix for instant phone scanning)
+  /** Prefer live app origin so QR always hits this deployment's /verify page */
+  const [verifyOrigin, setVerifyOrigin] = useState<string>(() => {
+    const env =
+      typeof process !== "undefined"
+        ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim()
+        : "";
+    if (env) return env.replace(/\/+$/, "");
+    return `https://${cleanWebsite}`;
+  });
+
+  useEffect(() => {
+    const env = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim();
+    if (env) {
+      setVerifyOrigin(env.replace(/\/+$/, ""));
+      return;
+    }
+    if (typeof window !== "undefined" && window.location?.origin) {
+      const origin = window.location.origin.replace(/\/+$/, "");
+      const host = window.location.hostname || "";
+      const isLocal =
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host.endsWith(".local");
+      // On localhost, fall back to configured public verification domain (phones can't open localhost)
+      setVerifyOrigin(isLocal ? `https://${cleanWebsite}` : origin);
+    }
+  }, [cleanWebsite]);
+
+  // Dynamic verification URL — enrollment + certificate number change → QR regenerates
   const payload = useMemo(() => {
     if (customPayload) return customPayload;
     const typeCode = docType === "marksheet" ? "ms" : "cert";
+    const base = verifyOrigin || `https://${cleanWebsite}`;
     if (cleanCert && cleanEnr) {
-      return `https://${cleanWebsite}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}&id=${encodeURIComponent(cleanCert)}`;
+      return `${base}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}&id=${encodeURIComponent(cleanCert)}`;
     }
-    return `https://${cleanWebsite}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}`;
-  }, [customPayload, docType, cleanCert, cleanEnr, cleanWebsite]);
+    return `${base}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}`;
+  }, [customPayload, docType, cleanCert, cleanEnr, cleanWebsite, verifyOrigin]);
 
   useEffect(() => {
     let cancelled = false;

@@ -1,70 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 72" width="640" height="72" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 80" width="760" height="80" role="img" aria-label="STATEMENT OF MARKS">
   <defs>
     <linearGradient id="goldStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F3E0A0"/>
-      <stop offset="28%" stop-color="#D4AF37"/>
-      <stop offset="55%" stop-color="#B8860B"/>
-      <stop offset="78%" stop-color="#E8C86A"/>
+      <stop offset="0%" stop-color="#F7E8B4"/>
+      <stop offset="25%" stop-color="#E2C05C"/>
+      <stop offset="50%" stop-color="#B88728"/>
+      <stop offset="75%" stop-color="#E8C86A"/>
       <stop offset="100%" stop-color="#C9A227"/>
     </linearGradient>
     <linearGradient id="navyFill" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#0B2148"/>
-      <stop offset="45%" stop-color="#061536"/>
-      <stop offset="100%" stop-color="#020B22"/>
+      <stop offset="0%" stop-color="#0C2048"/>
+      <stop offset="50%" stop-color="#071636"/>
+      <stop offset="100%" stop-color="#020A1F"/>
     </linearGradient>
-    <filter id="softShadow" x="-4%" y="-10%" width="108%" height="130%">
-      <feDropShadow dx="0" dy="1.2" stdDeviation="1.2" flood-color="#000" flood-opacity="0.28"/>
+    <filter id="softShadow" x="-4%" y="-20%" width="108%" height="150%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
     </filter>
   </defs>
-
-  <!-- Outer ornate cartouche (bracket ends) -->
   <path
     filter="url(#softShadow)"
     fill="url(#navyFill)"
     stroke="url(#goldStroke)"
-    stroke-width="3.2"
+    stroke-width="3.8"
     stroke-linejoin="round"
-    d="M 46 7
-       H 594
-       C 608 7 620 16 624 26
-       C 618 32 616 34 624 36
-       C 616 38 618 40 625 46
-       C 620 56 608 65 594 65
-       H 46
-       C 32 65 20 56 15 46
-       C 22 40 24 38 15 36
-       C 24 34 22 32 15 26
-       C 20 16 32 7 46 7 Z"
+    stroke-linecap="round"
+    d="M 48 8 H 712 C 728 8 740 18 740 28 L 728 40 L 740 52 C 740 62 728 72 712 72 H 48 C 32 72 20 62 20 52 L 32 40 L 20 28 C 20 18 32 8 48 8 Z"
   />
-
-  <!-- Inner gold hairline -->
   <path
     fill="none"
-    stroke="#E6C96A"
-    stroke-opacity="0.85"
-    stroke-width="1.1"
+    stroke="#E8CB72"
+    stroke-opacity="0.95"
+    stroke-width="1.2"
     stroke-linejoin="round"
-    d="M 48 11
-       H 592
-       C 604 11 614 18 618 26
-       C 612 32 610 34 618 36
-       C 610 38 612 40 618 46
-       C 614 54 604 61 592 61
-       H 48
-       C 36 61 26 54 22 46
-       C 30 40 32 38 22 36
-       C 32 34 30 32 22 26
-       C 26 18 36 11 48 11 Z"
+    stroke-linecap="round"
+    d="M 50 12.5 H 710 C 724 12.5 734 20.5 734 28.5 L 724 40 L 734 51.5 C 734 59.5 724 67.5 710 67.5 H 50 C 36 67.5 26 59.5 26 51.5 L 36 40 L 26 28.5 C 26 20.5 36 12.5 50 12.5 Z"
   />
-
-  <text
-    x="320"
-    y="42"
-    text-anchor="middle"
-    fill="#FFFFFF"
-    font-family="Georgia, 'Times New Roman', Times, serif"
-    font-size="22"
-    font-weight="700"
-    letter-spacing="3.2"
-  >STATEMENT OF MARKS</text>
+  <text x="380" y="47" text-anchor="middle" dominant-baseline="middle" fill="#FFFFFF" font-family="Georgia, 'Times New Roman', Times, serif" font-size="25" font-weight="700" letter-spacing="4">STATEMENT OF MARKS</text>
 </svg>

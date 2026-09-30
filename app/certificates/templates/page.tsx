@@ -31,6 +31,7 @@ import {
   DiplomaCertTemplate,
   MarksheetTemplate,
   MarksheetTemplateV2,
+  MarksheetTemplateV3,
   AtcAffiliationTemplate,
   MeritCertTemplate,
   WorkshopCertTemplate,
@@ -188,6 +189,8 @@ export default function CertificateTemplatesPage() {
         return <MarksheetTemplate data={activeData} />;
       case "marksheet2":
         return <MarksheetTemplateV2 data={activeData} />;
+      case "marksheet3":
+        return <MarksheetTemplateV3 data={activeData} />;
       case "affiliation":
         return <AtcAffiliationTemplate data={activeData} />;
       case "merit":
@@ -209,6 +212,8 @@ export default function CertificateTemplatesPage() {
         return <FileText className="h-4 w-4" />;
       case "marksheet2":
         return <FileText className="h-4 w-4" />;
+      case "marksheet3":
+        return <Medal className="h-4 w-4" />;
       case "affiliation":
         return <Building2 className="h-4 w-4" />;
       case "merit":

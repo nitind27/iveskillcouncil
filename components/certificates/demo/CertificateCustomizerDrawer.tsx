@@ -37,7 +37,9 @@ import CertificateQRCode from "../CertificateQRCode";
 import { uploadCertificateAsset } from "@/lib/certificate-storage";
 import {
   DEFAULT_PARTNER_LOGOS,
+  DEFAULT_GRADE_SYSTEM,
   CERTIFICATE_TYPE_CONFIGS,
+  performanceLabelFromPercent,
   type CertificateDemoData,
   type CertificateTypeId,
   type MarksheetSubject,
@@ -429,6 +431,8 @@ interface PartnerLogosManagerProps {
   onUpdateCombinedUrl: (url?: string) => void;
   onHeightChange: (h: number) => void;
   onResetHeight: () => void;
+  maxHeight?: number;
+  tallHeight?: number;
 }
 
 function PartnerLogosManager({
@@ -440,6 +444,8 @@ function PartnerLogosManager({
   onUpdateCombinedUrl,
   onHeightChange,
   onResetHeight,
+  maxHeight = 75,
+  tallHeight,
 }: PartnerLogosManagerProps) {
   // If partnerLogos is empty but partnerLogosUrl is set, default mode to strip; otherwise individual
   const [mode, setMode] = useState<"individual" | "strip">(
@@ -589,13 +595,13 @@ function PartnerLogosManager({
         label="Logos Strip Height"
         value={partnerLogosHeight}
         defaultValue={defaultPartnerLogosHeight}
-        min={25}
-        max={75}
+        min={28}
+        max={maxHeight}
         step={1}
         quickPresets={[
           { label: "Compact", value: 34 },
           { label: "Default", value: defaultPartnerLogosHeight },
-          { label: "Tall", value: 58 },
+          { label: "Tall", value: tallHeight ?? Math.min(maxHeight, 52) },
         ]}
         onChange={onHeightChange}
         onReset={onResetHeight}
@@ -1219,7 +1225,14 @@ export default function CertificateCustomizerDrawer({
 }: Props) {
   const isMarksheetV1 = selectedType === "marksheet";
   const isMarksheetV2 = selectedType === "marksheet2";
-  const isMarksheet = isMarksheetV1 || isMarksheetV2;
+  const isMarksheetV3 = selectedType === "marksheet3";
+  const isVocationalCert = selectedType === "vocational";
+  const isMarksheet = isMarksheetV1 || isMarksheetV2 || isMarksheetV3;
+  /** Certificate of Completion + Result Form 2 use fixed IVESDC_header.svg + Design/floral borders */
+  const usesFixedHeaderSvg = isMarksheetV2;
+  const usesSvgBorderPicker = isMarksheetV2;
+  /** Result Form 3 — board-style gold frame + ornate statement.png title plaque */
+  const isResult3Editor = isMarksheetV3;
   const currentTypeConfig =
     CERTIFICATE_TYPE_CONFIGS.find((c) => c.id === selectedType) || CERTIFICATE_TYPE_CONFIGS[0];
 
@@ -1243,7 +1256,7 @@ export default function CertificateCustomizerDrawer({
 
   // When user switches certificate type, reopen core sections for that template only
   useEffect(() => {
-    setActiveTab(isMarksheetV2 ? "border" : "all");
+    setActiveTab(isMarksheetV2 ? "border" : isMarksheetV3 ? "marks" : "all");
     setSearchQuery("");
     setOpenSections({
       logos: true,
@@ -1257,9 +1270,9 @@ export default function CertificateCustomizerDrawer({
       marks: isMarksheet,
       center: false,
     });
-  }, [selectedType, isMarksheet, isMarksheetV2]);
+  }, [selectedType, isMarksheet, isMarksheetV2, isMarksheetV3]);
 
-  const logosControlCount = isMarksheetV2 ? 2 : isMarksheetV1 ? 5 : 4;
+  const logosControlCount = isMarksheetV3 ? 3 : isMarksheetV2 ? 2 : isMarksheetV1 ? 5 : 4;
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -1302,7 +1315,12 @@ export default function CertificateCustomizerDrawer({
     if (field === "totalMax" || field === "totalObtained") {
       const max = Number(field === "totalMax" ? val : subjects[index].totalMax) || 100;
       const obt = Number(field === "totalObtained" ? val : subjects[index].totalObtained) || 0;
-      subjects[index].grade = `${max > 0 ? ((obt / max) * 100).toFixed(0) : 0}%`;
+      const pct = max > 0 ? (obt / max) * 100 : 0;
+      if (isMarksheetV3) {
+        subjects[index].grade = performanceLabelFromPercent(pct, activeData.gradeSystem);
+      } else {
+        subjects[index].grade = `${max > 0 ? pct.toFixed(0) : 0}%`;
+      }
     }
 
     onFieldChange("subjects", subjects);
@@ -1312,33 +1330,35 @@ export default function CertificateCustomizerDrawer({
     if (totalMax > 0) {
       const pct = Number(((totalObt / totalMax) * 100).toFixed(2));
       onFieldChange("marksPercent", pct);
+      if (isMarksheetV3) {
+        const remark = performanceLabelFromPercent(pct, activeData.gradeSystem);
+        onFieldChange("gradeLabel", remark);
+        onFieldChange("grade", remark);
+      }
     }
   };
 
   const handleAddSubject = () => {
     const subjects = [...(activeData.subjects || [])];
     const newIdx = subjects.length + 1;
+    const defaultObt = 85;
     subjects.push({
-      code: `SUB-0${newIdx}`,
+      code: isMarksheetV3 ? `${100 + newIdx}` : `SUB-0${newIdx}`,
       name: `New Subject Module ${newIdx}`,
       maxTheory: 100,
-      marksTheory: 85,
+      marksTheory: defaultObt,
       maxPractical: 0,
       marksPractical: 0,
       totalMax: 100,
-      totalObtained: 85,
-      grade: "85%",
+      totalObtained: defaultObt,
+      grade: isMarksheetV3
+        ? performanceLabelFromPercent(defaultObt, activeData.gradeSystem)
+        : "85%",
     });
     onFieldChange("subjects", subjects);
   };
 
-  const defaultGradeSystem: GradeSystemRow[] = [
-    { grade: "A+", label: "Excellent", range: "85% & Above" },
-    { grade: "A", label: "Very Good", range: "70% to 84%" },
-    { grade: "B", label: "Good", range: "55% to 69%" },
-    { grade: "C", label: "Average", range: "40% to 54%" },
-    { grade: "D", label: "Below Average", range: "Below 40%" },
-  ];
+  const defaultGradeSystem: GradeSystemRow[] = DEFAULT_GRADE_SYSTEM;
 
   const handleGradeSystemChange = (
     index: number,
@@ -1376,56 +1396,56 @@ export default function CertificateCustomizerDrawer({
   };
 
   // Dimensions & Defaults
-  const defaultLogoH = isMarksheetV2 ? 159 : isMarksheetV1 ? 92 : 84;
+  const defaultLogoH = isMarksheetV3 ? 122 : isMarksheetV2 ? 159 : isMarksheetV1 ? 92 : isVocationalCert ? 110 : 84;
   const currentLogoH = activeData.logoHeight || defaultLogoH;
 
-  const defaultLogoW = isMarksheetV2 ? 220 : isMarksheetV1 ? 195 : 180;
+  const defaultLogoW = isMarksheetV3 ? 248 : isMarksheetV2 ? 220 : isMarksheetV1 ? 195 : 180;
   const currentLogoW = activeData.logoWidth || defaultLogoW;
 
-  const defaultTitleFont = isMarksheetV2 ? 22 : isMarksheetV1 ? 20.5 : 20;
+  const defaultTitleFont = isMarksheetV3 ? 19 : isMarksheetV2 ? 22 : isMarksheetV1 ? 20.5 : 20;
   const currentTitleFont = activeData.titleFontSize || defaultTitleFont;
 
   const defaultIsoSize = isMarksheetV1 ? 92 : 84;
   const currentIsoSize = activeData.isoSealSize || defaultIsoSize;
 
-  const defaultPartnerH = isMarksheetV1 ? 46 : 44;
+  const defaultPartnerH = isMarksheetV3 ? 46 : isVocationalCert ? 56 : isMarksheetV1 ? 46 : 44;
   const currentPartnerH = activeData.partnerLogosHeight || defaultPartnerH;
 
-  const defaultPhotoW = isMarksheetV2 ? 108 : isMarksheetV1 ? 138 : 72;
+  const defaultPhotoW = isMarksheetV3 ? 98 : isMarksheetV2 ? 108 : isMarksheetV1 ? 138 : 72;
   const currentPhotoW = activeData.photoWidth || defaultPhotoW;
 
-  const defaultPhotoH = isMarksheetV2 ? 132 : isMarksheetV1 ? 152 : 86;
+  const defaultPhotoH = isMarksheetV3 ? 118 : isMarksheetV2 ? 132 : isMarksheetV1 ? 152 : 86;
   const currentPhotoH = activeData.photoHeight || defaultPhotoH;
 
   const defaultStudentSigH = isMarksheetV1 ? 36 : 28;
   const currentStudentSigH = activeData.studentSigHeight || defaultStudentSigH;
 
-  const defaultStampSize = isMarksheetV2 ? 90 : isMarksheetV1 ? 82 : 84;
+  const defaultStampSize = isMarksheetV3 ? 88 : isMarksheetV2 ? 90 : isMarksheetV1 ? 82 : 84;
   const currentStampSize = activeData.stampSize || defaultStampSize;
 
-  const defaultDirectorSigH = isMarksheetV2 ? 34 : isMarksheetV1 ? 44 : 48;
+  const defaultDirectorSigH = isMarksheetV3 ? 36 : isMarksheetV2 ? 34 : isMarksheetV1 ? 44 : 48;
   const currentDirectorSigH = activeData.directorSigHeight || defaultDirectorSigH;
 
-  const defaultGoldMedalSize = 125;
+  const defaultGoldMedalSize = isMarksheetV3 ? 90 : 125;
   const currentGoldMedalSize = activeData.goldMedalSize || defaultGoldMedalSize;
 
-  const defaultQrSize = isMarksheetV2 ? 72 : isMarksheet ? 76 : 52;
+  const defaultQrSize = isMarksheetV3 ? 64 : isMarksheetV2 ? 72 : isMarksheet ? 76 : 52;
   const currentQrSize = activeData.qrCodeSize || defaultQrSize;
 
   // Padding & Layout Spacing Defaults
-  const defaultPaddingTop = isMarksheetV2 ? 110 : isMarksheet ? 48 : 66;
+  const defaultPaddingTop = isMarksheetV3 ? 50 : isMarksheetV2 ? 110 : isMarksheet ? 48 : 66;
   const currentPaddingTop =
     activeData.paddingTop !== undefined ? activeData.paddingTop : defaultPaddingTop;
 
-  const defaultPaddingBottom = isMarksheetV2 ? 116 : isMarksheet ? 42 : 68;
+  const defaultPaddingBottom = isMarksheetV3 ? 50 : isMarksheetV2 ? 116 : isMarksheet ? 42 : 68;
   const currentPaddingBottom =
     activeData.paddingBottom !== undefined ? activeData.paddingBottom : defaultPaddingBottom;
 
-  const defaultPaddingLeft = isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
+  const defaultPaddingLeft = isMarksheetV3 ? 52 : isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
   const currentPaddingLeft =
     activeData.paddingLeft !== undefined ? activeData.paddingLeft : defaultPaddingLeft;
 
-  const defaultPaddingRight = isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
+  const defaultPaddingRight = isMarksheetV3 ? 52 : isMarksheetV2 ? 110 : isMarksheet ? 56 : 58;
   const currentPaddingRight =
     activeData.paddingRight !== undefined ? activeData.paddingRight : defaultPaddingRight;
 
@@ -1461,8 +1481,8 @@ export default function CertificateCustomizerDrawer({
   };
 
   // Typography & Font Sizing Defaults
-  const defaultInnerFontScale = 100;
-  const currentInnerFontScale = activeData.innerFontScale || defaultInnerFontScale;
+  const defaultInnerFontScale = isMarksheetV3 ? 115 : 100;
+  const currentInnerFontScale = activeData.innerFontScale ?? defaultInnerFontScale;
 
   const defaultCandidateFont = 13;
   const currentCandidateFont = activeData.candidateFontSize || defaultCandidateFont;
@@ -1493,11 +1513,17 @@ export default function CertificateCustomizerDrawer({
               <span className="truncate">Live Editor · {currentTypeConfig.title}</span>
             </h3>
             <p className="text-[10.5px] text-slate-400 mt-0.5 truncate">
-              {currentTypeConfig.badge ? (
-                <span className="text-[#F4CF74]/90">{currentTypeConfig.badge}</span>
-              ) : null}
-              {currentTypeConfig.badge ? " · " : null}
-              Controls &amp; logos for this template only
+              {isResult3Editor
+                ? "Result Form 3 · logo, particulars, marks, stamp, QR & seals"
+                : (
+                  <>
+                    {currentTypeConfig.badge ? (
+                      <span className="text-[#F4CF74]/90">{currentTypeConfig.badge}</span>
+                    ) : null}
+                    {currentTypeConfig.badge ? " · " : null}
+                    Controls &amp; logos for this template only
+                  </>
+                )}
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -1667,7 +1693,7 @@ export default function CertificateCustomizerDrawer({
                 : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
             )}
           >
-            Marks Table
+            {isMarksheetV3 ? "Marks & Remarks" : "Marks Table"}
           </button>
         )}
         <button
@@ -1680,7 +1706,7 @@ export default function CertificateCustomizerDrawer({
               : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
           )}
         >
-          Center &amp; Legal
+          {isMarksheetV3 ? "ATC & Verify" : "Center & Legal"}
         </button>
       </div>
 
@@ -1691,22 +1717,30 @@ export default function CertificateCustomizerDrawer({
           <DropdownSection
             id="logos"
             title={
-              isMarksheetV2
-                ? "1. Logo & Title Sizing"
-                : "1. Logo, Seals & Header Sizing"
+              usesFixedHeaderSvg
+                ? isVocationalCert
+                  ? "1. Header (Certificate of Completion)"
+                  : "1. Logo & Title Sizing"
+                : isResult3Editor
+                  ? "1. Logo & Institution Header"
+                  : "1. Logo, Seals & Header Sizing"
             }
             subtitle={
-              isMarksheetV2
-                ? "Institute logo & title size for Result - 2 only"
-                : "Upload and adjust height, width & font sizes"
+              usesFixedHeaderSvg
+                ? "Fixed IVESDC_header.svg — logo, title & ribbon baked in"
+                : isResult3Editor
+                  ? "Result Form 3 — institute logo, title, and partner logos height"
+                  : isVocationalCert
+                    ? "Institute logo and partner logos height — slider updates the certificate"
+                    : "Upload and adjust height, width & font sizes"
             }
             icon={<Building2 className="h-4 w-4" />}
             isOpen={openSections.logos}
             onToggle={() => toggleSection("logos")}
             badge={`${logosControlCount} Controls`}
           >
-            {/* Result Form 2: fixed IVESDC_header.svg — not dynamic logo/title */}
-            {isMarksheetV2 ? (
+            {/* Fixed IVESDC_header.svg — Certificate of Completion + Result Form 2 */}
+            {usesFixedHeaderSvg ? (
               <>
                 <ImageUploaderWithSizer
                   category="header"
@@ -1720,14 +1754,14 @@ export default function CertificateCustomizerDrawer({
                   }
                   sizeControl={{
                     label: "Header Height",
-                    value: activeData.headerHeight || 128,
-                    defaultValue: 128,
+                    value: activeData.headerHeight || (isVocationalCert ? 118 : 128),
+                    defaultValue: isVocationalCert ? 118 : 128,
                     min: 80,
                     max: 220,
                     step: 2,
                     quickPresets: [
                       { label: "Compact", value: 100 },
-                      { label: "Default", value: 128 },
+                      { label: "Default", value: isVocationalCert ? 118 : 128 },
                       { label: "Large", value: 160 },
                       { label: "XL", value: 190 },
                     ],
@@ -1747,7 +1781,11 @@ export default function CertificateCustomizerDrawer({
                 label="Institute Brand Lockup (Logo)"
                 description="Top-left institutional crest logo. Adjust height & container width smoothly."
                 currentValue={activeData.logoUrl}
-                defaultPreview="/cert/ivesdc-logo.png"
+                defaultPreview={
+                  isMarksheetV3 || isVocationalCert
+                    ? "/logo/IVESDC LOGO-01.png"
+                    : "/cert/ivesdc-logo.png"
+                }
                 onUpload={(val) => onFieldChange("logoUrl", val)}
                 onResetAsset={() => onFieldChange("logoUrl", undefined)}
                 sizeControl={{
@@ -1758,9 +1796,9 @@ export default function CertificateCustomizerDrawer({
                   max: 170,
                   step: 2,
                   quickPresets: [
-                    { label: "Compact", value: 65 },
+                    { label: "Compact", value: isMarksheetV3 ? 90 : 65 },
                     { label: "Default", value: defaultLogoH },
-                    { label: "Enlarged", value: 110 },
+                    { label: "Enlarged", value: isMarksheetV3 ? 118 : 110 },
                     { label: "Jumbo", value: 135 },
                   ],
                   onChange: (val) => onFieldChange("logoHeight", val),
@@ -1787,14 +1825,21 @@ export default function CertificateCustomizerDrawer({
             {/* Title Font Size — not used on Result Form 2 (header is fixed SVG) */}
             {!isMarksheetV2 && (
             <SizeSliderControl
-              label="Institution Title Font Size"
+              label={isResult3Editor ? "Institute Name Font Size" : "Institution Title Font Size"}
               value={currentTitleFont}
               defaultValue={defaultTitleFont}
-              min={14}
-              max={isMarksheetV2 ? 28 : 26}
+              min={12}
+              max={isMarksheetV3 ? 20 : isMarksheetV2 ? 28 : 26}
               step={0.5}
               quickPresets={
-                isMarksheetV2
+                isMarksheetV3
+                  ? [
+                      { label: "Compact", value: 13 },
+                      { label: "Default", value: defaultTitleFont },
+                      { label: "Large", value: 17 },
+                      { label: "XL", value: 19 },
+                    ]
+                  : isMarksheetV2
                   ? [
                       { label: "Compact", value: 18 },
                       { label: "Default", value: defaultTitleFont },
@@ -1814,8 +1859,8 @@ export default function CertificateCustomizerDrawer({
             />
             )}
 
-            {/* ISO seal — certificates + Result (V1) only; not on Result - 2 */}
-            {!isMarksheetV2 && (
+            {/* ISO seal — certificates + Result (V1) only */}
+            {!isMarksheetV2 && !isMarksheetV3 && (
               <ImageUploaderWithSizer
                 category="iso-seal"
                 label="Certified ISO Emblem Seal"
@@ -1842,56 +1887,103 @@ export default function CertificateCustomizerDrawer({
               />
             )}
 
-            {/* Statement of Marks cartouche banner — Result (V1) + Result - 2 */}
-            {isMarksheet && (
+            {/* Statement of Marks banner — Result V1 + Form 2 only (Result 3 = pure text title) */}
+            {isMarksheet && !isMarksheetV3 && (
               <ImageUploaderWithSizer
                 category="title-banner"
                 label="Statement of Marks Title Plaque Banner"
                 description={
                   isMarksheetV2
-                    ? "Optional custom badge for STATEMENT OF MARKS (blank-form cartouche). Leave default for built-in badge."
+                    ? "Navy/gold STATEMENT OF MARKS plaque: /certificates/statement.png"
                     : "Authentic royal navy blue cartouche with gold outline. Adjust height & width smoothly."
                 }
                 currentValue={activeData.customBannerUrl}
-                defaultPreview="/cert/res-statement-banner.png?v=authentic"
+                defaultPreview={
+                  isMarksheetV2
+                    ? "/certificates/statement.png"
+                    : "/cert/res-statement-banner.png?v=authentic"
+                }
                 onUpload={(val) => onFieldChange("customBannerUrl", val)}
-                onResetAsset={() => onFieldChange("customBannerUrl", undefined)}
+                onResetAsset={() =>
+                  onFieldChange(
+                    "customBannerUrl",
+                    isMarksheetV2
+                      ? "/certificates/statement.png"
+                      : undefined
+                  )
+                }
                 sizeControl={{
-                  label: "Banner Height",
-                  value: activeData.bannerHeight || (isMarksheetV2 ? 42 : 54),
-                  defaultValue: isMarksheetV2 ? 42 : 54,
-                  min: 36,
-                  max: 80,
-                  step: 2,
-                  quickPresets: [
-                    { label: "Compact (44px)", value: 44 },
-                    { label: "Default", value: isMarksheetV2 ? 42 : 54 },
-                    { label: "Enlarged (62px)", value: 62 },
-                    { label: "Jumbo (70px)", value: 70 },
-                  ],
-                  onChange: (val) => onFieldChange("bannerHeight", val),
-                  onReset: () => onFieldChange("bannerHeight", undefined),
+                  label: isMarksheetV2
+                    ? `Banner Width (height auto ${Math.round(((activeData.bannerWidth || 480) * 724) / 2171)}px) — max ~56% so Marksheet No. never overlaps`
+                    : "Banner Height",
+                  value: isMarksheetV2
+                    ? activeData.bannerWidth || 480
+                    : activeData.bannerHeight || 54,
+                  defaultValue: isMarksheetV2 ? 480 : 54,
+                  min: isMarksheetV2 ? 280 : 36,
+                  max: isMarksheetV2 ? 560 : 80,
+                  step: isMarksheetV2 ? 10 : 2,
+                  quickPresets: isMarksheetV2
+                    ? [
+                        { label: "S (360)", value: 360 },
+                        { label: "M (440)", value: 440 },
+                        { label: "L (500)", value: 500 },
+                        { label: "XL (540)", value: 540 },
+                      ]
+                    : [
+                        { label: "Compact (44px)", value: 44 },
+                        { label: "Default", value: 54 },
+                        { label: "Enlarged (70px)", value: 70 },
+                        { label: "Jumbo (86px)", value: 86 },
+                      ],
+                  onChange: (val) => {
+                    if (isMarksheetV2) {
+                      onFieldChange("bannerWidth", val);
+                      onFieldChange("bannerHeight", Math.round((val * 724) / 2171));
+                    } else {
+                      onFieldChange("bannerHeight", val);
+                    }
+                  },
+                  onReset: () => {
+                    if (isMarksheetV2) {
+                      onFieldChange("bannerWidth", 480);
+                      onFieldChange("bannerHeight", Math.round((480 * 724) / 2171));
+                    } else {
+                      onFieldChange("bannerHeight", undefined);
+                    }
+                  },
                 }}
-                secondarySizeControl={{
-                  label: "Banner Width",
-                  value: activeData.bannerWidth || (isMarksheetV2 ? 320 : 387),
-                  defaultValue: isMarksheetV2 ? 320 : 387,
-                  min: 280,
-                  max: 560,
-                  step: 5,
-                  quickPresets: [
-                    { label: "Compact (340px)", value: 340 },
-                    { label: "Default", value: isMarksheetV2 ? 320 : 387 },
-                    { label: "Wide (440px)", value: 440 },
-                    { label: "Max (500px)", value: 500 },
-                  ],
-                  onChange: (val) => onFieldChange("bannerWidth", val),
-                  onReset: () => onFieldChange("bannerWidth", undefined),
-                }}
+                secondarySizeControl={
+                  isMarksheetV2
+                    ? undefined
+                    : {
+                        label: "Banner Width",
+                        value: activeData.bannerWidth || 387,
+                        defaultValue: 387,
+                        min: 280,
+                        max: 560,
+                        step: 5,
+                        quickPresets: [
+                          { label: "Compact (340px)", value: 340 },
+                          { label: "Default", value: 387 },
+                          { label: "Wide (500px)", value: 500 },
+                          { label: "Max (560px)", value: 560 },
+                        ],
+                        onChange: (val) => onFieldChange("bannerWidth", val),
+                        onReset: () => onFieldChange("bannerWidth", undefined),
+                      }
+                }
               />
             )}
 
-            {/* Partner logos — certificates + Result (V1) only; not on Result - 2 */}
+            {isMarksheetV3 && (
+              <p className="rounded-lg border border-[#C4A35A]/30 bg-[#C4A35A]/10 px-2.5 py-2 text-[10px] text-[#F4CF74]/95 leading-snug">
+                Result Form 3 title is <span className="font-bold text-white">pure text</span> (Cinzel) — no
+                statement.png / border plaque. Size via Typography → Institute Name Font Size.
+              </p>
+            )}
+
+            {/* Partner logos — certificates + Result V1 + Result V3 */}
             {!isMarksheetV2 && (
               <PartnerLogosManager
                 partnerLogos={activeData.partnerLogos || DEFAULT_PARTNER_LOGOS}
@@ -1902,7 +1994,16 @@ export default function CertificateCustomizerDrawer({
                 onUpdateCombinedUrl={(url) => onFieldChange("partnerLogosUrl", url)}
                 onHeightChange={(val) => onFieldChange("partnerLogosHeight", val)}
                 onResetHeight={() => onFieldChange("partnerLogosHeight", undefined)}
+                maxHeight={isMarksheetV3 ? 56 : isVocationalCert ? 110 : 75}
+                tallHeight={isVocationalCert ? 90 : undefined}
               />
+            )}
+
+            {isResult3Editor && (
+              <p className="rounded-lg border border-[#C4A35A]/30 bg-[#C4A35A]/10 px-2.5 py-2 text-[10px] text-[#F4CF74]/95 leading-snug">
+                Result Form 3 uses a built-in gold double frame. Edit subjects &amp; marks under{" "}
+                <span className="font-bold">Marks Table</span> — remarks (Excellent / Very Good…) auto-fill from %.
+              </p>
             )}
           </DropdownSection>
         )}
@@ -2408,7 +2509,9 @@ export default function CertificateCustomizerDrawer({
                   : "Circular verification seal overlaid above director signature."
               }
               currentValue={activeData.stampUrl}
-              defaultPreview="/cert/stamp-blue.png"
+              defaultPreview={
+                isMarksheetV3 || isVocationalCert ? "/certificates/stamp.png" : "/cert/stamp-blue.png"
+              }
               onUpload={(val) => onFieldChange("stampUrl", val)}
               onResetAsset={() => onFieldChange("stampUrl", undefined)}
               sizeControl={{
@@ -2445,7 +2548,11 @@ export default function CertificateCustomizerDrawer({
                   : "Official signature image of the director."
               }
               currentValue={activeData.directorSignatureUrl}
-              defaultPreview="/cert/sig-director.png"
+              defaultPreview={
+                isMarksheetV3 || isVocationalCert
+                  ? "/certificates/signature.png"
+                  : "/cert/sig-director.png"
+              }
               onUpload={(val) => onFieldChange("directorSignatureUrl", val)}
               onResetAsset={() => onFieldChange("directorSignatureUrl", undefined)}
               sizeControl={{
@@ -2628,29 +2735,53 @@ export default function CertificateCustomizerDrawer({
         {shouldShowSection("border", ["border", "frame", "guilloche", "ornate", "custom border", "design", "floral"]) && (
           <DropdownSection
             id="border"
-            title="7. Official Border & Custom Frame"
-            subtitle="Floral, Design.svg, or upload your own A4 frame"
+            title={
+              isMarksheetV3
+                ? "7. Frame (Result Form 3)"
+                : isVocationalCert
+                  ? "7. Frame (Certificate of Completion)"
+                  : "7. Official Border & Custom Frame"
+            }
+            subtitle={
+              isMarksheetV3 || isVocationalCert
+                ? "Built-in gold + navy frame — no Design.svg / floral frame"
+                : "Floral, Design.svg, or upload your own A4 frame"
+            }
             icon={<Layers className="h-4 w-4" />}
             isOpen={openSections.border}
             onToggle={() => toggleSection("border")}
           >
+            {isMarksheetV3 || isVocationalCert ? (
+              <div className="rounded-xl border border-[#C4A35A]/25 bg-[#C4A35A]/10 p-3 space-y-2">
+                <p className="text-[11px] font-bold text-[#F4CF74]">
+                  Professional gold + navy triple frame (fixed)
+                </p>
+                <p className="text-[10px] text-slate-300 leading-snug">
+                  {isVocationalCert ? "Certificate of Completion" : "Result Form 3"} uses a gold + navy
+                  triple frame. Adjust spacing via Padding &amp; Layout so content stays above the border.
+                </p>
+              </div>
+            ) : (
+              <>
             {/* Border Selector */}
             <div className="rounded-xl border border-white/10 bg-slate-900/60 p-2.5">
               <label className="block text-[11px] font-bold text-[#C4A35A] mb-1.5 uppercase tracking-wide">
                 Select Official Border
               </label>
-              {isMarksheetV2 ? (
+              {usesSvgBorderPicker ? (
                 (() => {
                   const borderUrl = activeData.customBorderUrl || "";
                   const isDesignBorder =
                     borderUrl.includes("Design.svg") ||
-                    borderUrl.includes("DESIGN_BORDER");
+                    borderUrl.includes("DESIGN_BORDER") ||
+                    (isVocationalCert && !borderUrl);
                   const isFloralBorder =
-                    !borderUrl ||
+                    (!borderUrl && isMarksheetV2) ||
                     borderUrl.includes("ONLY_OUTSIDE_FLORAL_BORDER") ||
                     borderUrl.includes("certificate_border_last_image");
                   return (
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className={cn("grid gap-1.5", isVocationalCert ? "grid-cols-1" : "grid-cols-2")}>
+                      {isMarksheetV2 && (
                       <button
                         type="button"
                         onClick={() => {
@@ -2687,23 +2818,23 @@ export default function CertificateCustomizerDrawer({
                           Outside Floral
                         </div>
                       </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
-                          onFieldChange("borderStyle", "guilloche");
+                          onFieldChange("borderStyle", isVocationalCert ? "ornate" : "guilloche");
                           onFieldChange(
                             "customBorderUrl",
                             "/certificates/Design.svg"
                           );
-                          // Design.svg has a thick lace — keep content clear of ornament
                           const curT = activeData.paddingTop ?? 0;
                           const curB = activeData.paddingBottom ?? 0;
                           const curL = activeData.paddingLeft ?? 0;
                           const curR = activeData.paddingRight ?? 0;
-                          if (curT < 110) onFieldChange("paddingTop", 110);
-                          if (curB < 116) onFieldChange("paddingBottom", 116);
-                          if (curL < 110) onFieldChange("paddingLeft", 110);
-                          if (curR < 110) onFieldChange("paddingRight", 110);
+                          if (curT < 100) onFieldChange("paddingTop", 100);
+                          if (curB < 104) onFieldChange("paddingBottom", 104);
+                          if (curL < 100) onFieldChange("paddingLeft", 100);
+                          if (curR < 100) onFieldChange("paddingRight", 100);
                         }}
                         className={cn(
                           "rounded-lg overflow-hidden text-left transition border",
@@ -2727,7 +2858,7 @@ export default function CertificateCustomizerDrawer({
                             isDesignBorder ? "text-[#F4CF74]" : "text-slate-300"
                           )}
                         >
-                          Design Border
+                          Design Border (A4)
                         </div>
                       </button>
                     </div>
@@ -2767,7 +2898,7 @@ export default function CertificateCustomizerDrawer({
                   </button>
                 </div>
               )}
-              {isMarksheetV2 && (
+              {usesSvgBorderPicker && (
                 <p className="mt-1.5 text-[10px] text-slate-400 leading-snug">
                   Design Border uses <span className="font-mono text-slate-300">/certificates/Design.svg</span> (A4 frame). You can still upload a custom frame below.
                 </p>
@@ -2781,8 +2912,8 @@ export default function CertificateCustomizerDrawer({
               description="A4 portrait border with transparent or white interior (ratio ~1:1.41)."
               currentValue={activeData.customBorderUrl}
               defaultPreview={
-                isMarksheetV2
-                  ? activeData.customBorderUrl?.includes("Design.svg")
+                usesSvgBorderPicker
+                  ? activeData.customBorderUrl?.includes("Design.svg") || isVocationalCert
                     ? "/certificates/Design.svg"
                     : "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
                   : "/cert/res-border-pristine.png"
@@ -2791,12 +2922,16 @@ export default function CertificateCustomizerDrawer({
               onResetAsset={() =>
                 onFieldChange(
                   "customBorderUrl",
-                  isMarksheetV2
-                    ? "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
-                    : undefined
+                  isVocationalCert
+                    ? "/certificates/Design.svg"
+                    : isMarksheetV2
+                      ? "/border/ONLY_OUTSIDE_FLORAL_BORDER.svg"
+                      : undefined
                 )
               }
             />
+              </>
+            )}
           </DropdownSection>
         )}
 
@@ -2831,6 +2966,28 @@ export default function CertificateCustomizerDrawer({
                 onChange={(val) => onFieldChange("candidateFontSize", val)}
                 onReset={() => onFieldChange("candidateFontSize", undefined)}
                 colorTheme="blue"
+              />
+            )}
+
+            {/* Marksheet No. — Result Form 2 title row (inline one line) */}
+            {isMarksheetV2 && (
+              <SizeSliderControl
+                label="Marksheet No. Font Size (inline)"
+                value={activeData.marksheetNoFontSize || 10.5}
+                defaultValue={10.5}
+                min={8}
+                max={14}
+                step={0.5}
+                unit="px"
+                quickPresets={[
+                  { label: "Compact (9px)", value: 9 },
+                  { label: "Default (10.5px)", value: 10.5 },
+                  { label: "Medium (11.5px)", value: 11.5 },
+                  { label: "Large (12.5px)", value: 12.5 },
+                ]}
+                onChange={(val) => onFieldChange("marksheetNoFontSize", val)}
+                onReset={() => onFieldChange("marksheetNoFontSize", undefined)}
+                colorTheme="gold"
               />
             )}
 
@@ -3060,25 +3217,40 @@ export default function CertificateCustomizerDrawer({
         )}
 
         {/* ================= SECTION 9: MARKS TABLE (MARKSHEET ONLY) ================= */}
-        {isMarksheet && shouldShowSection("marks", ["marks", "subject", "percentage", "grade", "score"]) && (
+        {isMarksheet && shouldShowSection("marks", ["marks", "subject", "percentage", "grade", "score", "remark", "excellent"]) && (
           <DropdownSection
             id="marks"
-            title="9. Subjects & Marks Table"
-            subtitle={`${activeData.subjects?.length || 0} subjects • ${activeData.marksPercent}% overall`}
+            title={isMarksheetV3 ? "9. Subjects, Marks & Remarks" : "9. Subjects & Marks Table"}
+            subtitle={
+              isMarksheetV3
+                ? `${activeData.subjects?.length || 0} subjects • ${activeData.marksPercent}% → ${performanceLabelFromPercent(Number(activeData.marksPercent) || 0, activeData.gradeSystem)}`
+                : `${activeData.subjects?.length || 0} subjects • ${activeData.marksPercent}% overall`
+            }
             icon={<FileText className="h-4 w-4" />}
             isOpen={openSections.marks}
             onToggle={() => toggleSection("marks")}
-            badge={`${activeData.marksPercent}%`}
+            badge={
+              isMarksheetV3
+                ? performanceLabelFromPercent(Number(activeData.marksPercent) || 0, activeData.gradeSystem) || `${activeData.marksPercent}%`
+                : `${activeData.marksPercent}%`
+            }
             accent="emerald"
           >
-            {/* Overall Percentage and Grade Display Banner */}
+            {/* Overall Percentage and Remark Display Banner */}
             <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Overall Result:
                 </span>
                 <p className="text-sm font-extrabold text-emerald-400">
-                  {activeData.status || "PASS"} • {activeData.marksPercent}% (Grade {activeData.grade})
+                  {isMarksheetV3
+                    ? `${activeData.status || "PASS"} • ${activeData.marksPercent}% • ${
+                        performanceLabelFromPercent(
+                          Number(activeData.marksPercent) || 0,
+                          activeData.gradeSystem
+                        ) || activeData.gradeLabel || "—"
+                      }`
+                    : `${activeData.status || "PASS"} • ${activeData.marksPercent}% (Grade ${activeData.grade})`}
                 </p>
               </div>
               <button
@@ -3169,9 +3341,20 @@ export default function CertificateCustomizerDrawer({
                       />
                     </div>
                     <div>
-                      <label className="text-slate-400 text-[9.5px]">Percentage</label>
+                      <label className="text-slate-400 text-[9.5px]">
+                        {isMarksheetV3 ? "Remark (auto)" : "Percentage"}
+                      </label>
                       <div className="rounded border border-emerald-500/30 bg-emerald-500/10 py-0.5 text-center font-bold text-[10px] text-emerald-300">
-                        {sub.grade || `${Math.round((sub.totalObtained / sub.totalMax) * 100)}%`}
+                        {isMarksheetV3
+                          ? sub.grade ||
+                            performanceLabelFromPercent(
+                              sub.totalMax > 0
+                                ? (sub.totalObtained / sub.totalMax) * 100
+                                : 0,
+                              activeData.gradeSystem
+                            )
+                          : sub.grade ||
+                            `${Math.round((sub.totalObtained / sub.totalMax) * 100)}%`}
                       </div>
                     </div>
                   </div>
@@ -3179,16 +3362,22 @@ export default function CertificateCustomizerDrawer({
               ))}
             </div>
 
-            {/* Grade System Box Configuration (A+, A, B, C, D) */}
+            {/* Performance scale / Grade System */}
             <div className="mt-4 rounded-xl border border-white/10 bg-black/40 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-[#C4A35A]" />
-                    <span>Grade System Box (Legend Criteria)</span>
+                    <span>
+                      {isMarksheetV3
+                        ? "Performance Scale (% → Remark)"
+                        : "Grade System Box (Legend Criteria)"}
+                    </span>
                   </span>
                   <p className="text-[9.5px] text-slate-400">
-                    Official 5-tier grading criteria displayed on the bottom-left of the marksheet
+                    {isMarksheetV3
+                      ? "85%+ Excellent · 70–84% Very Good · 55–69% Good · 40–54% Average — auto on marksheet"
+                      : "Official 5-tier grading criteria displayed on the bottom-left of the marksheet"}
                   </p>
                 </div>
                 <button
@@ -3242,16 +3431,21 @@ export default function CertificateCustomizerDrawer({
                 {(activeData.gradeSystem || defaultGradeSystem).map((item, idx) => (
                   <div
                     key={idx}
-                    className="grid grid-cols-[48px_1fr_1fr] items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-2.5 py-1.5"
+                    className={cn(
+                      "grid items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-2.5 py-1.5",
+                      isMarksheetV3 ? "grid-cols-[1fr_1fr]" : "grid-cols-[48px_1fr_1fr]"
+                    )}
                   >
-                    <div>
-                      <input
-                        type="text"
-                        value={item.grade}
-                        onChange={(e) => handleGradeSystemChange(idx, "grade", e.target.value)}
-                        className="w-full rounded border border-white/15 bg-slate-950/90 px-1.5 py-1 text-center text-xs font-black text-amber-300 outline-none focus:border-[#C4A35A]"
-                      />
-                    </div>
+                    {!isMarksheetV3 && (
+                      <div>
+                        <input
+                          type="text"
+                          value={item.grade}
+                          onChange={(e) => handleGradeSystemChange(idx, "grade", e.target.value)}
+                          className="w-full rounded border border-white/15 bg-slate-950/90 px-1.5 py-1 text-center text-xs font-black text-amber-300 outline-none focus:border-[#C4A35A]"
+                        />
+                      </div>
+                    )}
                     <div>
                       <input
                         type="text"

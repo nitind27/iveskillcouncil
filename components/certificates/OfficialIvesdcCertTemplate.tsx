@@ -1,10 +1,38 @@
 "use client";
 
-import React, { useEffect, useState, type CSSProperties } from "react";
-import QRCode from "qrcode";
+/**
+ * Certificate of Completion — same navy / gold / parchment system as Result Form 3,
+ * laid out as a certificate (not a marks table).
+ */
+import React, { useId, type CSSProperties } from "react";
+import { Cinzel, Libre_Baskerville, Montserrat, Source_Sans_3 } from "next/font/google";
 import type { CertificateDemoData } from "./demo/types";
-import EnrollmentBarcode from "./EnrollmentBarcode";
 import CertificateQRCode from "./CertificateQRCode";
+
+const fontInstitution = Montserrat({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+});
+
+const fontSerif = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const fontBody = Source_Sans_3({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  display: "swap",
+});
+
+const fontDisplay = Cinzel({
+  subsets: ["latin"],
+  weight: ["600", "700", "900"],
+  display: "swap",
+});
 
 interface Props {
   data: CertificateDemoData;
@@ -13,554 +41,445 @@ interface Props {
   borderStyle?: "ornate" | "guilloche";
 }
 
-const sans: CSSProperties = { fontFamily: "Arial, Helvetica, -apple-system, BlinkMacSystemFont, sans-serif" };
-const serif: CSSProperties = { fontFamily: "Georgia, 'Times New Roman', Times, serif" };
-const cursive: CSSProperties = {
-  fontFamily: "'Brush Script MT', 'Great Vibes', 'Dancing Script', 'Alex Brush', 'Playfair Display', cursive, serif",
+const A4_W = 1054;
+const A4_H = 1492;
+const FRAME_SAFE = 56;
+
+const C = {
+  navy: "#0B1F3A",
+  navyMid: "#163A5C",
+  navyDeep: "#071426",
+  ink: "#1C2430",
+  muted: "#5A6573",
+  gold: "#A07F2C",
+  goldSoft: "#C9A84C",
+  goldBright: "#E2C76A",
+  goldPale: "#F3E6C0",
+  orange: "#E07818",
+  orangeHi: "#F0A04A",
+  orangeLo: "#C45E0E",
+  paper: "#FCF9F2",
+  paperWarm: "#F4EEE4",
+  rule: "rgba(11,31,58,0.16)",
+  ruleSoft: "rgba(11,31,58,0.10)",
+} as const;
+
+function CertFrame() {
+  const uid = useId().replace(/:/g, "");
+  const W = A4_W;
+  const H = A4_H;
+  const outer = 12;
+  const gold = 18;
+  const inner = 24;
+  const goldStroke = `url(#${uid}-gold)`;
+  const navyStroke = `url(#${uid}-navy)`;
+
+  const corner = (x: number, y: number, sx: number, sy: number) => (
+    <g transform={`translate(${x} ${y}) scale(${sx} ${sy})`}>
+      <path d="M0 0 H36 M0 0 V36" fill="none" stroke={goldStroke} strokeWidth="2.4" />
+      <path d="M5 5 H28 M5 5 V28" fill="none" stroke={goldStroke} strokeWidth="1" strokeOpacity="0.75" />
+      <rect x="0" y="0" width="8" height="8" fill={goldStroke} transform="rotate(45 4 4)" />
+      <rect x="2" y="2" width="4" height="4" fill="#FFF8E0" transform="rotate(45 4 4)" />
+    </g>
+  );
+
+  const midJewel = (cx: number, cy: number, horizontal: boolean) => (
+    <g transform={`translate(${cx} ${cy})`}>
+      <rect x="-5" y="-5" width="10" height="10" fill={goldStroke} transform="rotate(45)" />
+      <rect x="-2.5" y="-2.5" width="5" height="5" fill="#FFF8E0" transform="rotate(45)" />
+      {horizontal ? (
+        <>
+          <line x1="-18" y1="0" x2="-7" y2="0" stroke={goldStroke} strokeWidth="1.2" />
+          <line x1="7" y1="0" x2="18" y2="0" stroke={goldStroke} strokeWidth="1.2" />
+        </>
+      ) : (
+        <>
+          <line x1="0" y1="-18" x2="0" y2="-7" stroke={goldStroke} strokeWidth="1.2" />
+          <line x1="0" y1="7" x2="0" y2="18" stroke={goldStroke} strokeWidth="1.2" />
+        </>
+      )}
+    </g>
+  );
+
+  return (
+    <svg className="pointer-events-none absolute inset-0" width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" aria-hidden>
+      <defs>
+        <linearGradient id={`${uid}-gold`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F5E6B0" />
+          <stop offset="40%" stopColor="#C9A84C" />
+          <stop offset="70%" stopColor="#A07F2C" />
+          <stop offset="100%" stopColor="#D4B65A" />
+        </linearGradient>
+        <linearGradient id={`${uid}-navy`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#163A5C" />
+          <stop offset="100%" stopColor="#0B1F3A" />
+        </linearGradient>
+      </defs>
+      <rect x={outer} y={outer} width={W - outer * 2} height={H - outer * 2} stroke={navyStroke} strokeWidth="2.5" />
+      <rect x={gold} y={gold} width={W - gold * 2} height={H - gold * 2} stroke={goldStroke} strokeWidth="2.2" />
+      <rect x={inner} y={inner} width={W - inner * 2} height={H - inner * 2} stroke={navyStroke} strokeWidth="0.9" strokeOpacity="0.55" />
+      {corner(outer + 4, outer + 4, 1, 1)}
+      {corner(W - outer - 4, outer + 4, -1, 1)}
+      {corner(outer + 4, H - outer - 4, 1, -1)}
+      {corner(W - outer - 4, H - outer - 4, -1, -1)}
+      {midJewel(W / 2, gold, true)}
+      {midJewel(W / 2, H - gold, true)}
+      {midJewel(gold, H / 2, false)}
+      {midJewel(W - gold, H / 2, false)}
+    </svg>
+  );
+}
+
+/** Calligraphic underline — end spirals and a center infinity, matching the reference title. */
+function CertificateFlourish() {
+  const stroke = "#1A1A1A";
+  return (
+    <svg width="560" height="52" viewBox="0 0 720 64" fill="none" aria-hidden>
+      <g stroke={stroke} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <path d="M86 34 C62 34 48 20 60 12 C72 4 92 12 86 24 C80 34 64 36 70 26 C74 18 86 20 82 28" />
+        <path d="M80 32 H268" />
+        <path d="M268 32 C268 10 332 4 360 32 C388 60 452 54 452 32 C452 10 388 4 360 32 C332 60 268 54 268 32" />
+        <path d="M452 32 H640" />
+        <path d="M634 34 C658 34 672 20 660 12 C648 4 628 12 634 24 C640 34 656 36 650 26 C646 18 634 20 638 28" />
+      </g>
+    </svg>
+  );
+}
+
+function framePad(value: number | undefined, fallback: number) {
+  const n = value ?? fallback;
+  if (n >= 90) return fallback;
+  return Math.max(FRAME_SAFE, n);
+}
+
+const sans: CSSProperties = {
+  fontFamily: `${fontBody.style.fontFamily}, 'Source Sans 3', 'Segoe UI', sans-serif`,
 };
 
 export default function OfficialIvesdcCertTemplate({
   data,
   className = "",
   printId = "official-ivesdc-cert",
-  borderStyle,
 }: Props) {
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const activeBorder = borderStyle || data.borderStyle || "ornate";
-  const borderSrc =
-    data.customBorderUrl ||
-    (activeBorder === "guilloche"
-      ? "/cert/res-border-pristine.png?v=clean"
-      : "/cert/cert-border-pristine.png?v=clean");
+  const padT = framePad(data.paddingTop, 58);
+  const padB = framePad(data.paddingBottom, 64);
+  const padL = framePad(data.paddingLeft, 58);
+  const padR = framePad(data.paddingRight, 58);
+  const contentW = A4_W - padL - padR;
 
-  useEffect(() => {
-    let cancelled = false;
-    const verifyPayload = `IVESDC CERTIFICATE VERIFICATION
-Certificate No: ${data.certificateNumber || data.serialNumber || "IVESDC/CERT/2025/000123"}
-Enrollment No: ${data.registrationNumber || "4739846"}
-Candidate: ${data.studentName}
-Course: ${data.courseName}
-Duration: ${data.trainingStart} to ${data.trainingEnd}
-Issue Date: ${data.issueDate}
-Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in"}/verify`;
-
-    QRCode.toDataURL(verifyPayload, {
-      width: 130,
-      margin: 1,
-      color: { dark: "#0F2A4A", light: "#FFFFFF" },
-    })
-      .then((url) => {
-        if (!cancelled) setQrUrl(url);
-      })
-      .catch(() => {
-        if (!cancelled) setQrUrl(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    data.certificateNumber,
-    data.serialNumber,
-    data.registrationNumber,
-    data.studentName,
-    data.courseName,
-    data.trainingStart,
-    data.trainingEnd,
-    data.issueDate,
-    data.verificationWebsite,
-  ]);
-
-  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "—";
-  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[0]?.trim() || "—";
-
-  // Dynamic Typography & Content Font Scaling
   const fontScale = (data.innerFontScale || 100) / 100;
-  const baseCertBodyFont = data.certBodyFontSize || 15.5;
-  const bodyFont = baseCertBodyFont * fontScale;
-  const studentNameSize = Math.round((data.studentNameFontSize || 44) * fontScale);
+  const bodyFs = Math.round((data.certBodyFontSize || 17) * fontScale);
+  const photoW = data.photoWidth || 108;
+  const photoH = data.photoHeight || 128;
+  const stampSz = Math.min(96, Math.max(68, data.stampSize || 84));
+  const logoH = Math.min(168, Math.max(130, data.logoHeight || 150));
+  const logoMaxW = Math.min(340, Math.max(240, data.logoWidth || 300));
+  const sigH = data.directorSigHeight || 36;
+
+  const fatherName = data.fatherName || data.parentName?.split(" and ")[0]?.split("&")[0]?.trim() || "";
+  const motherName = data.motherName || data.parentName?.split(" and ")[1]?.split("&")[0]?.trim() || "";
+  const parentNames = [fatherName, motherName].filter(Boolean);
+  const parentLine = parentNames.length > 1 ? parentNames.join(" and ") : parentNames[0] || "—";
+
+  const certNo = data.certificateNumber || data.serialNumber || "IVESDC/CERT/2025/000123";
+  const enrollNo = data.registrationNumber || "4739846";
+
+  const verifySite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
+  const verifyEmail = data.verificationEmail || "official.iveskillcouncil@gmail.com";
+  const tagline = data.tagline || "Building a Skilled and Self-Reliant Nation";
+  const accred1 = data.accreditationLine1 || "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,";
+  const accred2 = data.accreditationLine2 || "Ministry of Corporate Affairs, Government of India";
+  const accred3 = data.accreditationLine3 || "ISO 21001:2018 & ISO 9001:2015 Certified Organization";
+  const registeredOffice =
+    data.registeredOffice ||
+    "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680";
+  const prose: CSSProperties = {
+    fontFamily: `${fontSerif.style.fontFamily}, Georgia, serif`,
+    color: C.ink,
+    fontSize: `${Math.max(15, bodyFs)}px`,
+    lineHeight: 1.45,
+  };
 
   return (
     <div
       id={printId}
-      className={`certificate-sheet relative mx-auto select-none overflow-hidden bg-white shadow-2xl ${className}`}
+      className={`certificate-sheet relative mx-auto select-none overflow-hidden ${className}`}
       style={{
-        width: 1054,
-        height: 1492,
-        minWidth: 1054,
-        minHeight: 1492,
-        maxWidth: 1054,
-        maxHeight: 1492,
+        width: A4_W,
+        height: A4_H,
+        minWidth: A4_W,
+        minHeight: A4_H,
+        maxWidth: A4_W,
+        maxHeight: A4_H,
+        backgroundColor: C.paper,
+        boxShadow: "0 12px 36px rgba(11, 31, 58, 0.16)",
         ...sans,
       }}
+      data-paper="A4-portrait-certificate"
     >
-      {/* 1. Authentic Pristine Border Image (from cert.jpeg / res.jpeg) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={borderSrc}
-        alt="Certificate Border"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-fill"
-        draggable={false}
-      />
-
-      {/* 2. Background Security Watermark (Disabled by default, only shown if explicitly enabled) */}
-      {Boolean(data.watermarkType && data.watermarkType !== "none" && typeof data.watermarkOpacity === "number" && data.watermarkOpacity > 0) && (
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center"
-          style={{ opacity: data.watermarkOpacity !== undefined ? data.watermarkOpacity : 0.04 }}
-        >
-          {data.watermarkType === "tiled-grid" ? (
-            <svg width="1054" height="1492" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-              <defs>
-                <pattern id="ivesdc-seal-cert-pattern" width="140" height="140" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
-                  <g transform="translate(35, 35)">
-                    <circle cx="35" cy="35" r="28" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="1.5" fill="none" strokeDasharray="4 2" />
-                    <circle cx="35" cy="35" r="23" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="0.8" fill="none" />
-                    <path d="M35 18 L48 27 L35 36 L22 27 Z" fill={data.watermarkColor || "#1E4A85"} />
-                    <path d="M26 31 V44 C26 50 35 55 35 55 C35 55 44 50 44 44 V31" fill="none" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="1.5" />
-                    <text x="35" y="47" textAnchor="middle" fill={data.watermarkColor || "#1E4A85"} fontSize="5.5" fontWeight="bold" letterSpacing="0.8">
-                      IVESDC
-                    </text>
-                  </g>
-                </pattern>
-              </defs>
-              <rect x="56" y="65" width="942" height="1362" fill="url(#ivesdc-seal-cert-pattern)" />
-            </svg>
-          ) : (
-            <svg width="560" height="560" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="85" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="6" strokeDasharray="8 6" />
-              <circle cx="100" cy="100" r="70" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="2" />
-              <path
-                d="M100 45 L150 72 L100 99 L50 72 Z"
-                fill={data.watermarkColor || "#1E4A85"}
-              />
-              <path
-                d="M65 82 V120 C65 138 100 152 100 152 C100 152 135 138 135 120 V82"
-                fill="none"
-                stroke={data.watermarkColor || "#1E4A85"}
-                strokeWidth="5"
-              />
-              <path d="M145 74 V130" stroke={data.watermarkColor || "#1E4A85"} strokeWidth="3" />
-              <circle cx="145" cy="133" r="4" fill={data.watermarkColor || "#1E4A85"} />
-              <text
-                x="100"
-                y="175"
-                textAnchor="middle"
-                fill={data.watermarkColor || "#1E4A85"}
-                fontSize="12"
-                fontWeight="bold"
-                letterSpacing="2"
-              >
-                IVESDC
-              </text>
-            </svg>
-          )}
-        </div>
-      )}
-
-      {/* 3. Main Certificate Workspace */}
       <div
-        className="relative z-[2] flex h-full flex-col justify-between"
+        className="pointer-events-none absolute inset-0"
         style={{
-          paddingTop: data.paddingTop !== undefined ? data.paddingTop : 66,
-          paddingBottom: data.paddingBottom !== undefined ? data.paddingBottom : 68,
-          paddingLeft: data.paddingLeft !== undefined ? data.paddingLeft : 58,
-          paddingRight: data.paddingRight !== undefined ? data.paddingRight : 58,
+          background: `radial-gradient(ellipse 70% 55% at 50% 40%, rgba(255,252,245,0.55) 0%, transparent 70%), linear-gradient(165deg, ${C.paper} 0%, ${C.paperWarm} 48%, ${C.paper} 100%)`,
         }}
+        aria-hidden
+      />
+      <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/certificates/logowithoutbg.png"
+          alt=""
+          draggable={false}
+          style={{ width: 420, opacity: 0.16, objectFit: "contain" }}
+        />
+      </div>
+      <div className="pointer-events-none absolute inset-0 z-[1]">
+        <CertFrame />
+      </div>
+
+      <div
+        className="relative z-[2] flex h-full min-h-0 flex-col overflow-hidden"
+        style={{ paddingTop: padT, paddingBottom: padB, paddingLeft: padL, paddingRight: padR, boxSizing: "border-box" }}
       >
-        {/* ================= HEADER SECTION ================= */}
-        <div className="shrink-0" style={{ marginBottom: data.headerSpacing !== undefined ? data.headerSpacing : 4 }}>
-          {/* Top Row: Sr. No. at top right */}
-          <div className="flex items-center justify-end pr-2 pt-1">
-            <span className="text-[12px] font-bold text-slate-900" style={sans}>
-              Sr. No.: <span className="font-semibold">{data.serialNumber || "IVESDC/CERT/2025/000123"}</span>
-            </span>
-          </div>
-
-          {/* Institution Header Block */}
-          <div className="mt-1 flex items-center justify-between px-2">
-            {/* Left: IVESDC Logo */}
-            <div className="shrink-0 flex items-center justify-start" style={{ width: data.logoWidth || 180 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={data.logoUrl || "/cert/ivesdc-logo.png?v=clean"}
-                alt="IVESDC Logo"
-                style={{ height: data.logoHeight || 84 }}
-                className="w-auto max-w-full object-contain"
-                draggable={false}
-              />
-            </div>
-
-            {/* Center: Title & Accreditations */}
-            <div className="flex-1 px-3 text-center">
-              <h1
-                className="font-black uppercase tracking-[0.02em] text-[#0F2A4A]"
-                style={{
-                  ...sans,
-                  fontSize: data.titleFontSize ? `${data.titleFontSize}px` : "20px",
-                }}
-              >
-                {data.instituteName || "INSTITUTE OF VOCATIONAL EDUCATION AND SKILL DEVELOPMENT COUNCIL"}
-              </h1>
-
-              {/* Golden Tagline Ribbon */}
-              <div className="my-1.5 flex items-center justify-center">
-                <div className="relative inline-flex items-center justify-center bg-gradient-to-r from-[#DDA743] via-[#F4CF74] to-[#DDA743] px-7 py-1 shadow-sm">
-                  {/* Ribbon swallowtails */}
-                  <div
-                    className="absolute -left-2.5 top-0 bottom-0 w-3 bg-[#DDA743]"
-                    style={{ clipPath: "polygon(100% 0, 100% 100%, 0 50%)" }}
-                  />
-                  <div
-                    className="absolute -right-2.5 top-0 bottom-0 w-3 bg-[#DDA743]"
-                    style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}
-                  />
-                  <span className="text-[12.5px] font-extrabold uppercase tracking-wide text-slate-950">
-                    {data.tagline || "Building a Skilled and Self-Reliant Nation"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Accreditation Text */}
-              <div className="space-y-0.5 text-[9.5px] font-bold leading-tight text-slate-900">
-                <p>{data.accreditationLine1 || "An Autonomous Body Registered under Section 8 of the Companies Act, 2013"}</p>
-                <p>{data.accreditationLine2 || "Ministry of Corporate Affairs, Government of India"}</p>
-                <p className="font-extrabold text-[#1E4A85]">
-                  {data.accreditationLine3 || "ISO 9001:2015 & ISO 21001:2018 Certified Organization"}
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Certified ISO Seal */}
-            <div className="flex shrink-0 items-center justify-end" style={{ width: data.logoWidth || 180 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={data.isoSealUrl || "/cert/iso-seal.png"}
-                alt="ISO 9001:2015 Certified"
-                style={{
-                  height: data.isoSealSize || 84,
-                  width: data.isoSealSize || 84,
-                }}
-                className="object-contain drop-shadow-sm"
-                draggable={false}
-              />
-            </div>
-          </div>
-
-          {/* Thin Gold Line with Center Diamond */}
-          <div className="relative my-2 flex items-center justify-center">
-            <div className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
-            <div className="absolute h-2 w-2 rotate-45 bg-[#C4A35A]" />
-          </div>
-
-          {/* Government / Partner Logos Row */}
-          <div className="px-2 flex items-center justify-between w-full min-h-[44px]">
-            {data.partnerLogos && data.partnerLogos.length > 0 ? (
-              data.partnerLogos.map((logo, idx) => (
-                <div key={logo.id || idx} className="flex items-center justify-center shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={logo.url}
-                    alt={logo.name || `Partner Logo ${idx + 1}`}
-                    style={{
-                      height: logo.height || data.partnerLogosHeight || 44,
-                      maxHeight: 65,
-                    }}
-                    className="w-auto object-contain max-w-full"
-                    draggable={false}
-                  />
-                </div>
-              ))
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={data.partnerLogosUrl || "/cert/partner-logos.png"}
-                alt="Government & Partner Logos"
-                style={{ height: data.partnerLogosHeight || 44 }}
-                className="w-full object-contain"
-                draggable={false}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* ================= CERTIFICATE BODY ================= */}
-        <div className="my-auto flex flex-col items-center px-6 text-center">
-          {/* Certificate Title */}
-          <div className="relative flex items-center justify-center gap-4">
-            <div className="flex items-center gap-1 text-[#C4A35A]">
-              <div className="h-px w-14 bg-[#C4A35A]" />
-              <span className="text-xs">✦</span>
-            </div>
-            <h2
-              className="text-[34px] font-extrabold uppercase tracking-[0.14em] text-[#0F2A4A]"
-              style={{ ...serif, textShadow: "0 1px 1px rgba(0,0,0,0.06)" }}
-            >
-              CERTIFICATE OF COMPLETION
-            </h2>
-            <div className="flex items-center gap-1 text-[#C4A35A]">
-              <span className="text-xs">✦</span>
-              <div className="h-px w-14 bg-[#C4A35A]" />
-            </div>
-          </div>
-
-          {/* Subtitle */}
-          <p
-            className="mt-3 font-medium tracking-wide text-slate-800"
-            style={{ ...sans, fontSize: `${Math.round(bodyFont * 0.9)}px` }}
+        <header className="flex shrink-0 flex-col items-center text-center" style={{ maxWidth: contentW }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={data.logoUrl || "/logo/IVESDC%20LOGO-01.png"}
+            alt="IVESDC"
+            style={{ height: logoH, width: "auto", maxWidth: logoMaxW }}
+            className="object-contain"
+            draggable={false}
+          />
+          <h2
+            lang="hi"
+            className="font-devanagari mt-2 flex w-full flex-nowrap items-center justify-center font-bold"
+            style={{
+              color: C.navy,
+              fontFamily: "var(--font-devanagari), 'Noto Sans Devanagari', sans-serif",
+              fontSize: "26px",
+              fontWeight: 700,
+              lineHeight: 1.2,
+              letterSpacing: "0",
+              whiteSpace: "nowrap",
+            }}
           >
-            This is to certify that
-          </p>
-
-          {/* Student Name in Signature / Cursive Script */}
-          <div className="mt-1 w-full max-w-[760px] pb-1">
-            <p
-              className="font-bold text-[#163A6B]"
+            व्यावसायिक शिक्षा एवं कौशल विकास परिषद्
+          </h2>
+          <div className="mt-2.5 px-9 py-[7px]" style={{ background: `linear-gradient(180deg, ${C.orangeHi}, ${C.orange} 45%, ${C.orangeLo})`, clipPath: "polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%)" }}>
+            <p className={`${fontInstitution.className} font-bold leading-none text-white`} style={{ fontSize: "14px", letterSpacing: "0.02em" }}>{tagline}</p>
+          </div>
+          <div className={`${fontSerif.className} mt-2 space-y-0.5 font-bold leading-snug`} style={{ color: C.ink, fontSize: "12.5px", maxWidth: 760 }}>
+            <p>{accred1}</p>
+            <p>{accred2}{accred3 ? ` · ${accred3}` : ""}</p>
+          </div>
+          <div
+            className="mt-2.5 w-full shrink-0"
+            style={{
+              padding: "2px",
+              background: `linear-gradient(90deg, ${C.goldPale}, ${C.goldBright}, ${C.gold}, ${C.goldBright}, ${C.goldPale})`,
+            }}
+          >
+            <div
+              className="flex w-full items-center justify-center"
               style={{
-                ...cursive,
-                fontSize: `${studentNameSize}px`,
-                letterSpacing: "0.02em",
-                textShadow: "0 1px 2px rgba(22,58,107,0.12)",
+                minHeight: 32,
+                padding: "6px 12px",
+                background: `linear-gradient(180deg, ${C.orangeHi} 0%, ${C.orange} 46%, ${C.orangeLo} 100%)`,
+                border: "1px solid rgba(110, 42, 6, 0.72)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4)",
               }}
             >
-              {data.studentName}
-            </p>
-            {/* Underline */}
-            <div className="mx-auto h-[1.5px] w-3/4 bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
+              <p
+                className={`${fontInstitution.className} w-full text-center font-semibold leading-none text-white`}
+                style={{
+                  fontSize: "12.5px",
+                  letterSpacing: "0.01em",
+                  whiteSpace: "nowrap",
+                  textShadow: "0 1px 1px rgba(80, 28, 0, 0.35)",
+                }}
+              >
+                IVESDC Which Provides vocational Education &amp; Skill Development Training of NSQF aligned Courses by MSDE, Govt. of India
+              </p>
+            </div>
           </div>
+        </header>
 
-          {/* Parentage */}
-          <p
-            className="mt-3 text-slate-800"
-            style={{ ...sans, fontSize: `${Math.round(bodyFont)}px` }}
+        <div className="cert-title-block mt-3 flex w-full shrink-0 flex-col items-center text-center">
+          <h1
+            className="w-full font-bold uppercase leading-none"
+            style={{
+              fontFamily: `'Times New Roman', Times, ${fontSerif.style.fontFamily}, Georgia, serif`,
+              color: "#1A1A1A",
+              fontSize: "58px",
+              fontWeight: 700,
+              letterSpacing: "0.045em",
+              textAlign: "center",
+              paddingLeft: "0.045em",
+              lineHeight: 0.95,
+            }}
           >
-            Son/Daughter of{" "}
-            <strong className="font-extrabold text-[#0F2A4A]">{fatherName}</strong>
-            {" and "}
-            <strong className="font-extrabold text-[#0F2A4A]">{motherName}</strong>
-          </p>
-
-          {/* Course Details */}
-          <p
-            className="mt-2 text-slate-800"
-            style={{ ...sans, fontSize: `${Math.round(bodyFont)}px` }}
-          >
-            has successfully completed the{" "}
-            <strong
-              className="font-extrabold text-[#163A6B]"
-              style={{ fontSize: `${Math.round(bodyFont * 1.1)}px` }}
-            >
-              {data.courseName}
-            </strong>
-          </p>
-
-          {/* Duration */}
-          <p
-            className="mt-2 text-slate-800"
-            style={{ ...sans, fontSize: `${Math.round(bodyFont * 0.96)}px` }}
-          >
-            conducted by this Institute from{" "}
-            <strong className="font-bold text-slate-900">
-              {data.trainingStart} to {data.trainingEnd}.
-            </strong>
-          </p>
-
-          {/* Recognition Statement */}
-          <p
-            className="mt-3 max-w-[820px] leading-relaxed text-slate-700"
-            style={{ ...sans, fontSize: `${Math.round(bodyFont * 0.88)}px` }}
-          >
-            He/She has acquired the necessary skills and knowledge and is awarded this certificate in
-            recognition of his/her achievement.
+            Certificate
+          </h1>
+          <div className="mt-0.5 flex items-center justify-center">
+            <CertificateFlourish />
+          </div>
+          <p className={`${fontSerif.className} mt-2 font-bold italic`} style={{ color: C.navyMid, fontSize: "16px" }}>
+            This is to certify that
           </p>
         </div>
 
-        {/* ================= AUTHENTICATION & SIGNATURES ================= */}
-        <div className="shrink-0 px-4">
-          <div className="grid grid-cols-3 items-end gap-2 pb-2">
-            {/* Column 1: Enrollment details + Director Signature */}
-            <div className="space-y-4">
-              <div
-                className="space-y-1 text-slate-900"
-                style={{ ...sans, fontSize: `${Math.round(12 * fontScale)}px` }}
-              >
-                {data.showEnrollmentBarcode ? (
-                  <div className="pb-1">
-                    <EnrollmentBarcode
-                      enrollmentNo={data.registrationNumber || data.barcodeNumber || "4739846"}
-                      words={data.barcodeTextWords}
-                      color="#000000"
-                      showLabel={true}
-                      showWords={true}
-                      barcodeHeight={36}
-                      align="left"
-                    />
-                  </div>
-                ) : (
-                  <p>
-                    <span className="font-semibold text-slate-600">Enrollment No. :</span>{" "}
-                    <strong className="font-mono font-extrabold text-[#0F2A4A]">
-                      {data.registrationNumber || "4739846"}
-                    </strong>
-                  </p>
-                )}
-                <p>
-                  <span className="font-semibold text-slate-600">Date of Issue :</span>{" "}
-                  <strong className="font-bold">{data.issueDate}</strong>
-                </p>
-                <p>
-                  <span className="font-semibold text-slate-600">Place :</span>{" "}
-                  <strong className="font-bold">{data.place || "Gandhinagar, Gujarat"}</strong>
-                </p>
-              </div>
+        <section className="mt-2 flex w-full shrink-0 flex-col items-center text-center">
+          <p className={`${fontDisplay.className} font-black uppercase`} style={{ color: C.navy, fontSize: "30px", letterSpacing: "0.04em", lineHeight: 1.15 }}>
+            {data.studentName || "—"}
+          </p>
+          <p className="mt-2" style={{ ...prose, fontSize: "16px", maxWidth: 720 }}>
+            Son/Daughter of <span className="font-bold" style={{ color: C.navy }}>{parentLine}</span>
+          </p>
+          <p className="mt-2" style={{ ...prose, fontSize: "16px", maxWidth: 760 }}>
+            has successfully completed the{" "}
+            <span className={`${fontDisplay.className} font-bold`} style={{ color: C.navy, fontSize: "20px" }}>
+              {data.courseName || "—"}
+            </span>
+          </p>
+          <p className="mt-1" style={{ ...prose, fontSize: "16px", maxWidth: 760 }}>
+            conducted by this Institute from {data.trainingStart || "—"} to {data.trainingEnd || "—"}.
+          </p>
+          <p className="mt-2" style={{ ...prose, fontSize: "15px", maxWidth: 680, lineHeight: 1.45 }}>
+            He/She has acquired the necessary skills and knowledge and is awarded this certificate in recognition of his/her achievement.
+          </p>
+        </section>
 
-              {/* Director Signature */}
-              <div className="pt-2">
-                <div className="flex h-[52px] items-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={data.directorSignatureUrl || "/cert/sig-director.png"}
-                    alt="Director Signature"
-                    style={{ height: data.directorSigHeight || 48 }}
-                    className="w-auto object-contain"
-                    draggable={false}
-                  />
-                </div>
-                <div className="w-[170px] border-t border-slate-700 pt-1">
-                  <p className="text-[12px] font-extrabold tracking-wide text-slate-900" style={sans}>
-                    {data.directorTitle || "Director"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Column 2: Gold Medal Seal + Blue Stamp */}
-            <div className="flex flex-col items-center justify-end">
-              <div className="relative flex items-center justify-center">
-                {/* Gold Seal with Laurel and Ribbons */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={data.goldMedalUrl || "/cert/seal-gold-medal.png"}
-                  alt="Official Gold Seal"
-                  style={{ height: data.goldMedalSize || 125 }}
-                  className="w-auto object-contain drop-shadow-md"
-                  draggable={false}
-                />
-              </div>
-
-              {/* Circular Blue Stamp */}
-              <div className="-mt-7">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={data.stampUrl || "/cert/stamp-blue.png"}
-                  alt="Official Stamp"
-                  style={{
-                    height: data.stampSize || 84,
-                    width: data.stampSize || 84,
-                  }}
-                  className="object-contain opacity-95"
-                  draggable={false}
-                />
-              </div>
-            </div>
-
-            {/* Column 3: Student Photo & Signature + Authorized Signatory */}
-            <div className="flex flex-col items-end space-y-4">
-              {/* Student Photo with Frame */}
-              <div className="flex flex-col items-center">
-                <div
-                  className="relative overflow-hidden rounded-[2px] border-2 border-[#1E4A85] bg-slate-100 p-0.5 shadow-sm"
-                  style={{
-                    width: data.photoWidth || 72,
-                    height: data.photoHeight || 86,
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={data.photoUrl || "/cert/sample-student-photo.png"}
-                    alt={data.studentName}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                {/* Student Signature Line */}
-                <div className="mt-1 text-center">
-                  {data.studentSignatureUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={data.studentSignatureUrl}
-                      alt="Student Signature"
-                      style={{ height: data.studentSigHeight || 28 }}
-                      className="w-auto object-contain"
-                    />
-                  ) : (
-                    <p className="text-[12px] font-semibold text-slate-800" style={cursive}>
-                      {data.studentName}
-                    </p>
-                  )}
-                  <p className="border-t border-slate-400 text-[9px] font-bold uppercase tracking-wider text-slate-600">
-                    Student Signature
-                  </p>
-                </div>
-              </div>
-
-              {/* Authorized Signatory */}
-              <div className="pt-2 text-right">
-                <div className="flex h-[52px] items-center justify-end">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/cert/sig-authorized.png"
-                    alt="Authorized Signatory"
-                    style={{ height: data.authorizedSigHeight || 48 }}
-                    className="w-auto object-contain"
-                    draggable={false}
-                  />
-                </div>
-                <div className="w-[170px] border-t border-slate-700 pt-1 text-right">
-                  <p className="text-[12px] font-extrabold tracking-wide text-slate-900" style={sans}>
-                    Authorized Signatory
-                  </p>
-                </div>
-              </div>
-            </div>
+        <section className="mt-4 flex shrink-0 items-end justify-between" style={{ maxWidth: contentW }}>
+          <div className="flex flex-col gap-1.5" style={{ minWidth: 280 }}>
+            <p style={{ ...prose, fontSize: "15px" }}>
+              <span className={`${fontBody.className} font-bold`} style={{ color: C.navy }}>Enrollment No.</span>
+              <span style={{ color: C.gold }}> : </span>
+              {enrollNo}
+            </p>
+            <p style={{ ...prose, fontSize: "15px" }}>
+              <span className={`${fontBody.className} font-bold`} style={{ color: C.navy }}>Date of Issue</span>
+              <span style={{ color: C.gold }}> : </span>
+              {data.issueDate || "—"}
+            </p>
+            <p style={{ ...prose, fontSize: "15px" }}>
+              <span className={`${fontBody.className} font-bold`} style={{ color: C.navy }}>Place</span>
+              <span style={{ color: C.gold }}> : </span>
+              {data.place || "—"}
+            </p>
           </div>
 
-          {/* Verification Box with QR Code on Right with generous padding & quiet zone */}
-          <div className="mb-1 flex items-center justify-between rounded-lg border border-[#1E4A85]/60 bg-white/95 px-4 py-2 shadow-sm gap-4">
-            {/* Left: Verification Website & Accredited Training Centre */}
-            <div className="flex-1 space-y-1">
-              <div className="text-[11px] leading-snug text-slate-800" style={sans}>
-                <p className="font-semibold">
-                  This certificate can be verified by scanning the QR Code or visiting
-                </p>
-                <p className="font-extrabold text-[#1E4A85] tracking-wide text-[11.5px]">
-                  https://{data.verificationWebsite || "www.iveskillcouncil.edu.in"}/verify
-                </p>
+          <aside className="flex shrink-0 flex-col items-center">
+            <div style={{ width: photoW, height: photoH, border: `1.5px solid ${C.navy}`, outline: `2px solid ${C.goldSoft}`, outlineOffset: 3, overflow: "hidden", background: C.paperWarm }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={data.photoUrl || "/cert/sample-student-photo.png"} alt={data.studentName} className="h-full w-full object-cover" draggable={false} />
+            </div>
+            <p className={`${fontDisplay.className} mt-1.5 font-bold`} style={{ color: C.navy, fontSize: "13px" }}>
+              {data.studentName || "—"}
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.studentSignatureUrl || "/cert/sample-student-sig.png"}
+              alt="Student signature"
+              draggable={false}
+              className="object-contain"
+              style={{ height: 28, maxWidth: photoW }}
+            />
+            <p className={`${fontBody.className} font-bold uppercase`} style={{ color: C.navy, fontSize: "9px", letterSpacing: "0.08em" }}>
+              Student Signature
+            </p>
+          </aside>
+        </section>
+
+        <footer className="mt-auto flex shrink-0 flex-col" style={{ maxWidth: contentW, paddingTop: 6 }}>
+          <div className="flex items-end justify-between px-4">
+            <div className="flex flex-col items-center">
+              <div className="relative" style={{ width: stampSz, height: stampSz }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.stampUrl || "/certificates/stamp.png"}
+                  alt="Official stamp"
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.directorSignatureUrl || "/certificates/signature.png"}
+                  alt="Signature"
+                  draggable={false}
+                  className="absolute object-contain"
+                  style={{ left: "10%", right: "10%", top: "22%", height: Math.max(sigH, 40), width: "80%" }}
+                />
               </div>
-              <div className="text-[10px] text-slate-600 pt-0.5" style={sans}>
-                <span className="font-bold text-slate-900">{data.trainingCentreName || data.atcName}</span>
-                {data.franchiseAddress && (
-                  <span className="text-slate-500 text-[9.5px]"> — {data.franchiseAddress}</span>
-                )}
-              </div>
+              <p className={`${fontDisplay.className} mt-1 text-center font-bold uppercase`} style={{ color: C.navy, fontSize: "9px", letterSpacing: "0.06em" }}>
+                Director Signature
+              </p>
+              <p className={`${fontBody.className} text-center font-bold`} style={{ color: C.navyMid, fontSize: "11px" }}>
+                Director
+              </p>
             </div>
 
-            {/* Right: Crystal Clear High-Definition QR Code with quiet-zone padding & border */}
-            <div className="shrink-0 flex items-center">
+            <div className="flex flex-col items-center justify-end gap-1">
               <CertificateQRCode
                 docType="certificate"
-                enrollmentNo={data.registrationNumber || "4739846"}
-                certificateNo={data.certificateNumber || data.serialNumber || "IVESDC/CERT/2025/00123"}
+                enrollmentNo={enrollNo}
+                certificateNo={certNo}
                 studentName={data.studentName}
-                verificationWebsite={data.verificationWebsite || "www.iveskillcouncil.edu.in"}
-                size={data.qrCodeSize || 56}
+                verificationWebsite={verifySite}
+                size={72}
                 color="#000000"
-                mode="card"
-                captionLine1="Scan to Verify"
-                captionLine2={`Enr: ${data.registrationNumber || "4739846"}`}
+                mode="flat"
+                captionLine1=""
+                captionLine2=""
+                showEnrollmentTag={false}
               />
             </div>
           </div>
-        </div>
+
+          <p className="mt-2 text-center" style={{ ...prose, fontSize: "12px", color: C.navyMid }}>
+            This certificate can be verified by scanning the QR Code or visiting {verifySite}
+          </p>
+          <p className="mt-1 text-center" style={{ color: C.muted, fontSize: "11px" }}>
+            Registered Office: {registeredOffice}
+          </p>
+
+          <div className="mt-2 shrink-0 overflow-hidden">
+            <div style={{ height: 2.5, background: `linear-gradient(90deg, ${C.goldPale}, ${C.goldBright}, ${C.gold}, ${C.goldBright}, ${C.goldPale})` }} />
+            <div
+              className="flex items-stretch"
+              style={{
+                minHeight: 34,
+                background: `linear-gradient(180deg, rgba(226,199,106,0.22) 0%, transparent 32%), linear-gradient(90deg, ${C.navyDeep}, ${C.navy} 42%, #102848)`,
+              }}
+            >
+              <div
+                className="flex shrink-0 items-center"
+                style={{
+                  background: `linear-gradient(180deg, ${C.goldBright}, ${C.gold} 46%, #8C6A22)`,
+                  padding: "0 16px 0 12px",
+                  clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)",
+                }}
+              >
+                <span className={`${fontDisplay.className} font-black uppercase`} style={{ color: C.navyDeep, fontSize: "8px", letterSpacing: "0.2em" }}>
+                  Verify
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-white">
+                <span className={`${fontBody.className} truncate font-bold`} style={{ fontSize: "8.5px" }}>{verifySite}</span>
+                <span className="h-3 w-px shrink-0" style={{ background: "rgba(226,199,106,0.55)" }} />
+                <span className={`${fontBody.className} truncate font-semibold`} style={{ color: C.goldPale, fontSize: "8px" }}>{verifyEmail}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 px-3" style={{ borderLeft: "1px solid rgba(226,199,106,0.5)" }}>
+                <span className={`${fontDisplay.className} font-black uppercase`} style={{ color: C.goldBright, fontSize: "8px", letterSpacing: "0.16em" }}>
+                  IVESDC
+                </span>
+                <span className={`${fontBody.className} font-bold uppercase`} style={{ color: C.navyDeep, fontSize: "6.5px", letterSpacing: "0.1em", background: `linear-gradient(180deg, ${C.goldPale}, ${C.goldSoft})`, padding: "3px 6px" }}>
+                  Official Certificate
+                </span>
+              </div>
+            </div>
+            <div style={{ height: 2, background: `linear-gradient(90deg, ${C.gold}, ${C.goldBright}, ${C.gold})` }} />
+          </div>
+        </footer>
       </div>
     </div>
   );

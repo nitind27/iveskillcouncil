@@ -51,7 +51,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function isPublicPath(path: string) {
-  return path === "/" || path === "/login" || path.startsWith("/userpanel");
+  return (
+    path === "/" ||
+    path === "/login" ||
+    path === "/verify" ||
+    path.startsWith("/verify/") ||
+    path.startsWith("/userpanel")
+  );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

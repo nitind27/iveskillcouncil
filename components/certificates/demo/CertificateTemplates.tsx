@@ -8,9 +8,15 @@ import IvesdcCertificateTemplate from "../IvesdcCertificateTemplate";
 import OfficialIvesdcCertTemplate from "../OfficialIvesdcCertTemplate";
 import OfficialIvesdcMarksheetTemplate from "../OfficialIvesdcMarksheetTemplate";
 import OfficialIvesdcMarksheetTemplateV2 from "../OfficialIvesdcMarksheetTemplateV2";
+import OfficialIvesdcMarksheetTemplateV3 from "../OfficialIvesdcMarksheetTemplateV3";
 import type { CertificateDisplayData } from "@/lib/certificate-display";
 
-export { OfficialIvesdcCertTemplate, OfficialIvesdcMarksheetTemplate, OfficialIvesdcMarksheetTemplateV2 };
+export {
+  OfficialIvesdcCertTemplate,
+  OfficialIvesdcMarksheetTemplate,
+  OfficialIvesdcMarksheetTemplateV2,
+  OfficialIvesdcMarksheetTemplateV3,
+};
 
 const sans: CSSProperties = { fontFamily: "Arial, Helvetica, sans-serif" };
 const serif: CSSProperties = { fontFamily: "Georgia, 'Times New Roman', Times, serif" };
@@ -205,6 +211,11 @@ export function MarksheetTemplate({ data }: { data: CertificateDemoData }) {
 /** Statement of Marks (Result) — Layout 2 (silver lace blank-form style) */
 export function MarksheetTemplateV2({ data }: { data: CertificateDemoData }) {
   return <OfficialIvesdcMarksheetTemplateV2 data={data} printId="demo-cert-marksheet2" />;
+}
+
+/** Result Form 3 — premium simple-border certificate layout */
+export function MarksheetTemplateV3({ data }: { data: CertificateDemoData }) {
+  return <OfficialIvesdcMarksheetTemplateV3 data={data} printId="demo-cert-marksheet3" />;
 }
 
 function LegacyMarksheetTemplate({ data }: { data: CertificateDemoData }) {

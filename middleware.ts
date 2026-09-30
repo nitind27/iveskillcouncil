@@ -12,7 +12,9 @@ import {
 // Routes that are public — no login required (user panel = default for students/visitors)
 const PUBLIC_PATHS = [
   "/login",
+  "/verify",
   "/api/auth",
+  "/api/certificates/verify",
   "/userpanel",
   "/certificates/templates",
   "/api/certificates/templates",
@@ -20,6 +22,8 @@ const PUBLIC_PATHS = [
 const isPublicPath = (path: string) =>
   path === "/" ||
   path === "/userpanel" ||
+  path === "/verify" ||
+  path.startsWith("/verify/") ||
   path === "/f" ||
   path.startsWith("/f/") ||
   PUBLIC_PATHS.some((route) => path.startsWith(route)) ||
