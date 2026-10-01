@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Award, FileText, Files, Loader2, Printer, X } from "lucide-react";
 import { showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -79,6 +80,24 @@ export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, 
   const [activeId, setActiveId] = useState<string | null>(null);
   const batch = useOfficialBatchPrint();
   const idsKey = studentIds ? studentIds.join(",") : "";
+  const [mounted, setMounted] = useState(false);
+  const open = Boolean(studentIds);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
 
   useEffect(() => {
     if (!idsKey) return;
@@ -113,13 +132,14 @@ export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey]);
 
-  if (!studentIds) return <>{batch.node}</>;
+  if (!studentIds || !mounted) return <>{batch.node}</>;
 
   const active = docs.find((d) => d.studentId === activeId) ?? docs[0];
   const totalPages = pagesFor(docs, choice).length;
 
   return (
     <>
+      {createPortal(
       <div className="fixed inset-0 z-[10200] flex flex-col bg-slate-950/90 backdrop-blur-md">
         <div className="no-print flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-[#0B1F3A] px-4 py-3 text-white">
           <div className="min-w-0">
@@ -221,7 +241,9 @@ export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, 
             </div>
           </div>
         )}
-      </div>
+      </div>,
+        document.body
+      )}
       {batch.node}
     </>
   );
