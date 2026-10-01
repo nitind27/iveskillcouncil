@@ -88,9 +88,12 @@ export async function GET(request: NextRequest) {
     if (Object.keys(studentWhere).length) baseWhere.student = studentWhere;
 
     const where: Prisma.CertificateWhereInput = { ...baseWhere };
-    if (status && STATUS_VALUES.includes(status as CertificateStatus)) {
-      where.status = status as CertificateStatus;
-    }
+    const statuses = (status || "")
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter((s): s is CertificateStatus => STATUS_VALUES.includes(s as CertificateStatus));
+    if (statuses.length === 1) where.status = statuses[0];
+    else if (statuses.length > 1) where.status = { in: statuses };
 
     const [certificates, total, grouped] = await Promise.all([
       prisma.certificate.findMany({

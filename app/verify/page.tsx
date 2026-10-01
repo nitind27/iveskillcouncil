@@ -446,7 +446,7 @@ function VerifyContent() {
       <div className="mx-auto max-w-2xl px-4 pb-14 pt-8 sm:pt-12">
         <header className="mb-7 text-center">
           <Link href="/verify" className="inline-block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo/IVESDC LOGO-01.png" alt="IVESDC" className="mx-auto h-16 w-auto object-contain sm:h-20" />
           </Link>
           <h1 className="mt-3 text-xl font-extrabold tracking-wide sm:text-2xl">Official Document Verification</h1>
@@ -459,13 +459,13 @@ function VerifyContent() {
           <SearchPanel onScan={() => setScanning(true)} />
         ) : (
           <div className="space-y-5">
-            {loading ? (
+          {loading ? (
               <div className="flex flex-col items-center gap-3 rounded-3xl border border-[#0B1F3A]/10 bg-white/80 px-6 py-16 text-center shadow-xl">
                 <Loader2 className="h-10 w-10 animate-spin text-[#B8922A]" />
                 <p className="text-lg font-bold">Verifying…</p>
                 <p className="text-sm text-slate-600">Checking the IVESDC registry for this document.</p>
-              </div>
-            ) : error ? (
+            </div>
+          ) : error ? (
               <div className="rounded-3xl border border-rose-200 bg-white/90 px-6 py-10 text-center shadow-xl">
                 <XCircle className="mx-auto h-10 w-10 text-rose-500" />
                 <p className="mt-2 text-lg font-bold">Verification unavailable</p>
@@ -479,8 +479,8 @@ function VerifyContent() {
               <p className="mb-3 text-sm font-bold">Verify another document</p>
               <SearchPanel compact onScan={() => setScanning(true)} />
             </div>
-          </div>
-        )}
+                    </div>
+                  )}
 
         <p className="mt-8 text-center text-[11px] text-slate-500">
           Official verification portal of IVESDC ·{" "}
