@@ -3,10 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const HERO_IMAGES = [
-  "/uploads/userpanel/hero/1.png",
-  "/uploads/userpanel/hero/2.png",
-  "/uploads/userpanel/hero/3.png",
-  "/uploads/userpanel/hero/4.png",
+  "/uploads/userpanel/hero/banner-1.jpg",
+  "/uploads/userpanel/hero/banner-2.jpg",
+  "/uploads/userpanel/hero/banner-3.jpg",
+  "/uploads/userpanel/hero/banner-4.jpg",
 ];
 
 async function main() {

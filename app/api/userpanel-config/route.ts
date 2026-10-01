@@ -77,12 +77,22 @@ export async function GET(_request: NextRequest) {
       return { ...stat, value };
     });
 
+    const savedHeroImages = (
+      Array.isArray(rawConfig.hero?.backgroundImages) && rawConfig.hero.backgroundImages.length > 0
+        ? rawConfig.hero.backgroundImages
+        : rawConfig.hero?.backgroundImage
+          ? [rawConfig.hero.backgroundImage]
+          : []
+    ).filter((src): src is string => typeof src === "string" && src.trim().length > 0);
+    const heroImages = savedHeroImages.length > 0 ? savedHeroImages : defaultConfig.hero.backgroundImages ?? [];
+
     const config: UserPanelConfig = {
       ...rawConfig,
       hero: {
+        ...defaultConfig.hero,
         ...rawConfig.hero,
-        backgroundImage: defaultConfig.hero.backgroundImage,
-        backgroundImages: defaultConfig.hero.backgroundImages,
+        backgroundImage: heroImages[0] ?? defaultConfig.hero.backgroundImage,
+        backgroundImages: heroImages,
       },
       stats: statsWithDynamicValues,
       courses: {

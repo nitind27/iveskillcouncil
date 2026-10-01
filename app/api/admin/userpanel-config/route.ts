@@ -100,8 +100,9 @@ export async function PUT(request: NextRequest) {
     const prevHeroLocal = prevHeroImagesRaw.filter(isLocalHeroUrl);
     const nextHeroUrlsSet = new Set(nextHeroImagesRaw.filter(isLocalHeroUrl) as string[]);
 
+    const defaultHeroUrls = new Set(defaultConfig.hero.backgroundImages ?? []);
     for (const oldUrl of prevHeroLocal) {
-      if (nextHeroUrlsSet.has(oldUrl)) continue;
+      if (nextHeroUrlsSet.has(oldUrl) || defaultHeroUrls.has(oldUrl)) continue;
       const oldAbs = path.join(process.cwd(), "public", oldUrl.replace(/^\//, ""));
       await safeUnlink(oldAbs);
     }

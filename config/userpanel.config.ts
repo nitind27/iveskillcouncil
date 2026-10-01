@@ -214,12 +214,12 @@ const defaultConfig: UserPanelConfig = {
   hero: {
     greetingPrefix: "Welcome Back",
     subtitle: "Your gateway to quality education. Explore courses, grab offers, and grow with our institute & franchise network.",
-    backgroundImage: "/uploads/userpanel/hero/1.png",
+    backgroundImage: "/uploads/userpanel/hero/banner-1.jpg",
     backgroundImages: [
-      "/uploads/userpanel/hero/1.png",
-      "/uploads/userpanel/hero/2.png",
-      "/uploads/userpanel/hero/3.png",
-      "/uploads/userpanel/hero/4.png",
+      "/uploads/userpanel/hero/banner-1.jpg",
+      "/uploads/userpanel/hero/banner-2.jpg",
+      "/uploads/userpanel/hero/banner-3.jpg",
+      "/uploads/userpanel/hero/banner-4.jpg",
     ],
     ctaPrimary: { label: "View Courses", href: "/userpanel/courses" },
     ctaSecondary: { label: "Explore Offers", href: "/userpanel#offers" },

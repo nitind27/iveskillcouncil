@@ -27,10 +27,10 @@ const HERO_ROTATE_INTERVAL_MS = 6000;
 const SLIDE_EASE = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_HERO_IMAGES = [
-  "/uploads/userpanel/hero/1.png",
-  "/uploads/userpanel/hero/2.png",
-  "/uploads/userpanel/hero/3.png",
-  "/uploads/userpanel/hero/4.png",
+  "/uploads/userpanel/hero/banner-1.jpg",
+  "/uploads/userpanel/hero/banner-2.jpg",
+  "/uploads/userpanel/hero/banner-3.jpg",
+  "/uploads/userpanel/hero/banner-4.jpg",
 ];
 
 const imageVariants = {
