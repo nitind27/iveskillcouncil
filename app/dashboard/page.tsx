@@ -21,6 +21,7 @@ import FranchiseFilterDropdown from "@/components/dashboard/FranchiseFilterDropd
 import StudentDashboard from "@/components/adminpanel/dashboard/StudentDashboard";
 import type { ReportFiltersState } from "@/components/adminpanel/dashboard/DashboardReportToolbar";
 import DashboardReportToolbar from "@/components/adminpanel/dashboard/DashboardReportToolbar";
+import StudentReportPanel from "@/components/adminpanel/dashboard/StudentReportPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { ROLES } from "@/lib/permissions";
@@ -198,6 +199,9 @@ export default function DashboardPage() {
               onCardClick={setSelectedCard}
               franchiseId={franchiseFilter}
             />
+            {(isSuperAdminOrAdmin || roleId === ROLES.SUB_ADMIN) && (
+              <StudentReportPanel franchiseId={franchiseFilter || undefined} />
+            )}
           </motion.div>
         )}
 
