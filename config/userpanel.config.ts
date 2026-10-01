@@ -8,6 +8,44 @@ export interface NavLink {
   href: string;
 }
 
+export interface GalleryImage {
+  src: string;
+  alt?: string;
+  /** Smaller version used for grid tiles; lightbox always uses `src`. */
+  thumb?: string;
+  /** Used for the filter chips on the gallery section. */
+  category?: string;
+}
+
+function galleryImage(n: number, alt: string, category: string): GalleryImage {
+  const name = `gallery-${String(n).padStart(2, "0")}`;
+  return { src: `/assets/gallery/${name}.jpg`, thumb: `/assets/gallery/${name}-sm.jpg`, alt, category };
+}
+
+const STOCK_IMAGE_HOSTS = ["images.unsplash.com", "img.freepik.com"];
+
+function isStockImage(src: string): boolean {
+  try {
+    return STOCK_IMAGE_HOSTS.includes(new URL(src).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Saved gallery images, or the built-in institute gallery when nothing real has been
+ * saved yet (empty, or only the original stock placeholder photos).
+ */
+export function resolveGalleryImages(saved: GalleryImage[] | null | undefined): GalleryImage[] {
+  const images = (Array.isArray(saved) ? saved : []).filter(
+    (img): img is GalleryImage => typeof img?.src === "string" && img.src.trim().length > 0
+  );
+  if (images.length === 0 || images.every((img) => isStockImage(img.src))) {
+    return defaultConfig.gallery.images;
+  }
+  return images;
+}
+
 export interface StatItem {
   id: string;
   label: string;
@@ -153,7 +191,7 @@ export interface UserPanelConfig {
   };
   gallery: {
     sectionTitle: string;
-    images: { src: string; alt?: string }[];
+    images: GalleryImage[];
   };
   testimonials: {
     sectionTitle: string;
@@ -271,12 +309,16 @@ const defaultConfig: UserPanelConfig = {
   gallery: {
     sectionTitle: "Gallery",
     images: [
-      { src: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop", alt: "Campus" },
-      { src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop", alt: "Learning" },
-      { src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&h=300&fit=crop", alt: "Workshop" },
-      { src: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300&fit=crop", alt: "Students" },
-      { src: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&h=300&fit=crop", alt: "Event" },
-      { src: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop", alt: "Graduation" },
+      galleryImage(3, "India's Best 100 Institute Award Show 2026 — Winners", "Events"),
+      galleryImage(1, "Excellence in Education Award 2026", "Awards"),
+      galleryImage(2, "India's Best 100 Institute Award", "Awards"),
+      galleryImage(4, "Award Winner — DITRP India, Mumbai", "Highlights"),
+      galleryImage(7, "Proud Moment — Excellence in Education Award", "Awards"),
+      galleryImage(8, "Double Honours at DITRP Award Show 2026", "Awards"),
+      galleryImage(5, "Felicitation Ceremony", "Awards"),
+      galleryImage(6, "DITRP Award Show, Mumbai", "Events"),
+      galleryImage(9, "Bharat Gaurav Samman", "Awards"),
+      galleryImage(10, "Award Show Invitation — Kohinoor Continental, Mumbai", "Highlights"),
     ],
   },
   testimonials: {

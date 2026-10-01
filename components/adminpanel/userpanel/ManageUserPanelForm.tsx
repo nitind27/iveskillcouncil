@@ -25,7 +25,7 @@ import {
   Pencil,
 } from "lucide-react";
 import type { UserPanelConfig } from "@/config/userpanel.config";
-import { defaultConfig } from "@/config/userpanel.config";
+import { defaultConfig, resolveGalleryImages } from "@/config/userpanel.config";
 import { cn } from "@/lib/utils";
 import WelcomePopupModal from "@/components/userpanel/WelcomePopupModal";
 import { ImageEditorModal } from "@/components/common/ImageEditorModal";
@@ -88,7 +88,11 @@ function ensureConfig(c: Partial<UserPanelConfig> | null): UserPanelConfig {
     courses: c.courses ?? defaultConfig.courses,
     franchise: c.franchise ?? defaultConfig.franchise,
     offers: c.offers ?? defaultConfig.offers,
-    gallery: c.gallery ?? defaultConfig.gallery,
+    gallery: {
+      ...defaultConfig.gallery,
+      ...(c.gallery ?? {}),
+      images: resolveGalleryImages(c.gallery?.images),
+    },
     testimonials: c.testimonials ?? defaultConfig.testimonials,
     footer: c.footer ?? defaultConfig.footer,
   };
@@ -2232,6 +2236,9 @@ export default function ManageUserPanelForm() {
               <div className="space-y-4">
                 {config.gallery.images.map((img, i) => (
                   <div key={i} className="flex gap-3 items-end flex-wrap">
+                    <div className="h-[42px] w-14 shrink-0 overflow-hidden rounded-lg border border-border/70 bg-muted">
+                      {img.src && <img src={img.thumb || img.src} alt="" className="h-full w-full object-cover" />}
+                    </div>
                     <div className="flex-1 min-w-[200px]">
                       <label className={labelClass}>Image URL</label>
                       <input
@@ -2240,13 +2247,18 @@ export default function ManageUserPanelForm() {
                         onChange={(e) =>
                           setConfig((c) => ({
                             ...c,
-                            gallery: { ...c.gallery, images: c.gallery.images.map((im, j) => (j === i ? { ...im, src: e.target.value } : im)) },
+                            gallery: {
+                              ...c.gallery,
+                              images: c.gallery.images.map((im, j) =>
+                                j === i ? { ...im, src: e.target.value, thumb: undefined } : im
+                              ),
+                            },
                           }))
                         }
                       />
                     </div>
-                    <div className="w-40">
-                      <label className={labelClass}>Alt text</label>
+                    <div className="w-48">
+                      <label className={labelClass}>Caption</label>
                       <input
                         className={inputClass}
                         value={img.alt ?? ""}
@@ -2254,6 +2266,20 @@ export default function ManageUserPanelForm() {
                           setConfig((c) => ({
                             ...c,
                             gallery: { ...c.gallery, images: c.gallery.images.map((im, j) => (j === i ? { ...im, alt: e.target.value || undefined } : im)) },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="w-36">
+                      <label className={labelClass}>Category</label>
+                      <input
+                        className={inputClass}
+                        value={img.category ?? ""}
+                        placeholder="Awards, Events…"
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            gallery: { ...c.gallery, images: c.gallery.images.map((im, j) => (j === i ? { ...im, category: e.target.value || undefined } : im)) },
                           }))
                         }
                       />

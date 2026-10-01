@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { StudentStatus, FranchiseStatus } from "@prisma/client";
-import { defaultConfig } from "@/config/userpanel.config";
+import { defaultConfig, resolveGalleryImages } from "@/config/userpanel.config";
 import { cache, USERPANEL_CONFIG_CACHE_KEY } from "@/lib/cache";
 import type { UserPanelConfig, StatItem } from "@/config/userpanel.config";
 
@@ -100,6 +100,11 @@ export async function GET(_request: NextRequest) {
         items: (rawConfig.courses?.items || []).filter(
           (c: { enabled?: boolean }) => c?.enabled !== false
         ),
+      },
+      gallery: {
+        ...defaultConfig.gallery,
+        ...rawConfig.gallery,
+        images: resolveGalleryImages(rawConfig.gallery?.images),
       },
       testimonials: rawConfig.testimonials ?? defaultConfig.testimonials,
     };
