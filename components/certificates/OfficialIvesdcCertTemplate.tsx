@@ -191,7 +191,7 @@ export default function OfficialIvesdcCertTemplate({
   const bodyFs = Math.round((data.certBodyFontSize || 17) * fontScale);
   const photoW = data.photoWidth && data.photoWidth > 100 ? data.photoWidth : 122;
   const photoH = data.photoHeight && data.photoHeight > 120 ? data.photoHeight : 148;
-  const stampSz = Math.min(136, Math.max(120, data.stampSize || 120));
+  const stampSz = Math.min(150, Math.max(140, data.stampSize || 140));
   const logoW = data.logoWidth && data.logoWidth > 450 ? Math.min(680, data.logoWidth) : 420;
   const sigH = data.directorSigHeight || 36;
   /** 2.2 inch round sticker, applied by hand. */
@@ -525,8 +525,8 @@ export default function OfficialIvesdcCertTemplate({
 
         <footer className="mt-auto flex shrink-0 flex-col" style={{ maxWidth: contentW, paddingTop: 0, marginTop: 0 }}>
           <div className="mb-1 flex items-end justify-between gap-6 px-1">
-            <div className="flex shrink-0 flex-col items-center">
-              <div className="relative" style={{ width: stampSz, height: stampSz }}>
+            <div className="flex shrink-0 flex-col items-center" style={{ marginLeft: 26 }}>
+              <div className="relative" style={{ width: stampSz, height: stampSz, marginBottom: -(stampSz - 120) }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={data.stampUrl || "/certificates/stamp.png"}
@@ -540,10 +540,10 @@ export default function OfficialIvesdcCertTemplate({
                   alt="Signature"
                   draggable={false}
                   className="absolute object-contain"
-                  style={{ left: "8%", right: "8%", top: "20%", height: Math.max(sigH, Math.round(stampSz * 0.5)), width: "84%" }}
+                  style={{ left: "2%", top: "18%", height: Math.max(sigH, Math.round(stampSz * 0.54)), width: "96%" }}
                 />
               </div>
-              <div style={{ width: 168, height: 2, marginTop: 6, background: C.navy }} />
+              <div className="relative z-[1]" style={{ width: 168, height: 2, marginTop: 6, background: C.navy }} />
               <p
                 className={`${fontDisplay.className} mt-1.5 text-center font-bold uppercase`}
                 style={{ color: C.navy, fontSize: "8px", letterSpacing: "0.05em", lineHeight: 1.25, whiteSpace: "nowrap" }}
@@ -608,7 +608,7 @@ export default function OfficialIvesdcCertTemplate({
             <div className="flex shrink-0 flex-col items-center" style={{ width: 220 }}>
               <div
                 className="relative flex w-full items-end justify-center"
-                style={{ height: data.atcStampUrl ? 96 : Math.max(48, data.authorizedSigHeight || 48) }}
+                style={{ height: data.atcStampUrl ? 114 : Math.max(56, data.authorizedSigHeight || 56) }}
               >
                 {data.atcStampUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -617,7 +617,7 @@ export default function OfficialIvesdcCertTemplate({
                     alt="ATC stamp"
                     draggable={false}
                     className="pointer-events-none absolute object-contain"
-                    style={{ width: 92, height: 92, left: "50%", bottom: 2, transform: "translateX(-50%)", opacity: 0.9 }}
+                    style={{ width: 112, height: 112, left: "50%", bottom: 1, transform: "translateX(-50%)", opacity: 0.9 }}
                   />
                 ) : null}
                 {data.atcSignatureUrl ? (
@@ -627,7 +627,7 @@ export default function OfficialIvesdcCertTemplate({
                     alt="ATC signature"
                     draggable={false}
                     className="relative z-[1] object-contain object-bottom"
-                    style={{ height: Math.max(40, data.authorizedSigHeight || 44), maxWidth: 190 }}
+                    style={{ height: Math.max(52, data.authorizedSigHeight || 58), maxWidth: 210 }}
                   />
                 ) : null}
               </div>

@@ -139,6 +139,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Short QR link printed on certificates: /V/<M|C>/<enrollment>/<document no.>
+  const shortVerify = /^\/v\/(m|c)\/([^/]+)(?:\/(.+))?$/i.exec(pathname);
+  if (shortVerify) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verify";
+    url.search = "";
+    url.searchParams.set("type", shortVerify[1].toLowerCase() === "c" ? "cert" : "ms");
+    url.searchParams.set("enr", decodeURIComponent(shortVerify[2]));
+    if (shortVerify[3]) url.searchParams.set("id", decodeURIComponent(shortVerify[3]));
+    return NextResponse.redirect(url);
+  }
+
   if (pathname.startsWith("/f/")) {
     const rest = pathname.slice(3);
     const first = (rest.split("/")[0] || "").toLowerCase();

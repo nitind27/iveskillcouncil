@@ -12,6 +12,20 @@ const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_VERIFY_URL || "https://ivesdc.cod
   .trim()
   .replace(/\/+$/, "");
 
+/**
+ * All-uppercase short link (`HTTPS://HOST/V/M/<enr>/<id>`) so the QR uses alphanumeric mode:
+ * far fewer modules, so each dot prints larger and phones read it without zooming.
+ * Returns null when a value can't be represented that way (lowercase, "/" in enrollment, …).
+ */
+function shortVerifyUrl(typeCode: "ms" | "cert", enr: string, id: string): string | null {
+  const safe = /^[0-9A-Z\-./]*$/;
+  const origin = VERIFY_ORIGIN.toUpperCase();
+  if (!enr || enr.includes("/") || !safe.test(enr) || !safe.test(id) || !/^[0-9A-Z\-./:]+$/.test(origin)) return null;
+  const parts = [origin, "V", typeCode === "ms" ? "M" : "C", enr];
+  if (id) parts.push(id);
+  return parts.join("/");
+}
+
 export interface CertificateQRCodeProps {
   /** Document type for verification link */
   docType?: "marksheet" | "certificate" | "diploma";
@@ -80,6 +94,8 @@ export default function CertificateQRCode({
   const payload = useMemo(() => {
     if (customPayload) return customPayload;
     const typeCode = docType === "marksheet" ? "ms" : "cert";
+    const short = shortVerifyUrl(typeCode, cleanEnr, cleanCert);
+    if (short) return short;
     if (cleanCert && cleanEnr) {
       return `${VERIFY_ORIGIN}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}&id=${encodeURIComponent(cleanCert)}`;
     }
@@ -153,7 +169,9 @@ export default function CertificateQRCode({
 
         {(captionLine1 || captionLine2) && (
           <div
-            className="mt-1.5 flex min-h-[22px] flex-col items-center justify-start text-center leading-tight"
+            className={`mt-1.5 flex flex-col items-center justify-start text-center leading-tight ${
+              captionLine1 && captionLine2 ? "min-h-[22px]" : ""
+            }`}
             style={{ ...sans, color: "#0E2A54", width: frame }}
           >
             {captionLine1 && (

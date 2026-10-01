@@ -322,7 +322,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   const photoH = data.photoHeight || 108;
   const qrPx = Math.min(62, Math.max(48, data.qrCodeSize || 56));
   const sigH = data.directorSigHeight || 36;
-  const stampPx = Math.min(96, Math.max(68, data.stampSize || 82));
+  const stampPx = Math.min(112, Math.max(100, data.stampSize || 100));
   const coordSigH = data.authorizedSigHeight || data.studentSigHeight || 28;
   const HOLOGRAM_MM = 23; /* hologram guide 23mm × 23mm */
   const stampSrc = data.stampUrl || "/certificates/stamp.png";
@@ -1185,9 +1185,9 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     left: "50%",
                     top: "50%",
                     transform: "translate(-50%, -50%)",
-                    width: Math.round(stampPx * 0.86),
+                    width: Math.round(stampPx * 1.05),
                     height: "auto",
-                    maxHeight: Math.max(sigH, Math.round(stampPx * 0.55)),
+                    maxHeight: Math.max(sigH, Math.round(stampPx * 0.64)),
                   }}
                 />
               </div>
@@ -1238,7 +1238,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     alt="ATC Authorised Signatory"
                     draggable={false}
                     className="relative z-[2] object-contain object-bottom"
-                    style={{ maxWidth: Math.round(stampPx * 1.5), height: Math.max(coordSigH, Math.round(stampPx * 0.5)) }}
+                    style={{ maxWidth: Math.round(stampPx * 1.7), height: Math.max(coordSigH, Math.round(stampPx * 0.62)) }}
                   />
                 ) : null}
               </div>
@@ -1270,7 +1270,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     alt="Examination Coordinator signature"
                     draggable={false}
                     className="object-contain object-bottom"
-                    style={{ maxWidth: Math.round(stampPx * 1.5), height: Math.max(coordSigH, Math.round(stampPx * 0.5)) }}
+                    style={{ maxWidth: Math.round(stampPx * 1.7), height: Math.max(coordSigH, Math.round(stampPx * 0.62)) }}
                   />
                 ) : null}
               </div>
@@ -1327,11 +1327,11 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 certificateNo={certNo}
                 studentName={data.studentName}
                 verificationWebsite={verifySite}
-                size={Math.max(84, qrPx)}
+                size={Math.max(98, qrPx)}
                 color="#000000"
                 mode="marksheet"
-                captionLine1="Scan to Verify"
-                captionLine2="Official Marksheet"
+                captionLine1="Scan to Verify Marksheet"
+                captionLine2=""
                 showEnrollmentTag={false}
               />
             </div>

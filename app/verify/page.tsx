@@ -80,6 +80,12 @@ function paramsFromScan(raw: string): URLSearchParams | null {
   if (!text) return null;
   try {
     const url = new URL(text);
+    const short = /^\/v\/(m|c)\/([^/]+)(?:\/(.+))?$/i.exec(url.pathname);
+    if (short) {
+      const qs = new URLSearchParams({ type: short[1].toLowerCase() === "c" ? "cert" : "ms", enr: decodeURIComponent(short[2]) });
+      if (short[3]) qs.set("id", decodeURIComponent(short[3]));
+      return qs;
+    }
     if (url.searchParams.get("enr") || url.searchParams.get("id")) return url.searchParams;
   } catch {
     // not a URL
