@@ -676,8 +676,8 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
   },
   marksheet3: {
     id: "demo-marksheet3",
-    serialNumber: "IVESDC/MS/2025/004781",
-    certificateNumber: "IVESDC/MS/2025/004781",
+    serialNumber: "00001",
+    certificateNumber: "00001",
     registrationNumber: "IVESDC2504781",
     barcodeNumber: "IVESDC2504781",
     rollNumber: "CDC/25/04781",

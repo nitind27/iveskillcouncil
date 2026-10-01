@@ -15,6 +15,7 @@ import {
 } from "@/lib/student-certificate-fill";
 import { ensureCourseSubjectsFromLegacy } from "@/lib/course-subjects";
 import { getFranchiseSignatures } from "@/lib/franchise-document-signatures";
+import { assignMarksheetNumbers, getMarksheetNumber } from "@/lib/marksheet-numbers";
 
 const CONFIG_FILE_PATH = path.join(process.cwd(), "data", "certificate-templates-config.json");
 
@@ -62,7 +63,7 @@ const studentInclude = Prisma.validator<Prisma.StudentInclude>()({
     },
   },
   certificates: {
-    where: { status: "ISSUED" },
+    where: { status: { in: ["ISSUED", "APPROVED"] } },
     orderBy: { issueDate: "desc" },
     take: 1,
     select: { certificateNumber: true },
@@ -179,17 +180,23 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
     durationMonths: student.course?.durationMonths ?? student.course?.durationValue ?? null,
     durationValue: student.course?.durationValue ?? student.course?.durationMonths ?? null,
     durationUnit: student.course?.durationUnit ?? "Months",
-    certificateNumber: student.certificates[0]?.certificateNumber ?? null,
+    certificateNumber: /^IVESDC\//.test(student.certificates[0]?.certificateNumber ?? "")
+      ? student.certificates[0].certificateNumber
+      : null,
     enrollmentNumber: student.studentCode || attempt?.enrollmentNumber || student.id.toString(),
     marksPercent,
     subjects,
   };
 }
 
-/** Certificate of Completion + Statement of Marks (Result) - 3, filled with this student's live data. */
+/**
+ * Certificate of Completion + Statement of Marks (Result) - 3, filled with this student's live data.
+ * `assignMarksheetNo: false` only reads an existing marksheet number (used by public verification).
+ */
 export async function buildStudentOfficialDocuments(
   student: StudentWithRelations,
-  layouts: OfficialLayouts
+  layouts: OfficialLayouts,
+  options: { assignMarksheetNo?: boolean } = {}
 ): Promise<StudentOfficialDocuments> {
   const source = await buildSource(student);
 
@@ -199,6 +206,16 @@ export async function buildStudentOfficialDocuments(
     source,
     "marksheet3"
   );
+
+  const studentKey = student.id.toString();
+  const marksheetNo =
+    options.assignMarksheetNo === false
+      ? await getMarksheetNumber(studentKey)
+      : (await assignMarksheetNumbers([studentKey]))[studentKey];
+  if (marksheetNo) {
+    marksheet.certificateNumber = marksheetNo;
+    marksheet.serialNumber = marksheetNo;
+  }
 
   const franchiseSlug = student.franchise.slug?.trim() || "";
   const atcCode = franchiseSlug

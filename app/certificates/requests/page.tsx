@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import {
@@ -16,6 +16,12 @@ import {
   ChevronRight,
   Printer,
   Info,
+  Search,
+  Building2,
+  CheckCheck,
+  CheckSquare,
+  Square,
+  Send,
 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { showSuccess, showError } from "@/lib/toast";
@@ -27,10 +33,13 @@ import {
 } from "@/lib/certificate-access";
 import { cn } from "@/lib/utils";
 import { CreateCertificateModal } from "@/components/certificates/CreateCertificateModal";
-import { CertificatePreviewModal } from "@/components/certificates/CertificatePreviewModal";
+import { StudentOfficialCertificatesModal } from "@/components/certificates/StudentOfficialCertificatesModal";
+import { OfficialBatchPreview } from "@/components/certificates/OfficialBatchPreview";
 
 interface CertItem {
   id: string;
+  studentId: string;
+  studentCode?: string;
   studentName: string;
   studentEmail: string;
   courseName: string;
@@ -43,8 +52,14 @@ interface CertItem {
 
 interface CertResponse {
   items: CertItem[];
+  counts?: Record<"REQUESTED" | "APPROVED" | "ISSUED" | "REJECTED", number>;
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
+
+type BulkStatus = "APPROVED" | "REJECTED" | "ISSUED";
+
+const PRINTABLE = new Set(["APPROVED", "ISSUED"]);
+const MAX_PRINT = 100;
 
 const STATUS_CHIP: Record<string, string> = {
   ISSUED: "bg-emerald-500/10 text-emerald-800 border-emerald-200/80",
@@ -55,7 +70,7 @@ const STATUS_CHIP: Record<string, string> = {
 
 const STATUS_HINT: Record<string, string> = {
   REQUESTED: "Waiting for institute approval",
-  APPROVED: "Approved — institute will print & dispatch",
+  APPROVED: "Approved — institute will print certificate & result",
   ISSUED: "Printed by institute — hard copy on the way",
   REJECTED: "Request rejected — contact institute",
 };
@@ -71,16 +86,30 @@ export default function CertificatesRequestsPage() {
   const [status, setStatus] = useState("");
   const [franchiseId, setFranchiseId] = useState("");
   const [courseId, setCourseId] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [previewCert, setPreviewCert] = useState<CertItem | null>(null);
+  const [printStudentId, setPrintStudentId] = useState<string | null>(null);
+  const [batchPrintIds, setBatchPrintIds] = useState<string[] | null>(null);
+  const [batchPrintCertIds, setBatchPrintCertIds] = useState<string[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Map<string, CertItem>>(new Map());
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const queryParams = new URLSearchParams();
   queryParams.set("page", String(page));
-  queryParams.set("limit", "12");
+  queryParams.set("limit", "25");
   if (status) queryParams.set("status", status);
   if (franchiseId) queryParams.set("franchiseId", franchiseId);
   if (courseId) queryParams.set("courseId", courseId);
+  if (search) queryParams.set("search", search);
 
   const { data: franchisesData } = useSWR(
     showFranchiseFilter ? "/api/franchises?limit=200" : null,
@@ -110,12 +139,76 @@ export default function CertificatesRequestsPage() {
   );
 
   const items = data?.items ?? [];
-  const pagination = data?.pagination ?? { page: 1, limit: 12, total: 0, totalPages: 1 };
+  const pagination = data?.pagination ?? { page: 1, limit: 25, total: 0, totalPages: 1 };
 
   const stats = {
-    requested: items.filter((c) => c.status === "REQUESTED").length,
-    approved: items.filter((c) => c.status === "APPROVED").length,
-    issued: items.filter((c) => c.status === "ISSUED").length,
+    requested: data?.counts?.REQUESTED ?? 0,
+    approved: data?.counts?.APPROVED ?? 0,
+    issued: data?.counts?.ISSUED ?? 0,
+  };
+  const selectedFranchise = (franchises as { id: string; name: string }[]).find((f) => f.id === franchiseId);
+
+  const selectedList = Array.from(selected.values());
+  const selectedPending = selectedList.filter((c) => c.status === "REQUESTED");
+  const selectedPrintable = selectedList.filter((c) => PRINTABLE.has(c.status));
+  const selectedApproved = selectedList.filter((c) => c.status === "APPROVED");
+  const allOnPageSelected = items.length > 0 && items.every((c) => selected.has(c.id));
+
+  const toggleRow = (c: CertItem) => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(c.id)) next.delete(c.id);
+      else next.set(c.id, c);
+      return next;
+    });
+  };
+
+  const togglePage = () => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (allOnPageSelected) items.forEach((c) => next.delete(c.id));
+      else items.forEach((c) => next.set(c.id, c));
+      return next;
+    });
+  };
+
+  const bulkUpdate = async (
+    newStatus: BulkStatus,
+    target: { ids: string[] } | { franchiseId: string; courseId?: string; search?: string },
+    confirmText?: string
+  ) => {
+    if (confirmText && !window.confirm(confirmText)) return false;
+    setActionLoading("bulk");
+    try {
+      const res = await fetch("/api/certificates", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: newStatus, ...target }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        await showError("Error", d.error || "Failed to update");
+        return false;
+      }
+      await showSuccess("Updated", d.message || `Requests ${newStatus.toLowerCase()}`);
+      setSelected(new Map());
+      mutate();
+      return true;
+    } catch {
+      await showError("Error", "Failed to update");
+      return false;
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const openBatchPrint = (rows: CertItem[]) => {
+    const printable = rows.filter((c) => PRINTABLE.has(c.status));
+    if (!printable.length) return;
+    const ids = Array.from(new Set(printable.map((c) => c.studentId))).slice(0, MAX_PRINT);
+    setBatchPrintCertIds(printable.filter((c) => c.status === "APPROVED").map((c) => c.id));
+    setBatchPrintIds(ids);
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -133,6 +226,7 @@ export default function CertificatesRequestsPage() {
         return;
       }
       await showSuccess("Updated", `Certificate ${newStatus.toLowerCase()}`);
+      setSelected(new Map());
       mutate();
     } catch {
       await showError("Error", "Failed to update");
@@ -162,7 +256,7 @@ export default function CertificatesRequestsPage() {
             </div>
             <p className="mt-1 text-xs text-white/60 sm:text-sm">
               {isInstituteAdmin
-                ? "Approve requests, issue certificates, and print hard copies for franchises"
+                ? "Select a franchise, approve its requests, then print Certificate + Result for approved students"
                 : "Request certificates for your batch — institute admin will approve and send hard copies"}
             </p>
           </div>
@@ -217,8 +311,9 @@ export default function CertificatesRequestsPage() {
         <div className="flex items-start gap-3 rounded-xl border border-blue-200/80 bg-blue-50 px-4 py-3 text-sm text-blue-900">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            You can request certificates for your students but <strong>cannot print</strong> them here.
-            After institute approval, hard copies will be printed and sent to your centre.
+            Select any of your students (or a whole batch) and send a request. Once the institute admin approves it,
+            the <strong>Certificate of Completion + Statement of Marks</strong> are printed by the institute and sent to
+            your centre — you can track the status here.
           </p>
         </div>
       )}
@@ -271,6 +366,15 @@ export default function CertificatesRequestsPage() {
               ))}
             </select>
           )}
+          <div className="relative min-w-[180px] flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search student name or ID"
+              className="h-9 w-full rounded-lg border border-border/70 bg-background pl-8 pr-3 text-sm outline-none focus:border-[#1E4A85]"
+            />
+          </div>
           <button
             type="button"
             onClick={() => mutate()}
@@ -280,6 +384,125 @@ export default function CertificatesRequestsPage() {
             Refresh
           </button>
         </div>
+
+        {isInstituteAdmin && selectedFranchise && (
+          <div className="flex flex-col gap-3 border-b border-[#C4A35A]/25 bg-[#C4A35A]/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0B1F3A] text-[#C4A35A]">
+                <Building2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-foreground">{selectedFranchise.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {stats.requested} pending · {stats.approved} approved (ready to print) · {stats.issued} issued
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!stats.requested || actionLoading === "bulk"}
+                onClick={() =>
+                  bulkUpdate(
+                    "APPROVED",
+                    { franchiseId, courseId, search },
+                    `Approve all ${stats.requested} pending request(s) of ${selectedFranchise.name}?`
+                  )
+                }
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-40"
+              >
+                {actionLoading === "bulk" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                Approve all pending ({stats.requested})
+              </button>
+              {canPrint && (
+                <button
+                  type="button"
+                  disabled={!stats.approved || actionLoading === "print-franchise"}
+                  onClick={async () => {
+                    setActionLoading("print-franchise");
+                    try {
+                      const qs = new URLSearchParams({ franchiseId, status: "APPROVED", limit: String(MAX_PRINT) });
+                      if (courseId) qs.set("courseId", courseId);
+                      if (search) qs.set("search", search);
+                      const res = await fetch(`/api/certificates?${qs}`, { credentials: "include" });
+                      const json = await res.json();
+                      openBatchPrint((json?.data?.items ?? []) as CertItem[]);
+                    } catch {
+                      await showError("Error", "Failed to load approved requests");
+                    } finally {
+                      setActionLoading(null);
+                    }
+                  }}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B132B] hover:brightness-110 disabled:opacity-40"
+                >
+                  {actionLoading === "print-franchise" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Printer className="h-3.5 w-3.5" />
+                  )}
+                  Print approved ({Math.min(stats.approved, MAX_PRINT)})
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isInstituteAdmin && selected.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#1E4A85]/15 bg-[#1E4A85]/[0.05] px-4 py-2.5 sm:px-5">
+            <span className="mr-1 text-sm font-bold text-[#1E4A85]">{selected.size} selected</span>
+            <button
+              type="button"
+              disabled={!selectedPending.length || actionLoading === "bulk"}
+              onClick={() => bulkUpdate("APPROVED", { ids: selectedPending.map((c) => c.id) })}
+              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              Approve ({selectedPending.length})
+            </button>
+            <button
+              type="button"
+              disabled={!selectedPending.length || actionLoading === "bulk"}
+              onClick={() =>
+                bulkUpdate(
+                  "REJECTED",
+                  { ids: selectedPending.map((c) => c.id) },
+                  `Reject ${selectedPending.length} request(s)?`
+                )
+              }
+              className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-semibold text-red-700 disabled:opacity-40"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Reject ({selectedPending.length})
+            </button>
+            {canPrint && (
+              <button
+                type="button"
+                disabled={!selectedPrintable.length}
+                onClick={() => openBatchPrint(selectedPrintable)}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#C4A35A] px-2.5 py-1.5 text-xs font-bold text-[#0B132B] disabled:opacity-40"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Print Certificate + Result ({selectedPrintable.length})
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={!selectedApproved.length || actionLoading === "bulk"}
+              onClick={() => bulkUpdate("ISSUED", { ids: selectedApproved.map((c) => c.id) })}
+              className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              <Send className="h-3.5 w-3.5" />
+              Mark issued ({selectedApproved.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelected(new Map())}
+              className="ml-auto text-xs font-medium text-muted-foreground hover:underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
 
         <div className="overflow-x-auto p-4 sm:p-5">
           {isLoading && !data ? (
@@ -306,6 +529,22 @@ export default function CertificatesRequestsPage() {
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-[#1E4A85]/15">
+                  {isInstituteAdmin && (
+                    <th className="w-10 px-3 py-3">
+                      <button
+                        type="button"
+                        onClick={togglePage}
+                        aria-label={allOnPageSelected ? "Unselect page" : "Select page"}
+                        className="flex h-5 w-5 items-center justify-center"
+                      >
+                        {allOnPageSelected ? (
+                          <CheckSquare className="h-4 w-4 text-[#1E4A85]" />
+                        ) : (
+                          <Square className="h-4 w-4 text-slate-400" />
+                        )}
+                      </button>
+                    </th>
+                  )}
                   <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#1E4A85]">
                     Student
                   </th>
@@ -332,11 +571,30 @@ export default function CertificatesRequestsPage() {
                 {items.map((c) => (
                   <tr
                     key={c.id}
-                    className="border-b border-[#1E4A85]/5 transition hover:bg-[#1E4A85]/[0.03]"
+                    className={cn(
+                      "border-b border-[#1E4A85]/5 transition",
+                      selected.has(c.id) ? "bg-[#C4A35A]/10" : "hover:bg-[#1E4A85]/[0.03]"
+                    )}
                   >
+                    {isInstituteAdmin && (
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleRow(c)}
+                          aria-label={selected.has(c.id) ? "Unselect" : "Select"}
+                          className="flex h-5 w-5 items-center justify-center"
+                        >
+                          {selected.has(c.id) ? (
+                            <CheckSquare className="h-4 w-4 text-[#1E4A85]" />
+                          ) : (
+                            <Square className="h-4 w-4 text-slate-400" />
+                          )}
+                        </button>
+                      </td>
+                    )}
                     <td className="px-3 py-3">
                       <p className="font-medium">{c.studentName}</p>
-                      <p className="text-xs text-muted-foreground">{c.studentEmail}</p>
+                      <p className="text-xs text-muted-foreground">{c.studentCode || c.studentEmail}</p>
                     </td>
                     <td className="px-3 py-3">{c.courseName}</td>
                     {showFranchiseFilter && (
@@ -362,14 +620,14 @@ export default function CertificatesRequestsPage() {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1.5">
-                        {canPrint && (c.status === "ISSUED" || c.status === "APPROVED") && (
+                        {canPrint && PRINTABLE.has(c.status) && (
                           <button
                             type="button"
-                            onClick={() => setPreviewCert(c)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#1E4A85]/10 px-2.5 py-1 text-xs font-semibold text-[#1E4A85] hover:bg-[#1E4A85]/20"
+                            onClick={() => setPrintStudentId(c.studentId)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#C4A35A]/40 bg-[#C4A35A]/10 px-2.5 py-1 text-xs font-semibold text-[#8B6914] hover:bg-[#C4A35A]/20"
                           >
-                            <Eye className="h-3.5 w-3.5" />
-                            Preview
+                            <Printer className="h-3.5 w-3.5" />
+                            Print
                           </button>
                         )}
                         {isInstituteAdmin && c.status === "REQUESTED" && (
@@ -444,12 +702,37 @@ export default function CertificatesRequestsPage() {
         onSuccess={() => mutate()}
       />
       {canPrint && (
-        <CertificatePreviewModal
-          certificateId={previewCert?.id ?? ""}
-          open={!!previewCert}
-          onClose={() => setPreviewCert(null)}
-          studentName={previewCert?.studentName}
-        />
+        <>
+          <StudentOfficialCertificatesModal
+            studentId={printStudentId}
+            open={!!printStudentId}
+            onClose={() => setPrintStudentId(null)}
+          />
+          <OfficialBatchPreview
+            studentIds={batchPrintIds}
+            onClose={() => setBatchPrintIds(null)}
+            extraAction={
+              batchPrintCertIds.length > 0 ? (
+                <button
+                  type="button"
+                  disabled={actionLoading === "bulk"}
+                  onClick={async () => {
+                    const ok = await bulkUpdate(
+                      "ISSUED",
+                      { ids: batchPrintCertIds },
+                      `Mark ${batchPrintCertIds.length} printed certificate(s) as ISSUED?`
+                    );
+                    if (ok) setBatchPrintCertIds([]);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Mark {batchPrintCertIds.length} as issued
+                </button>
+              ) : null
+            }
+          />
+        </>
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GlassModal } from "@/components/common/GlassModal";
-import { Loader2, Award, Users, User } from "lucide-react";
+import { Loader2, Award, Users, User, Search, CheckSquare, Square } from "lucide-react";
 import { showSuccess, showError } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
@@ -10,12 +10,15 @@ import { cn } from "@/lib/utils";
 
 interface Student {
   id: string;
+  studentCode?: string;
   fullName: string;
   email: string;
   courseName: string;
   courseId?: string;
   franchiseName: string;
 }
+
+const STUDENT_PAGE_SIZE = 50;
 
 interface Course {
   id: string;
@@ -38,50 +41,69 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [studentId, setStudentId] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [courseId, setCourseId] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setStudentId("");
+    setSelectedIds(new Set());
+    setSearch("");
+    setDebouncedSearch("");
+    setPage(1);
     setCourseId("");
-    setMode(isFranchise ? "batch" : "single");
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setMode("single");
+    fetch(isFranchise ? "/api/students/franchise-courses" : "/api/courses?limit=200", { credentials: "include" })
+      .then((r) => r.json())
+      .then((json) => {
+        const raw = json?.data ?? json;
+        const list = Array.isArray(raw) ? raw : (raw?.items ?? []);
+        setCourses(
+          list.map((c: { id: string; name: string; courseName?: string }) => ({
+            id: c.id,
+            name: c.name ?? c.courseName ?? "Course",
+          }))
+        );
+      })
+      .catch(() => setCourses([]));
   }, [open, isFranchise]);
 
-  const loadData = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
     setLoading(true);
-    try {
-      const [studentsRes, coursesRes] = await Promise.all([
-        fetch("/api/students?limit=500", { credentials: "include" }),
-        fetch(isFranchise ? "/api/students/franchise-courses" : "/api/courses?limit=200", {
-          credentials: "include",
-        }),
-      ]);
-
-      const studentsJson = await studentsRes.json();
-      const coursesJson = await coursesRes.json();
-
-      const rawStudents = studentsJson?.data ?? studentsJson;
-      const list = rawStudents?.items ?? rawStudents;
-      setStudents(Array.isArray(list) ? list : []);
-
-      const rawCourses = coursesJson?.data ?? coursesJson;
-      const courseList = Array.isArray(rawCourses) ? rawCourses : (rawCourses?.items ?? []);
-      setCourses(
-        courseList.map((c: { id: string; name: string; courseName?: string }) => ({
-          id: c.id,
-          name: c.name ?? c.courseName ?? "Course",
-        }))
-      );
-    } catch {
-      setStudents([]);
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const qs = new URLSearchParams({ page: String(page), limit: String(STUDENT_PAGE_SIZE) });
+    if (debouncedSearch) qs.set("search", debouncedSearch);
+    fetch(`/api/students?${qs}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        const raw = json?.data ?? json;
+        const list: Student[] = Array.isArray(raw?.items) ? raw.items : [];
+        setStudents((prev) => (page === 1 ? list : [...prev, ...list]));
+        setHasMore(page < (raw?.pagination?.totalPages ?? 1));
+      })
+      .catch(() => {
+        if (!cancelled) setStudents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, page, debouncedSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,14 +113,14 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
         await showError("Validation", "Select a course / batch");
         return;
       }
-    } else if (!studentId) {
-      await showError("Validation", "Select a student");
+    } else if (!selectedIds.size) {
+      await showError("Validation", "Select at least one student");
       return;
     }
 
     setSubmitting(true);
     try {
-      const body = mode === "batch" ? { courseId } : { studentId };
+      const body = mode === "batch" ? { courseId } : { studentIds: Array.from(selectedIds) };
       const res = await fetch("/api/certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,10 +134,7 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
       }
 
       const payload = data.data ?? data;
-      const msg =
-        mode === "batch"
-          ? `Batch request sent: ${payload.created ?? 0} created, ${payload.skipped ?? 0} already requested`
-          : "Certificate request sent to institute admin";
+      const msg = `Request sent: ${payload.created ?? 0} student(s), ${payload.skipped ?? 0} already requested`;
 
       await showSuccess("Success", msg);
       onClose();
@@ -131,9 +150,26 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
     "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20";
   const labelClass = "block text-sm font-medium text-foreground mb-1";
 
-  const batchStudentCount = courseId
-    ? students.filter((s) => (s.courseId ?? "") === courseId || s.courseName === courses.find((c) => c.id === courseId)?.name).length
-    : 0;
+  const visibleStudents = students;
+  const allVisibleSelected = visibleStudents.length > 0 && visibleStudents.every((s) => selectedIds.has(s.id));
+
+  const toggleStudent = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) visibleStudents.forEach((s) => next.delete(s.id));
+      else visibleStudents.forEach((s) => next.add(s.id));
+      return next;
+    });
+  };
 
   return (
     <GlassModal
@@ -176,7 +212,7 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
             )}
           >
             <User className="h-4 w-4" />
-            Single student
+            Select students
           </button>
         </div>
 
@@ -199,27 +235,91 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
             </select>
             {courseId && (
               <p className="mt-1 text-xs text-muted-foreground">
-                ~{batchStudentCount} student(s) in this batch will be requested (skips already requested)
+                All active / completed students of this batch will be requested (already requested are skipped)
               </p>
             )}
           </div>
         ) : (
           <div>
-            <label className={labelClass}>Student *</label>
-            <select
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className={inputClass}
-              required
-              disabled={loading}
-            >
-              <option value="">{loading ? "Loading students…" : "Select student"}</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.fullName} – {s.courseName} ({s.franchiseName})
-                </option>
-              ))}
-            </select>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="text-sm font-medium text-foreground">Students *</label>
+              <span className="text-xs font-semibold text-[#1E4A85]">{selectedIds.size} selected</span>
+            </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name, student ID, email or phone"
+                className={cn(inputClass, "pl-8")}
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={toggleAllVisible}
+                disabled={!visibleStudents.length}
+                className="inline-flex items-center gap-1 font-semibold text-[#1E4A85] hover:underline disabled:opacity-40"
+              >
+                {allVisibleSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                {allVisibleSelected ? "Unselect shown" : `Select shown (${visibleStudents.length})`}
+              </button>
+              {selectedIds.size > 0 && (
+                <button type="button" onClick={() => setSelectedIds(new Set())} className="text-muted-foreground hover:underline">
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="mt-1.5 max-h-64 overflow-auto rounded-lg border border-border">
+              {loading && visibleStudents.length === 0 ? (
+                <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading students…
+                </p>
+              ) : visibleStudents.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No students found</p>
+              ) : (
+                visibleStudents.map((s) => {
+                  const on = selectedIds.has(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleStudent(s.id)}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 border-b border-border/50 px-3 py-2 text-left last:border-b-0 transition",
+                        on ? "bg-[#1E4A85]/[0.07]" : "hover:bg-muted/50"
+                      )}
+                    >
+                      {on ? (
+                        <CheckSquare className="h-4 w-4 shrink-0 text-[#1E4A85]" />
+                      ) : (
+                        <Square className="h-4 w-4 shrink-0 text-slate-400" />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{s.fullName}</span>
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {[s.studentCode, s.courseName, isFranchise ? null : s.franchiseName].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+              {hasMore && visibleStudents.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#1E4A85] hover:bg-muted/50 disabled:opacity-50"
+                >
+                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Load more students
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Students who already have a request are skipped automatically.
+            </p>
           </div>
         )}
 

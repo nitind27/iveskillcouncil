@@ -6,6 +6,7 @@ import {
   findStudentForOfficialDocuments,
   loadOfficialLayouts,
 } from "@/lib/student-official-documents";
+import { findStudentIdByMarksheetNo } from "@/lib/marksheet-numbers";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,9 @@ function typeFromNumber(id: string, fallback: DocType): DocType {
 async function studentDetails(studentId: bigint) {
   const student = await findStudentForOfficialDocuments(studentId);
   if (!student) return null;
-  const docs = await buildStudentOfficialDocuments(student, await loadOfficialLayouts());
+  const docs = await buildStudentOfficialDocuments(student, await loadOfficialLayouts(), {
+    assignMarksheetNo: false,
+  });
   const ms = docs.marksheet;
   const hasPhoto = Boolean(student.profileImageUrl && student.profileImageUrl.trim());
   const subjects = (ms.subjects ?? [])
@@ -192,7 +195,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (!scannedStudent) {
+    // 2) Sequential marksheet number (00001…) from the marksheet register
+    const marksheetOwnerId = id ? await findStudentIdByMarksheetNo(id) : null;
+    let student = scannedStudent;
+    if (marksheetOwnerId) {
+      type = "ms";
+      if ((enrRaw || enrDigits) && scannedStudent?.id.toString() !== marksheetOwnerId) {
+        return successResponse({
+          verified: false,
+          reason: "MISMATCH",
+          message: "The enrollment on this scan does not belong to that marksheet number.",
+          query,
+          document: scannedStudent ? { type, ...(await studentDetails(scannedStudent.id)) } : undefined,
+        });
+      }
+      student ??= await prisma.student.findUnique({
+        where: { id: BigInt(marksheetOwnerId) },
+        select: studentSelect,
+      });
+    }
+
+    if (!student) {
       return successResponse({
         verified: false,
         reason: "NOT_FOUND",
@@ -201,10 +224,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 2) Student found by enrollment (QR from a website-printed document, or barcode scan)
-    const details = await studentDetails(scannedStudent.id);
+    // 3) Student found by enrollment (QR from a website-printed document, or barcode scan)
+    const details = await studentDetails(student.id);
     const latestIssued = await prisma.certificate.findFirst({
-      where: { studentId: scannedStudent.id, status: { in: ["ISSUED", "APPROVED"] } },
+      where: { studentId: student.id, status: { in: ["ISSUED", "APPROVED"] } },
       orderBy: { createdAt: "desc" },
       select: { certificateNumber: true, issueDate: true },
     });
@@ -215,7 +238,7 @@ export async function GET(request: NextRequest) {
       issueDate: latestIssued?.issueDate ? latestIssued.issueDate.toISOString() : null,
     };
 
-    if (id && !isGeneratedNumberFor(id, scannedStudent.studentCode)) {
+    if (id && !marksheetOwnerId && !isGeneratedNumberFor(id, student.studentCode)) {
       return successResponse({
         verified: false,
         reason: "NUMBER_UNKNOWN",
@@ -225,7 +248,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    if (scannedStudent.status === "DROPPED") {
+    if (student.status === "DROPPED") {
       return successResponse({
         verified: false,
         reason: "STUDENT_DROPPED",

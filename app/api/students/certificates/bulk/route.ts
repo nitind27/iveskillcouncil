@@ -9,6 +9,7 @@ import {
   loadOfficialLayouts,
   type StudentOfficialDocuments,
 } from "@/lib/student-official-documents";
+import { assignMarksheetNumbers } from "@/lib/marksheet-numbers";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
 
     const students = await findStudentsForOfficialDocuments(where, MAX_BATCH);
     const layouts = await loadOfficialLayouts();
+    await assignMarksheetNumbers(students.map((s) => s.id));
 
     const items: StudentOfficialDocuments[] = new Array(students.length);
     for (let i = 0; i < students.length; i += CONCURRENCY) {

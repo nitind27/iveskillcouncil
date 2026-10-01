@@ -87,6 +87,9 @@ function paramsFromScan(raw: string): URLSearchParams | null {
   const qs = new URLSearchParams();
   if (/^IVESDC\//i.test(text)) {
     qs.set("id", text.toUpperCase());
+  } else if (/^\d{5}$/.test(text)) {
+    qs.set("type", "ms");
+    qs.set("id", text);
   } else {
     qs.set("type", "student");
     qs.set("enr", text.toUpperCase());
@@ -157,7 +160,7 @@ function SearchPanel({ onScan, compact }: { onScan: () => void; compact?: boolea
           value={value}
           onChange={(e) => setValue(e.target.value)}
           autoFocus={!compact}
-          placeholder="e.g. STU-2026-000001 or IVESDC/MS/2026/000001"
+          placeholder="e.g. STU-2026-000001 or Marksheet No. 00001"
           className="h-12 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-[#0B1F3A] outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:border-[#B8922A] focus:ring-2 focus:ring-[#E8C46A]/40"
         />
         <button

@@ -344,7 +344,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   const watermarkLogoSrc = "/certificates/logowithoutbg.png";
 
   const enrollNo = data.registrationNumber || data.barcodeNumber || "4739846";
-  const certNo = data.certificateNumber || data.serialNumber || "IVESDC/MS/2025/000123";
+  const certNo = data.certificateNumber || data.serialNumber || "00001";
   const verifySite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
   const verifyEmail = data.verificationEmail || "official.iveskillcouncil@gmail.com";
   const tagline = data.tagline || "Building a Skilled and Self-Reliant Nation";
@@ -678,13 +678,13 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             }}
           >
             {[
-              { label: "Marksheet No.", value: certNo },
               { label: "Enrollment No.", value: enrollNo },
+              { label: "Marksheet No.", value: certNo },
               { label: "Date of Issue", value: data.issueDate || "—" },
             ].map((cell, i) => (
               <div
                 key={cell.label}
-                className={`flex flex-col justify-center px-2.5 py-1 ${i === 1 ? "items-center" : ""}`}
+                className={`flex flex-col justify-center px-2.5 py-1 ${i === 1 ? "items-center text-center" : ""}`}
                 style={{
                   borderRight: i < 2 ? `1px solid ${C.rule}` : undefined,
                   background: i === 1 ? C.navyWash : undefined,
@@ -692,12 +692,12 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               >
                 {i === 1 ? (
                   <EnrollmentBarcode
-                    enrollmentNo={enrollNo}
+                    enrollmentNo={cell.value}
                     showLabel={true}
                     showWords={true}
-                    label="Enrollment No. :"
+                    label="Marksheet No. :"
                     barcodeHeight={24}
-                    containerWidth={300}
+                    containerWidth={380}
                     color="#000"
                     align="center"
                   />
@@ -1337,7 +1337,17 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             </div>
           </div>
 
-          <div className="mt-1 flex items-end justify-end gap-4 px-1">
+          <div className="mt-1 flex items-end justify-between gap-4 px-1">
+            <EnrollmentBarcode
+              enrollmentNo={enrollNo}
+              showLabel={true}
+              showWords={true}
+              label="Enrollment No. :"
+              barcodeHeight={24}
+              containerWidth={Math.min(300, Math.round(contentW * 0.34))}
+              color="#000"
+              align="left"
+            />
             <EnrollmentBarcode
               enrollmentNo={data.barcodeNumber || enrollNo}
               words={data.barcodeTextWords}

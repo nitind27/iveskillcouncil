@@ -1,11 +1,20 @@
 import { NextRequest } from "next/server";
+import type { CertificateStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
 import { ROLES } from "@/lib/permissions";
-import { canRequestCertificates } from "@/lib/certificate-access";
+import { canManageCertificateWorkflow, canRequestCertificates } from "@/lib/certificate-access";
+import {
+  applyCertificateStatus,
+  WORKFLOW_STATUSES,
+  type WorkflowStatus,
+} from "@/lib/certificate-workflow";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_VALUES: CertificateStatus[] = ["REQUESTED", "APPROVED", "ISSUED", "REJECTED"];
+const MAX_BULK = 500;
 
 function getFranchiseFilter(user: { roleId: number; franchiseId?: string | null }) {
   if (user.roleId === ROLES.SUB_ADMIN && user.franchiseId) {
@@ -22,6 +31,7 @@ function mapCertItem(c: {
   createdAt: Date;
   student: {
     id: bigint;
+    studentCode: string;
     courseId: bigint | null;
     user: { fullName: string; email: string };
     course: { id: bigint; name: string } | null;
@@ -31,6 +41,7 @@ function mapCertItem(c: {
   return {
     id: c.id.toString(),
     studentId: c.student.id.toString(),
+    studentCode: c.student.studentCode,
     courseId: c.student.courseId?.toString() ?? null,
     franchiseId: c.franchise.id.toString(),
     studentName: c.student.user.fullName,
@@ -60,17 +71,28 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const franchiseId = searchParams.get("franchiseId");
     const courseId = searchParams.get("courseId");
+    const search = (searchParams.get("search") || "").trim();
 
-    const where: Record<string, unknown> = { ...getFranchiseFilter(user) };
-    if (status) where.status = status;
-    if (franchiseId && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
-      where.franchiseId = BigInt(franchiseId);
+    const baseWhere: Prisma.CertificateWhereInput = { ...getFranchiseFilter(user) };
+    if (franchiseId && /^\d+$/.test(franchiseId) && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
+      baseWhere.franchiseId = BigInt(franchiseId);
     }
-    if (courseId) {
-      where.student = { courseId: BigInt(courseId) };
+    const studentWhere: Prisma.StudentWhereInput = {};
+    if (courseId && /^\d+$/.test(courseId)) studentWhere.courseId = BigInt(courseId);
+    if (search) {
+      studentWhere.OR = [
+        { studentCode: { contains: search } },
+        { user: { fullName: { contains: search } } },
+      ];
+    }
+    if (Object.keys(studentWhere).length) baseWhere.student = studentWhere;
+
+    const where: Prisma.CertificateWhereInput = { ...baseWhere };
+    if (status && STATUS_VALUES.includes(status as CertificateStatus)) {
+      where.status = status as CertificateStatus;
     }
 
-    const [certificates, total] = await Promise.all([
+    const [certificates, total, grouped] = await Promise.all([
       prisma.certificate.findMany({
         where,
         skip: (page - 1) * limit,
@@ -87,12 +109,15 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.certificate.count({ where }),
+      prisma.certificate.groupBy({ by: ["status"], where: baseWhere, _count: { _all: true } }),
     ]);
 
     const items = certificates.map(mapCertItem);
+    const counts = { REQUESTED: 0, APPROVED: 0, ISSUED: 0, REJECTED: 0 };
+    for (const g of grouped) counts[g.status] = g._count._all;
 
     return successResponse(
-      { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } },
+      { items, counts, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } },
       "Certificates retrieved"
     );
   } catch (err) {
@@ -191,11 +216,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ids: bigint[] = studentIds?.length
-      ? studentIds.map((id: string) => BigInt(id))
-      : studentId
-        ? [BigInt(studentId)]
-        : [];
+    if (Array.isArray(studentIds) && studentIds.length) {
+      const list = Array.from(new Set((studentIds as unknown[]).map(String).filter((v) => /^\d+$/.test(v))));
+      if (!list.length) return errorResponse("No valid students selected", 400);
+      if (list.length > MAX_BULK) return errorResponse(`Select at most ${MAX_BULK} students at a time`, 400);
+
+      let created = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+      for (const sid of list) {
+        const result = await createOneRequest(BigInt(sid), user.id, roleId, user.franchiseId);
+        if (!("error" in result)) created += 1;
+        else if (result.error.includes("already exists")) skipped += 1;
+        else errors.push(result.error);
+      }
+      if (!created && !skipped && errors.length) return errorResponse(errors[0], 400);
+      return successResponse(
+        { created, skipped, failed: errors.length },
+        `${created} request(s) sent, ${skipped} already requested`
+      );
+    }
+
+    const ids: bigint[] = studentId && /^\d+$/.test(String(studentId)) ? [BigInt(studentId)] : [];
 
     if (!ids.length) return errorResponse("Provide studentId, studentIds, or courseId for batch", 400);
 
@@ -213,5 +255,65 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("Certificates POST:", err);
     return errorResponse("Failed to create certificate request", 500);
+  }
+}
+
+/**
+ * PUT – bulk approve / reject / issue (institute admin).
+ * Body: { status, ids: string[] } or { status, franchiseId } for every eligible request of that franchise.
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return unauthorizedResponse();
+    if (!canManageCertificateWorkflow(Number(user.roleId))) {
+      return errorResponse("Only institute admin can approve or issue certificates", 403);
+    }
+
+    const body = (await request.json().catch(() => ({}))) as {
+      status?: WorkflowStatus;
+      ids?: unknown[];
+      franchiseId?: string;
+      courseId?: string;
+      search?: string;
+    };
+    const status = body.status as WorkflowStatus;
+    if (!WORKFLOW_STATUSES.includes(status)) {
+      return errorResponse("Invalid status. Use APPROVED, ISSUED, or REJECTED", 400);
+    }
+
+    let ids: bigint[] = [];
+    if (Array.isArray(body.ids) && body.ids.length) {
+      ids = Array.from(new Set(body.ids.map(String).filter((v) => /^\d+$/.test(v)))).map((v) => BigInt(v));
+    } else if (body.franchiseId && /^\d+$/.test(String(body.franchiseId))) {
+      const studentWhere: Prisma.StudentWhereInput = {};
+      if (body.courseId && /^\d+$/.test(String(body.courseId))) studentWhere.courseId = BigInt(body.courseId);
+      const search = String(body.search || "").trim();
+      if (search) {
+        studentWhere.OR = [
+          { studentCode: { contains: search } },
+          { user: { fullName: { contains: search } } },
+        ];
+      }
+      const rows = await prisma.certificate.findMany({
+        where: {
+          franchiseId: BigInt(body.franchiseId),
+          status: status === "ISSUED" ? "APPROVED" : "REQUESTED",
+          ...(Object.keys(studentWhere).length ? { student: studentWhere } : {}),
+        },
+        select: { id: true },
+        take: MAX_BULK,
+      });
+      ids = rows.map((r) => r.id);
+    }
+
+    if (!ids.length) return errorResponse("No certificate requests to update", 400);
+    if (ids.length > MAX_BULK) return errorResponse(`Update at most ${MAX_BULK} requests at a time`, 400);
+
+    const result = await applyCertificateStatus(ids, status, user.id);
+    return successResponse(result, `${result.updated} request(s) ${status.toLowerCase()}`);
+  } catch (err) {
+    console.error("Certificates bulk PUT:", err);
+    return errorResponse("Failed to update certificate requests", 500);
   }
 }
