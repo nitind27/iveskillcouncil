@@ -46,7 +46,7 @@ import { showSuccess, showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export default function CertificateTemplatesPage() {
-  const [selectedType, setSelectedType] = useState<CertificateTypeId>("marksheet");
+  const [selectedType, setSelectedType] = useState<CertificateTypeId>("marksheet3");
   const [zoom, setZoom] = useState<number>(58);
   const [showCustomizer, setShowCustomizer] = useState<boolean>(true);
   const [customData, setCustomData] = useState<Record<CertificateTypeId, CertificateDemoData>>(
@@ -57,9 +57,10 @@ export default function CertificateTemplatesPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Optional ?type=marksheet2 deep-link
+  // Optional ?type=marksheet3 deep-link
   useEffect(() => {
-    const typeParam = new URLSearchParams(window.location.search).get("type");
+    let typeParam = new URLSearchParams(window.location.search).get("type");
+    if (typeParam === "marksheet" || typeParam === "marksheet2") typeParam = "marksheet3";
     if (typeParam && CERTIFICATE_TYPE_CONFIGS.some((c) => c.id === typeParam)) {
       setSelectedType(typeParam as CertificateTypeId);
     }

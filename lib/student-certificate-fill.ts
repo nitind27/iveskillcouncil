@@ -199,12 +199,13 @@ function parentLine(s: StudentCertificateSource): { father: string; mother: stri
   return { father, mother, parentName };
 }
 
-function enrollmentDigits(s: StudentCertificateSource): string {
-  const fromEnroll = (s.enrollmentNumber || "").replace(/\D/g, "");
-  if (fromEnroll) return fromEnroll;
-  const fromCode = (s.studentCode || "").replace(/\D/g, "");
-  if (fromCode) return fromCode;
-  return s.id.replace(/\D/g, "").padStart(7, "0").slice(-7);
+/** Printed enrollment, QR and barcode — the student's real code, not a stripped digit string. */
+function enrollmentCode(s: StudentCertificateSource): string {
+  const explicit = (s.enrollmentNumber || "").trim();
+  if (explicit) return explicit;
+  const code = (s.studentCode || "").trim();
+  if (code) return code;
+  return s.id;
 }
 
 /**
@@ -218,7 +219,7 @@ export function fillCertificateFromStudent(
 ): CertificateDemoData {
   const name = studentDisplayName(student);
   const { father, mother, parentName } = parentLine(student);
-  const enroll = enrollmentDigits(student);
+  const enroll = enrollmentCode(student);
   const year = new Date().getFullYear();
   const padded = String(enroll || student.id).slice(-6).padStart(6, "0");
   const prefix = kind === "vocational" ? "CERT" : "MS";

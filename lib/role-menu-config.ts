@@ -31,6 +31,7 @@ import {
   Layers,
   Printer,
   Eye,
+  PenLine,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLES } from "./permissions";
@@ -138,6 +139,18 @@ const SUPER_ADMIN_MENU: RoleMenuSection[] = [
         label: "Print Certificates",
         icon: Printer,
         href: "/certificates/print",
+      },
+      {
+        id: "certificates-official-print",
+        label: "Official Print (Cert + Result)",
+        icon: Printer,
+        href: "/certificates/official-print",
+      },
+      {
+        id: "document-signatures",
+        label: "Centre Stamp & Signatures",
+        icon: PenLine,
+        href: "/certificates/signatures",
       },
       {
         id: "certificates-issued",
@@ -251,6 +264,12 @@ const SUB_ADMIN_MENU: RoleMenuSection[] = [
         label: "Certificate Demos",
         icon: Eye,
         href: "/certificates/templates",
+      },
+      {
+        id: "document-signatures",
+        label: "Stamp & Signatures",
+        icon: PenLine,
+        href: "/certificates/signatures",
       },
     ],
   },

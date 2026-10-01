@@ -112,7 +112,7 @@ export async function getCertificateDisplayData(
     atcName: franchise.name,
     studentName: student.user.fullName,
     parentName: "",
-    registrationNumber: `REG-${String(student.id).padStart(6, "0")}`,
+    registrationNumber: student.studentCode,
     courseName: student.course?.name ?? "—",
     grade: gradeInfo?.grade ?? "A",
     gradeLabel: gradeInfo?.label ?? "Very Good",

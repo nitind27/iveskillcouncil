@@ -7,7 +7,7 @@
 import React, { useId, type CSSProperties } from "react";
 import { Cinzel, Libre_Baskerville, Montserrat, Source_Sans_3 } from "next/font/google";
 import type { CertificateDemoData, MarksheetSubject } from "./demo/types";
-import { DEFAULT_PARTNER_LOGOS, performanceLabelFromPercent } from "./demo/types";
+import { performanceLabelFromPercent } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import CertificateQRCode from "./CertificateQRCode";
 
@@ -51,8 +51,8 @@ interface Props {
 
 const A4_W = 1054;
 const A4_H = 1492;
-/** Content must clear border lines (inner @24) + corner ornaments (~40) */
-const FRAME_SAFE = 48;
+/** Content must clear the gold frame, inner hairline (27) and corner brackets (to 33). */
+const FRAME_SAFE = 38;
 
 /**
  * Official Result-3 palette — one source of truth
@@ -106,88 +106,21 @@ const MUTED = C.muted;
 const PAPER = C.paper;
 const RULE = C.rule;
 
-/**
- * Clean premium certificate border —
- * navy + gold double frame, simple corners & mid jewels (no clutter).
- */
+/** Same gold frame as Certificate of Completion. */
 function Result3CertificateBorder() {
-  const uid = useId().replace(/:/g, "");
+  const gradientId = `r3Gold${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const W = A4_W;
   const H = A4_H;
-
-  const outer = 12; // navy
-  const gold = 18; // gold
-  const inner = 24; // fine navy hairline
-
-  const goldStroke = `url(#${uid}-gold)`;
-  const navyStroke = `url(#${uid}-navy)`;
-
-  const corner = (x: number, y: number, sx: number, sy: number) => (
-    <g transform={`translate(${x} ${y}) scale(${sx} ${sy})`}>
-      <path
-        d="M0 0 H36 M0 0 V36"
-        fill="none"
-        stroke={goldStroke}
-        strokeWidth="2.4"
-        strokeLinecap="square"
-      />
-      <path
-        d="M5 5 H28 M5 5 V28"
-        fill="none"
-        stroke={goldStroke}
-        strokeWidth="1"
-        strokeOpacity="0.75"
-      />
-      <rect
-        x="0"
-        y="0"
-        width="8"
-        height="8"
-        fill={goldStroke}
-        transform="rotate(45 4 4)"
-      />
-      <rect
-        x="2"
-        y="2"
-        width="4"
-        height="4"
-        fill="#FFF8E0"
-        transform="rotate(45 4 4)"
-      />
-    </g>
-  );
-
-  const midJewel = (cx: number, cy: number, horizontal: boolean) => (
-    <g transform={`translate(${cx} ${cy})`}>
-      <rect
-        x="-5"
-        y="-5"
-        width="10"
-        height="10"
-        fill={goldStroke}
-        transform="rotate(45)"
-      />
-      <rect
-        x="-2.5"
-        y="-2.5"
-        width="5"
-        height="5"
-        fill="#FFF8E0"
-        transform="rotate(45)"
-      />
-      {horizontal ? (
-        <>
-          <line x1="-18" y1="0" x2="-7" y2="0" stroke={goldStroke} strokeWidth="1.2" />
-          <line x1="7" y1="0" x2="18" y2="0" stroke={goldStroke} strokeWidth="1.2" />
-        </>
-      ) : (
-        <>
-          <line x1="0" y1="-18" x2="0" y2="-7" stroke={goldStroke} strokeWidth="1.2" />
-          <line x1="0" y1="7" x2="0" y2="18" stroke={goldStroke} strokeWidth="1.2" />
-        </>
-      )}
-    </g>
-  );
+  const inset = 16;
+  const stroke = 6;
+  const hair = 27;
+  const arm = 54;
+  const corners: Array<[number, number, number, number]> = [
+    [hair, hair, 1, 1],
+    [W - hair, hair, -1, 1],
+    [hair, H - hair, 1, -1],
+    [W - hair, H - hair, -1, -1],
+  ];
 
   return (
     <svg
@@ -199,60 +132,41 @@ function Result3CertificateBorder() {
       aria-hidden
     >
       <defs>
-        <linearGradient id={`${uid}-gold`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#F5E6B0" />
-          <stop offset="40%" stopColor="#C9A84C" />
-          <stop offset="70%" stopColor="#A07F2C" />
-          <stop offset="100%" stopColor="#D4B65A" />
-        </linearGradient>
-        <linearGradient id={`${uid}-navy`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#163A5C" />
-          <stop offset="100%" stopColor="#0B1F3A" />
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={C.gold} />
+          <stop offset="0.25" stopColor={C.goldSoft} />
+          <stop offset="0.5" stopColor={C.gold} />
+          <stop offset="0.75" stopColor={C.goldSoft} />
+          <stop offset="1" stopColor={C.gold} />
         </linearGradient>
       </defs>
-
-      {/* 1 — Outer navy */}
       <rect
-        x={outer}
-        y={outer}
-        width={W - outer * 2}
-        height={H - outer * 2}
-        stroke={navyStroke}
-        strokeWidth="2.5"
+        x={inset}
+        y={inset}
+        width={W - inset * 2}
+        height={H - inset * 2}
+        stroke={`url(#${gradientId})`}
+        strokeWidth={stroke}
       />
-
-      {/* 2 — Gold frame */}
       <rect
-        x={gold}
-        y={gold}
-        width={W - gold * 2}
-        height={H - gold * 2}
-        stroke={goldStroke}
-        strokeWidth="2.2"
+        x={hair}
+        y={hair}
+        width={W - hair * 2}
+        height={H - hair * 2}
+        stroke={C.goldSoft}
+        strokeWidth={1}
+        opacity={0.85}
       />
-
-      {/* 3 — Inner navy hairline */}
-      <rect
-        x={inner}
-        y={inner}
-        width={W - inner * 2}
-        height={H - inner * 2}
-        stroke={navyStroke}
-        strokeWidth="0.9"
-        strokeOpacity="0.55"
-      />
-
-      {/* Corners */}
-      {corner(outer + 4, outer + 4, 1, 1)}
-      {corner(W - outer - 4, outer + 4, -1, 1)}
-      {corner(outer + 4, H - outer - 4, 1, -1)}
-      {corner(W - outer - 4, H - outer - 4, -1, -1)}
-
-      {/* Mid-edge jewels */}
-      {midJewel(W / 2, gold, true)}
-      {midJewel(W / 2, H - gold, true)}
-      {midJewel(gold, H / 2, false)}
-      {midJewel(W - gold, H / 2, false)}
+      {corners.map(([x, y, sx, sy], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${sx} ${sy})`}>
+          <path d={`M0 ${arm} L0 0 L${arm} 0`} stroke={C.gold} strokeWidth={2.4} strokeLinecap="square" />
+          <path d={`M5 ${arm - 14} L5 5 L${arm - 14} 5`} stroke={C.goldSoft} strokeWidth={1} />
+          <rect x={-4.5} y={-4.5} width={9} height={9} fill={C.gold} transform="rotate(45)" />
+          <rect x={-2} y={-2} width={4} height={4} fill={C.goldPale} transform="rotate(45)" />
+          <circle cx={arm + 5} cy={0} r={1.8} fill={C.gold} />
+          <circle cx={0} cy={arm + 5} r={1.8} fill={C.gold} />
+        </g>
+      ))}
     </svg>
   );
 }
@@ -391,10 +305,10 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   className = "",
   printId = "official-ivesdc-marksheet-v3",
 }: Props) {
-  const padT = Math.max(FRAME_SAFE, data.paddingTop ?? 50);
-  const padB = Math.max(FRAME_SAFE, data.paddingBottom ?? 50, 68);
-  const padL = Math.max(FRAME_SAFE, data.paddingLeft ?? 52);
-  const padR = Math.max(FRAME_SAFE, data.paddingRight ?? 52);
+  const padT = Math.max(FRAME_SAFE, data.paddingTop ?? 40);
+  const padB = Math.max(FRAME_SAFE, data.paddingBottom ?? 40);
+  const padL = Math.max(FRAME_SAFE, data.paddingLeft ?? 40);
+  const padR = Math.max(FRAME_SAFE, data.paddingRight ?? 40);
   const contentW = A4_W - padL - padR;
 
   const fontScale = (data.innerFontScale ?? 115) / 100;
@@ -413,17 +327,11 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   const HOLOGRAM_MM = 23; /* hologram guide 23mm × 23mm */
   const stampSrc = data.stampUrl || "/certificates/stamp.png";
   const directorSigSrc = data.directorSignatureUrl || "/certificates/signature.png";
-  const rowH = Math.max(24, Math.round(26 * fontScale));
+  const rowH = Math.max(18, Math.round(17 * fontScale));
   const headerTitleFs = Math.max(17.5, Math.round((data.titleFontSize || 19) * fontScale * 10) / 10);
   const headerSubFs = Math.max(11.5, Math.round(headerTitleFs * 0.72));
-  const headerAccredFs = Math.max(9.5, Math.round(10.5 * fontScale * 10) / 10);
   const marksHeadingFs = Math.max(18, Math.round(22 * fontScale));
-  const secGap = 8; /* vertical rhythm between major blocks */
-  const partnerH = Math.min(56, Math.max(28, data.partnerLogosHeight || 46));
-  const partners =
-    data.partnerLogos && data.partnerLogos.length > 0
-      ? data.partnerLogos
-      : DEFAULT_PARTNER_LOGOS;
+  const secGap = 4; /* vertical rhythm between major blocks */
 
   const watermarkType = data.watermarkType ?? "crest";
   const showWatermark = watermarkType !== "none";
@@ -431,7 +339,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     0.45,
     Math.max(0.14, data.watermarkOpacity ?? 0.22)
   );
-  const bgShadowSrc = data.backgroundPatternUrl || "/certificates/bgcert.png";
+  const bgShadowSrc = "/certificates/3bg.png";
   /* Transparent logo watermark (no white/black box) */
   const watermarkLogoSrc = "/certificates/logowithoutbg.png";
 
@@ -447,7 +355,6 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     data.accreditationLine2 ||
     "Ministry of Corporate Affairs, Government of India, ISO 21001:2018 & ISO 9001:2015 Certified Organization";
   const accred3 = data.accreditationLine3 || "";
-  const verifyLine = `Verify this Certificate by Scan QR Code or Log on: ${verifySite}, Mail.${verifyEmail}`;
   const DEFAULT_GOV_ORDER =
     "Under The General Administration Department\nGovt. of Gujarat vide its Resolution\nGR No. CRR /10/2007/120320/G5, Dt :13-8-2008\nby Sachivalay Gandhinagar";
   const govOrderLines = (data.govOrderText || DEFAULT_GOV_ORDER)
@@ -552,7 +459,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             right: padR,
             bottom: padB,
             left: padL,
-            opacity: 0.42,
+            opacity: 0.16,
           }}
           aria-hidden
         >
@@ -638,15 +545,8 @@ export default function OfficialIvesdcMarksheetTemplateV3({
         {/* ===== INSTITUTIONAL HEADER ===== */}
         <header
           className="shrink-0 overflow-hidden"
-          style={{
-            maxWidth: contentW,
-            boxShadow: C.panelInset,
-          }}
+          style={{ maxWidth: contentW }}
         >
-          {/* Gold + navy double rules */}
-          <div style={{ height: 3, background: `linear-gradient(90deg, ${C.goldPale}, ${GOLD_SOFT}, ${GOLD}, ${GOLD_SOFT}, ${C.goldPale})` }} />
-          <div style={{ height: 1.5, background: HEADER_BLUE }} />
-
           <div
             className="relative flex items-center gap-4 px-3 py-3.5"
             style={{
@@ -669,18 +569,20 @@ export default function OfficialIvesdcMarksheetTemplateV3({
 
             <div className="relative z-[1] min-w-0 flex-1 text-center">
               <h2
-                className={`${fontDisplay.className} font-black uppercase`}
+                lang="hi"
+                className="font-devanagari font-bold"
                 style={{
                   color: C.navy,
-                  fontSize: `${headerTitleFs}px`,
-                  lineHeight: 1.18,
-                  letterSpacing: "0.06em",
+                  fontFamily: "var(--font-devanagari), 'Noto Sans Devanagari', sans-serif",
+                  fontSize: "26px",
+                  fontWeight: 700,
+                  lineHeight: 1.25,
+                  letterSpacing: "0",
+                  whiteSpace: "nowrap",
                   textShadow: "0 1px 0 rgba(255,255,255,0.65)",
                 }}
               >
-                INSTITUTE OF VOCATIONAL EDUCATION
-                <br />
-                AND SKILL DEVELOPMENT COUNCIL
+                व्यावसायिक शिक्षा एवं कौशल विकास परिषद्
               </h2>
 
               {/* Orange motto ribbon */}
@@ -707,24 +609,15 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               </div>
 
               <div
-                className={`${fontBody.className} mt-2 space-y-[2px] font-semibold leading-snug`}
-                style={{ color: C.ink, fontSize: `${headerAccredFs}px` }}
+                className={`${fontBody.className} mt-2 font-semibold`}
+                style={{ color: C.ink, fontSize: "15px", lineHeight: 1.35 }}
               >
-                <p>{accred1}</p>
-                <p>{accred2}</p>
-                {accred3 ? <p>{accred3}</p> : null}
+                <p style={{ whiteSpace: "nowrap" }}>{accred1}</p>
+                <p style={{ whiteSpace: "nowrap" }}>
+                  {accred2}
+                  {accred3 ? ` · ${accred3}` : ""}
+                </p>
               </div>
-
-              <p
-                className={`${fontBody.className} mt-1.5 font-bold leading-snug`}
-                style={{
-                  color: C.navyMid,
-                  fontSize: `${Math.max(8.5, headerAccredFs - 0.5)}px`,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                {verifyLine}
-              </p>
             </div>
           </div>
 
@@ -733,7 +626,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
         </header>
 
         {/* ===== STATEMENT OF MARKS — pure text ===== */}
-        <div className="flex shrink-0 flex-col items-center" style={{ maxWidth: contentW, marginTop: secGap + 2 }}>
+        <div className="flex shrink-0 flex-col items-center" style={{ maxWidth: contentW, marginTop: secGap }}>
           <h1
             className={`${fontDisplay.className} text-center font-black uppercase`}
             style={{
@@ -741,14 +634,14 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               fontSize: `${marksHeadingFs + 2}px`,
               letterSpacing: "0.26em",
               lineHeight: 1.12,
-              textShadow: "0 1px 0 rgba(255,255,255,0.7)",
+              textShadow: `0 1px 0 #fff, 0 2px 0 ${C.goldSoft}`,
             }}
           >
             Statement of Marks
           </h1>
 
           {/* Ornamental gold rule */}
-          <div className="mt-2 flex items-center gap-2.5" style={{ width: Math.min(380, contentW * 0.48) }}>
+          <div className="mt-1 flex items-center gap-2.5" style={{ width: Math.min(380, contentW * 0.48) }}>
             <span
               className="h-px flex-1"
               style={{ background: `linear-gradient(90deg, transparent, ${C.goldSoft}, ${C.gold})` }}
@@ -770,16 +663,16 @@ export default function OfficialIvesdcMarksheetTemplateV3({
           </div>
 
           <p
-            className={`${fontSerif.className} mt-1.5 text-center font-bold italic`}
+            className={`${fontSerif.className} mt-1 text-center font-bold italic`}
             style={{ color: C.gold, fontSize: "11.5px", letterSpacing: "0.16em" }}
           >
             Academic Record · Examination Result
           </p>
 
           <div
-            className={`${fontBody.className} mt-3 grid w-full overflow-hidden`}
+            className={`${fontBody.className} mt-1.5 grid w-full overflow-hidden`}
             style={{
-              gridTemplateColumns: "1.15fr 1fr 0.95fr",
+              gridTemplateColumns: "1fr 1.4fr 0.8fr",
               ...panelShell,
               borderTop: `2.5px solid ${C.gold}`,
             }}
@@ -791,24 +684,39 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             ].map((cell, i) => (
               <div
                 key={cell.label}
-                className="flex flex-col px-2.5 py-2"
+                className={`flex flex-col justify-center px-2.5 py-1 ${i === 1 ? "items-center" : ""}`}
                 style={{
                   borderRight: i < 2 ? `1px solid ${C.rule}` : undefined,
                   background: i === 1 ? C.navyWash : undefined,
                 }}
               >
-                <span
-                  className="font-bold uppercase"
-                  style={{ color: C.muted, fontSize: "7.5px", letterSpacing: "0.12em" }}
-                >
-                  {cell.label}
-                </span>
-                <span
-                  className={`${fontDisplay.className} mt-0.5 font-bold tabular-nums leading-tight`}
-                  style={{ color: C.navy, fontSize: "11px" }}
-                >
-                  {cell.value}
-                </span>
+                {i === 1 ? (
+                  <EnrollmentBarcode
+                    enrollmentNo={enrollNo}
+                    showLabel={true}
+                    showWords={true}
+                    label="Enrollment No. :"
+                    barcodeHeight={24}
+                    containerWidth={300}
+                    color="#000"
+                    align="center"
+                  />
+                ) : (
+                  <>
+                    <span
+                      className="font-bold uppercase"
+                      style={{ color: C.muted, fontSize: "7.5px", letterSpacing: "0.12em" }}
+                    >
+                      {cell.label}
+                    </span>
+                    <span
+                      className={`${fontDisplay.className} mt-0.5 font-bold tabular-nums leading-tight`}
+                      style={{ color: C.navy, fontSize: "11px" }}
+                    >
+                      {cell.value}
+                    </span>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -871,18 +779,30 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                   draggable={false}
                 />
               </div>
-              <div className="mt-2 w-full">
-                <EnrollmentBarcode
-                  enrollmentNo={enrollNo}
-                  words={data.barcodeTextWords}
-                  showLabel={true}
-                  showWords={false}
-                  label="Enroll."
-                  barcodeHeight={28}
-                  containerWidth={Math.max(110, photoW + 4)}
-                  color="#000"
-                  align="center"
+              <div className="mt-2 flex w-full flex-col items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.studentSignatureUrl || "/cert/sample-student-sig.png"}
+                  alt="Student signature"
+                  draggable={false}
+                  className="object-contain object-center"
+                  style={{
+                    height: data.studentSigHeight || 38,
+                    maxWidth: photoW,
+                    mixBlendMode: "multiply",
+                    background: "transparent",
+                  }}
                 />
+                <div
+                  className="mt-0.5 w-full border-t"
+                  style={{ borderColor: C.navy, maxWidth: photoW, borderTopWidth: 1.25 }}
+                />
+                <p
+                  className={`${fontDisplay.className} mt-0.5 text-center font-bold uppercase leading-tight tracking-[0.06em]`}
+                  style={{ color: C.navy, fontSize: "6.5px" }}
+                >
+                  Student Signature
+                </p>
               </div>
             </div>
           </aside>
@@ -927,7 +847,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 ].map((col) => (
                   <th
                     key={col.label}
-                    className={`${fontBody.className} px-1.5 py-[8px] font-bold uppercase`}
+                    className={`${fontBody.className} px-1.5 py-[4px] font-bold uppercase`}
                     style={{
                       width: col.w,
                       fontSize: `${headFs}px`,
@@ -1100,7 +1020,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               ].map((cell, i) => (
                 <div
                   key={cell.label}
-                  className="flex flex-col items-center justify-center px-2 py-3"
+                  className="flex flex-col items-center justify-center px-2 py-1.5"
                   style={{
                     borderRight: i < 2 ? `1px solid ${C.rule}` : undefined,
                     background:
@@ -1109,16 +1029,33 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                         : C.rowAWash,
                   }}
                 >
-                  <span
-                    className={`${fontDisplay.className} text-center font-bold leading-none`}
-                    style={{
-                      color: C.navy,
-                      fontSize: cell.big ? "20px" : "14px",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    {cell.value}
-                  </span>
+                  {i === 2 && hasMarks ? (
+                    <span
+                      className={`${fontDisplay.className} text-center font-black uppercase leading-none`}
+                      style={{
+                        color: C.goldBright,
+                        fontSize: "15px",
+                        letterSpacing: "0.16em",
+                        padding: "2px 14px 2px 16px",
+                        borderRadius: 999,
+                        background: `linear-gradient(180deg, ${C.navyMid} 0%, ${C.navy} 100%)`,
+                        border: `1px solid ${C.gold}`,
+                      }}
+                    >
+                      {cell.value}
+                    </span>
+                  ) : (
+                    <span
+                      className={`${fontDisplay.className} text-center font-bold leading-none`}
+                      style={{
+                        color: C.navy,
+                        fontSize: cell.big ? "20px" : "14px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      {cell.value}
+                    </span>
+                  )}
                   <span
                     className={`${fontBody.className} mt-2 font-bold uppercase`}
                     style={{ color: C.muted, fontSize: "8px", letterSpacing: "0.14em" }}
@@ -1160,7 +1097,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
         {/* ===== AUTHENTICATION ===== */}
         <footer
           className="mt-auto flex shrink-0 flex-col"
-          style={{ maxWidth: contentW, paddingTop: 6 }}
+          style={{ maxWidth: contentW, paddingTop: 2 }}
         >
           <div
             className="mb-1 flex items-center gap-2"
@@ -1186,67 +1123,52 @@ export default function OfficialIvesdcMarksheetTemplateV3({
 
           {/* ATC strip */}
           <div
-            className={`${fontBody.className} mb-1 grid gap-x-3 px-2.5 py-1.5`}
+            className={`${fontBody.className} mb-1 grid gap-x-4 gap-y-1 px-3 py-1.5`}
             style={{
-              gridTemplateColumns: "1.35fr 0.85fr",
+              gridTemplateColumns: "minmax(0, 1fr) auto",
               border: `1px solid ${C.rule}`,
               borderLeft: `3px solid ${C.gold}`,
-              background: `linear-gradient(90deg, rgba(243,230,192,0.35) 0%, ${C.paperWarm} 40%)`,
-              fontSize: "8.5px",
-              color: C.ink,
+              background: `linear-gradient(90deg, rgba(243,230,192,0.45) 0%, ${C.paperWarm} 40%)`,
+              fontSize: "11px",
+              color: C.navy,
+              lineHeight: 1.3,
               boxShadow: C.panelInset,
             }}
           >
-            <p className="font-bold leading-snug">
-              <span style={{ color: C.muted }}>ATC :</span>{" "}
+            <p className="min-w-0 truncate font-bold">
+              <span style={{ color: C.muted, fontWeight: 600 }}>Authorised Training Centre (ATC) Name :</span>{" "}
               {data.atcName || data.trainingCentreName || "—"}
             </p>
-            <p className="font-bold leading-snug">
-              <span style={{ color: C.muted }}>Code :</span> {data.atcCode || "—"}
+            <p className="font-bold" style={{ whiteSpace: "nowrap" }}>
+              <span style={{ color: C.muted, fontWeight: 600 }}>ATC.Code :</span>{" "}
+              <span className="tabular-nums">{data.atcCode || "—"}</span>
             </p>
-            <p className="col-span-2 font-semibold leading-snug" style={{ color: C.muted, fontSize: "8px" }}>
-              {data.franchiseAddress || data.trainingCentre || ""}
+            <p className="col-span-2 min-w-0 truncate font-bold">
+              <span style={{ color: C.muted, fontWeight: 600 }}>ATC Address :</span>{" "}
+              {data.franchiseAddress || data.trainingCentre || "—"}
             </p>
           </div>
 
           {/* ===== Signatures + seals (balanced 3-col) ===== */}
           <div
             className="grid items-end gap-3"
-            style={{ gridTemplateColumns: "1fr 1.2fr 0.95fr" }}
+            style={{ gridTemplateColumns: "1fr 1fr 1fr auto" }}
           >
-            {/* Examination Coordinator */}
-            <div className="flex min-w-0 flex-col items-center px-1">
-              <div style={{ height: Math.max(52, Math.round(stampPx * 0.55)) }} aria-hidden />
-              <div
-                className="w-full max-w-[200px] border-t"
-                style={{ borderColor: C.navy, borderTopWidth: 1.25 }}
-              />
-              <p
-                className={`${fontDisplay.className} mt-1 text-center font-bold uppercase leading-tight tracking-[0.06em]`}
-                style={{ color: C.navy, fontSize: "7.5px" }}
-              >
-                Examination Coordinator
-              </p>
-            </div>
-
             {/* Authorised Signatory — stamp + signature */}
             <div className="flex min-w-0 flex-col items-center px-1">
               <div
-                className="relative flex w-full items-end justify-center"
-                style={{ height: stampPx, maxWidth: 240 }}
+                className="relative mx-auto"
+                style={{ width: stampPx, height: stampPx }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={stampSrc}
                   alt=""
                   draggable={false}
-                  className="pointer-events-none absolute select-none object-contain"
+                  className="pointer-events-none absolute inset-0 select-none object-contain"
                   style={{
-                    width: stampPx,
-                    height: stampPx,
-                    left: "50%",
-                    bottom: 0,
-                    transform: "translateX(-48%)",
+                    width: "100%",
+                    height: "100%",
                     opacity: 0.9,
                     zIndex: 1,
                     WebkitPrintColorAdjust: "exact",
@@ -1258,12 +1180,14 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                   src={directorSigSrc}
                   alt="Authorised Signatory"
                   draggable={false}
-                  className="relative z-[2] object-contain object-bottom"
+                  className="absolute z-[2] object-contain"
                   style={{
-                    height: Math.max(sigH, Math.round(stampPx * 0.4)),
-                    maxWidth: "70%",
-                    marginBottom: 2,
-                    marginLeft: "14%",
+                    left: "50%",
+                    top: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: Math.round(stampPx * 0.86),
+                    height: "auto",
+                    maxHeight: Math.max(sigH, Math.round(stampPx * 0.55)),
                   }}
                 />
               </div>
@@ -1285,8 +1209,91 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               </p>
             </div>
 
+            {/* ATC (franchise) authorised signatory — its own seal + signature */}
+            <div className="flex min-w-0 flex-col items-center justify-end px-1">
+              <div className="relative mx-auto flex items-end justify-center" style={{ width: "100%", height: stampPx }}>
+                {data.atcStampUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={data.atcStampUrl}
+                    alt=""
+                    draggable={false}
+                    className="pointer-events-none absolute select-none object-contain"
+                    style={{
+                      width: stampPx,
+                      height: stampPx,
+                      left: "50%",
+                      top: 0,
+                      transform: "translateX(-50%)",
+                      opacity: 0.9,
+                      WebkitPrintColorAdjust: "exact",
+                      printColorAdjust: "exact",
+                    }}
+                  />
+                ) : null}
+                {data.atcSignatureUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={data.atcSignatureUrl}
+                    alt="ATC Authorised Signatory"
+                    draggable={false}
+                    className="relative z-[2] object-contain object-bottom"
+                    style={{ maxWidth: Math.round(stampPx * 1.5), height: Math.max(coordSigH, Math.round(stampPx * 0.5)) }}
+                  />
+                ) : null}
+              </div>
+              <div
+                className="w-full max-w-[220px] border-t"
+                style={{ borderColor: C.navy, borderTopWidth: 1.25 }}
+              />
+              <p
+                className={`${fontDisplay.className} mt-1 text-center font-bold uppercase leading-tight tracking-[0.06em]`}
+                style={{ color: C.navy, fontSize: "7.5px" }}
+              >
+                ATC Authorised Signatory
+              </p>
+              <p
+                className={`${fontBody.className} max-w-full truncate text-center font-semibold leading-tight`}
+                style={{ color: C.muted, fontSize: "6px" }}
+              >
+                {data.atcSignatoryName || data.atcName || "Authorised Training Centre"}
+              </p>
+            </div>
+
+            {/* Examination Coordinator */}
+            <div className="flex min-w-0 flex-col items-center justify-end px-1">
+              <div className="flex w-full items-end justify-center" style={{ height: stampPx }}>
+                {data.examCoordinatorSignatureUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={data.examCoordinatorSignatureUrl}
+                    alt="Examination Coordinator signature"
+                    draggable={false}
+                    className="object-contain object-bottom"
+                    style={{ maxWidth: Math.round(stampPx * 1.5), height: Math.max(coordSigH, Math.round(stampPx * 0.5)) }}
+                  />
+                ) : null}
+              </div>
+              <div
+                className="w-full max-w-[220px] border-t"
+                style={{ borderColor: C.navy, borderTopWidth: 1.25 }}
+              />
+              <p
+                className={`${fontDisplay.className} mt-1 text-center font-bold uppercase leading-tight tracking-[0.06em]`}
+                style={{ color: C.navy, fontSize: "7.5px" }}
+              >
+                Examination Coordinator
+              </p>
+              <p
+                className={`${fontBody.className} max-w-full truncate text-center font-semibold leading-tight`}
+                style={{ color: data.examCoordinatorName ? C.muted : "transparent", fontSize: "6px" }}
+              >
+                {data.examCoordinatorName || "Examination Coordinator"}
+              </p>
+            </div>
+
             {/* Hologram + QR — right column */}
-            <div className="flex items-end justify-end gap-2.5 pb-0.5">
+            <div className="flex items-start justify-end gap-2.5 pb-0.5">
               {data.showHologramGuide !== false ? (
                 <div
                   className="flex flex-col items-center select-none"
@@ -1320,7 +1327,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 certificateNo={certNo}
                 studentName={data.studentName}
                 verificationWebsite={verifySite}
-                size={Math.min(qrPx, 52)}
+                size={Math.max(84, qrPx)}
                 color="#000000"
                 mode="marksheet"
                 captionLine1="Scan to Verify"
@@ -1330,47 +1337,21 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             </div>
           </div>
 
-          {/* Office + barcode — one compact band */}
-          <div
-            className="mt-1 grid items-center gap-3 px-2 py-1"
-            style={{
-              gridTemplateColumns: "1.1fr 1.2fr",
-              background: `linear-gradient(90deg, ${C.paperWarm} 0%, rgba(251,247,239,0.9) 100%)`,
-              borderTop: `1px solid ${C.rule}`,
-              borderBottom: `1px solid ${C.rule}`,
-            }}
-          >
-            <div className="min-w-0">
-              <span
-                className={`${fontDisplay.className} inline-block px-1.5 py-[2px] font-bold uppercase tracking-[0.12em] text-white`}
-                style={{ background: C.navy, fontSize: "6.5px" }}
-              >
-                Registered Office
-              </span>
-              <p
-                className={`${fontBody.className} mt-1 font-semibold leading-snug`}
-                style={{ color: C.ink, fontSize: "7.5px" }}
-              >
-                {data.registeredOffice ||
-                  "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680"}
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <EnrollmentBarcode
-                enrollmentNo={data.barcodeNumber || enrollNo}
-                words={data.barcodeTextWords}
-                showLabel={true}
-                showWords={true}
-                label={`Document Serial : ${certNo}`}
-                barcodeHeight={22}
-                containerWidth={Math.min(300, contentW * 0.42)}
-                color="#000"
-                align="right"
-              />
-            </div>
+          <div className="mt-1 flex items-end justify-end gap-4 px-1">
+            <EnrollmentBarcode
+              enrollmentNo={data.barcodeNumber || enrollNo}
+              words={data.barcodeTextWords}
+              showLabel={true}
+              showWords={true}
+              label={`Document Serial : ${certNo}`}
+              barcodeHeight={24}
+              containerWidth={Math.min(300, Math.round(contentW * 0.34))}
+              color="#000"
+              align="right"
+            />
           </div>
 
-          {/* Gujarat GAD resolution — compact inline flex */}
+          {/* Gujarat GAD resolution */}
           <div
             className="mt-1 flex w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 px-2 py-[4px]"
             style={{
@@ -1402,172 +1383,78 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             ))}
           </div>
 
-          {/* Partner logos — full-width clean strip */}
-          <div className="mt-1 shrink-0">
+          <div
+            className="relative mt-2 w-full shrink-0"
+            style={{
+              border: `2.5px solid ${C.gold}`,
+              borderRadius: 16,
+              background: `linear-gradient(180deg, #FFFDF8 0%, ${C.paperWarm} 100%)`,
+              boxShadow: `inset 0 0 0 1px ${C.navy}, 0 1px 0 rgba(255,255,255,0.7)`,
+              padding: "14px 10px 6px",
+            }}
+          >
             <div
-              className="flex items-center justify-center gap-1.5 py-[3px]"
+              className="absolute left-1/2 flex items-center justify-center"
               style={{
-                background: C.sectionBand,
-                borderBottom: `1px solid ${C.ruleSoft}`,
+                top: 0,
+                transform: "translate(-50%, -52%)",
+                minWidth: 168,
+                height: 22,
+                padding: "0 22px",
+                background: `linear-gradient(180deg, ${C.navyMid} 0%, ${C.navy} 55%, ${C.navyDeep} 100%)`,
+                clipPath:
+                  "polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%)",
+                boxShadow: `0 1px 0 ${C.goldBright}`,
               }}
             >
               <span
-                className="h-px w-8"
-                style={{ background: `linear-gradient(90deg, transparent, ${C.gold})` }}
-                aria-hidden
-              />
-              <span
-                className={`${fontDisplay.className} font-bold uppercase tracking-[0.18em]`}
-                style={{ color: C.navy, fontSize: "6.5px" }}
+                className={`${fontDisplay.className} font-bold text-white`}
+                style={{ fontSize: "11px", letterSpacing: "0.04em", lineHeight: 1 }}
               >
                 Empanelled with
               </span>
-              <span
-                className="h-px w-8"
-                style={{ background: `linear-gradient(90deg, ${C.gold}, transparent)` }}
-                aria-hidden
-              />
             </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/certificates/certificatebot.png"
+              alt="Partner logos"
+              draggable={false}
+              className="block w-full object-cover object-center"
+              style={{ height: 122 }}
+            />
             <div
-              className="flex w-full items-center justify-center px-1"
+              className={`${fontBody.className} mt-1.5 flex items-center justify-center font-bold text-white`}
               style={{
-                gap: 32,
-                paddingTop: 3,
-                paddingBottom: 4,
-                background: `linear-gradient(180deg, #F6F0E6 0%, #FAF6EE 100%)`,
+                minHeight: 22,
+                padding: "4px 12px",
+                borderRadius: 999,
+                background: `linear-gradient(180deg, ${C.navyMid} 0%, ${C.navy} 100%)`,
+                border: `1px solid ${C.gold}`,
+                fontSize: "12px",
+                letterSpacing: "0.01em",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
               }}
             >
-              {partners.slice(0, 8).map((logo, idx) => (
-                <div
-                  key={logo.id || idx}
-                  className="flex shrink-0 items-center justify-center"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={logo.url}
-                    alt={logo.name || `Partner ${idx + 1}`}
-                    style={{
-                      height: partnerH,
-                      maxHeight: partnerH,
-                      width: "auto",
-                      maxWidth: Math.round(partnerH * 2.15),
-                      mixBlendMode: "multiply",
-                    }}
-                    className="object-contain object-center"
-                    draggable={false}
-                  />
-                </div>
-              ))}
+              GRADE SYSTEM - A+: Excellent (85% & Above) | A : Very Good (70% to 84%) | B: Good (55% to 69%) | C: Average (40% to 54%)
             </div>
           </div>
 
-          {/* Verify bar — gold plaque + navy seal strip */}
-          <div className="mt-0 shrink-0 overflow-hidden">
-            <div
-              style={{
-                height: 2.5,
-                background: `linear-gradient(90deg, ${C.goldPale}, ${C.goldBright}, ${C.gold}, ${C.goldBright}, ${C.goldPale})`,
-              }}
-            />
-            <div
-              className="relative flex items-stretch"
-              style={{
-                minHeight: 36,
-                background: `
-                  linear-gradient(180deg, rgba(226,199,106,0.22) 0%, transparent 32%),
-                  repeating-linear-gradient(90deg, transparent 0 18px, rgba(226,199,106,0.06) 18px 19px),
-                  linear-gradient(90deg, ${C.navyDeep} 0%, ${C.navy} 42%, #102848 100%)
-                `,
-              }}
+          <div className="mt-1.5 w-full shrink-0 text-center">
+            <p
+              className={`${fontBody.className} font-semibold`}
+              style={{ color: C.navy, fontSize: "15px", lineHeight: 1.35, whiteSpace: "nowrap" }}
             >
-              <div
-                className="relative flex shrink-0 items-center"
-                style={{
-                  background: `linear-gradient(180deg, ${C.goldBright} 0%, ${C.gold} 46%, #8C6A22 100%)`,
-                  padding: "0 18px 0 12px",
-                  clipPath: "polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%)",
-                  boxShadow: "inset 0 1px 0 rgba(255,248,224,0.55)",
-                }}
-              >
-                <span
-                  className={`${fontDisplay.className} font-black uppercase`}
-                  style={{ color: C.navyDeep, fontSize: "8px", letterSpacing: "0.22em" }}
-                >
-                  Verify
-                </span>
-              </div>
-
-              <div className="flex min-w-0 flex-1 items-center gap-2.5 px-3">
-                <span
-                  className="inline-block shrink-0 rotate-45"
-                  style={{ width: 5, height: 5, background: C.goldBright, boxShadow: `0 0 0 1px ${C.goldPale}` }}
-                  aria-hidden
-                />
-                <span
-                  className={`${fontBody.className} min-w-0 truncate font-bold leading-none text-white`}
-                  style={{ fontSize: "8.5px", letterSpacing: "0.02em" }}
-                >
-                  {verifySite}
-                </span>
-                <span
-                  className="inline-block h-3.5 w-px shrink-0"
-                  style={{ background: "rgba(226,199,106,0.55)" }}
-                  aria-hidden
-                />
-                <span
-                  className="inline-block shrink-0 rotate-45"
-                  style={{ width: 5, height: 5, background: C.goldBright }}
-                  aria-hidden
-                />
-                <span
-                  className={`${fontBody.className} min-w-0 truncate font-semibold leading-none`}
-                  style={{ color: C.goldPale, fontSize: "8px" }}
-                >
-                  {verifyEmail}
-                </span>
-              </div>
-
-              <div
-                className="flex shrink-0 items-center gap-2 px-3"
-                style={{
-                  borderLeft: "1px solid rgba(226,199,106,0.5)",
-                  background: "linear-gradient(90deg, rgba(160,127,44,0.16), transparent 70%)",
-                }}
-              >
-                <span
-                  className={`${fontDisplay.className} font-black uppercase`}
-                  style={{ color: C.goldBright, fontSize: "8.5px", letterSpacing: "0.18em" }}
-                >
-                  IVESDC
-                </span>
-                <span
-                  className="h-px w-4 shrink-0"
-                  style={{ background: `linear-gradient(90deg, ${C.goldBright}, transparent)` }}
-                  aria-hidden
-                />
-                <span
-                  className={`${fontBody.className} font-bold uppercase`}
-                  style={{
-                    color: C.navyDeep,
-                    fontSize: "6.5px",
-                    letterSpacing: "0.12em",
-                    background: `linear-gradient(180deg, ${C.goldPale} 0%, ${C.goldSoft} 100%)`,
-                    padding: "3px 7px",
-                    border: `1px solid ${C.goldBright}`,
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.45)",
-                  }}
-                >
-                  Official Document
-                </span>
-              </div>
-            </div>
-            <div style={{ height: 1.5, background: C.navyDeep }} />
-            <div
-              style={{
-                height: 2,
-                background: `linear-gradient(90deg, ${C.gold}, ${C.goldBright}, ${C.gold})`,
-              }}
-            />
+              This certificate can be verified by scanning the QR Code or visiting {verifySite}
+            </p>
+            <p
+              className={`${fontBody.className} mt-0.5 font-semibold`}
+              style={{ color: C.navy, fontSize: "15px", lineHeight: 1.35, whiteSpace: "nowrap" }}
+            >
+              <span className="font-bold">Registered Office:</span>{" "}
+              {data.registeredOffice ||
+                "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680"}
+            </p>
           </div>
         </footer>
       </div>

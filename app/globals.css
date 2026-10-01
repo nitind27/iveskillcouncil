@@ -597,6 +597,10 @@ html.lang-gu body {
   margin: 0;
 }
 
+.cert-batch-print-root {
+  display: none;
+}
+
 @media print {
   html,
   body {
@@ -725,6 +729,39 @@ html.lang-gu body {
     max-height: 1492px !important;
     transform-origin: 0 0 !important;
     transform: scale(0.752) !important;
+  }
+
+  /* Multi-page batch print (Certificate of Completion / Result 3) — one A4 page per sheet */
+  html.cert-batch-printing,
+  html.cert-batch-printing body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  html.cert-batch-printing body > *:not(.cert-batch-print-root) {
+    display: none !important;
+  }
+
+  html.cert-batch-printing .cert-batch-print-root {
+    display: block !important;
+    position: static !important;
+  }
+
+  html.cert-batch-printing .cert-batch-page {
+    position: relative !important;
+    display: block !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  html.cert-batch-printing .cert-batch-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
 
   /* Landscape / shorter canvases (723×1024) */

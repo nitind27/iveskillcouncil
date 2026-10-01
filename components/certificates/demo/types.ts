@@ -105,6 +105,14 @@ export interface CertificateDemoData {
   photoUrl?: string;
   studentSignatureUrl?: string;
   directorSignatureUrl?: string;
+  /** Authorized Training Centre signature on Certificate of Completion */
+  atcSignatureUrl?: string;
+  /** ATC (franchise) seal, uploaded by the franchise admin */
+  atcStampUrl?: string;
+  atcSignatoryName?: string;
+  /** Examination Coordinator signature on the Statement of Marks */
+  examCoordinatorSignatureUrl?: string;
+  examCoordinatorName?: string;
   directorTitle?: string;
   stampUrl?: string;
   /** Optional hologram preview image (physical sticker is 23×23 mm, applied manually) */
@@ -257,7 +265,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     accreditationLine3: "ISO 9001:2015 & ISO 21001:2018 Certified Organization",
     registeredOffice: "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
     govOrderText:
-      "Under The General Administration Department Govt. of Gujarat vide it's Resolution GR No. CRR/12/2007/120320/G5, Dt : 13-8-2008 by Sachivalay Gandhinagar",
+      "Under The General Administration Department Govt. of Gujarat vide it's Resolution GR\nNo. CRR/12/2007/120320/G5, Dt : 13-8-2008 by Sachivalay Gandhinagar",
     verificationWebsite: "www.iveskillcouncil.edu.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     gradeSystem: [
@@ -266,8 +274,8 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
       { grade: "B", label: "Good", range: "55% to 69%" },
       { grade: "C", label: "Average", range: "40% to 54%" },
     ],
-    photoWidth: 92,
-    photoHeight: 112,
+    photoWidth: 122,
+    photoHeight: 148,
     stampSize: 88,
     qrCodeSize: 56,
     partnerLogosHeight: 90,
@@ -922,32 +930,12 @@ export const CERTIFICATE_TYPE_CONFIGS: CertificateTypeConfig[] = [
     sampleData: SAMPLE_CERTIFICATE_PRESETS.vocational,
   },
   {
-    id: "marksheet",
-    title: "Statement of Marks (Result)",
-    badge: "Official Result",
-    badgeColor: "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300",
-    category: "Result Layout",
-    description: "Official IVESDC marksheet with matching ornate border, 8-subject marks grid, barcode, PASS status, and QR verification.",
-    orientation: "portrait",
-    sampleData: SAMPLE_CERTIFICATE_PRESETS.marksheet,
-  },
-  {
-    id: "marksheet2",
-    title: "Statement of Marks (Result) - 2",
-    badge: "Result Form 2",
-    badgeColor: "bg-slate-100 text-slate-900 border-slate-300 dark:bg-slate-800/60 dark:text-slate-200",
-    category: "Blank Form Layout",
-    description: "Classic silver lace border Statement of Marks form with Gothic title, NSQF bar, GRADE OBTAINED row, and Examination Coordinator signature.",
-    orientation: "portrait",
-    sampleData: SAMPLE_CERTIFICATE_PRESETS.marksheet2,
-  },
-  {
     id: "marksheet3",
     title: "Statement of Marks (Result) - 3",
-    badge: "Result Form 3",
+    badge: "Official Result",
     badgeColor: "bg-[#C4A35A]/20 text-[#0B1F3A] border-[#C4A35A]/40 dark:bg-[#C4A35A]/15 dark:text-[#F4CF74]",
-    category: "Premium Certificate Layout",
-    description: "Board-style Result Form 3 — gold frame, subject marks table with auto remarks (Excellent / Very Good / Good / Average from %), stamp, QR & barcode.",
+    category: "Result Layout",
+    description: "Official IVESDC result — gold frame, subject marks table with auto remarks (Excellent / Very Good / Good / Average from %), stamp, QR & barcode.",
     orientation: "portrait",
     sampleData: SAMPLE_CERTIFICATE_PRESETS.marksheet3,
   },

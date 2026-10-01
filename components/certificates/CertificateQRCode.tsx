@@ -7,6 +7,11 @@ const sans: CSSProperties = {
   fontFamily: "Arial, Helvetica, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
+/** Live site that serves /verify — every printed QR points here, wherever the document was printed from. */
+const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_VERIFY_URL || "https://ivesdc.codeatinfotech.com")
+  .trim()
+  .replace(/\/+$/, "");
+
 export interface CertificateQRCodeProps {
   /** Document type for verification link */
   docType?: "marksheet" | "certificate" | "diploma";
@@ -56,7 +61,6 @@ export default function CertificateQRCode({
   enrollmentNo,
   certificateNo,
   studentName,
-  verificationWebsite = "www.iveskillcouncil.edu.in",
   size = 80,
   color = "#000000",
   bgColor = "#FFFFFF",
@@ -72,46 +76,15 @@ export default function CertificateQRCode({
 
   const cleanEnr = String(enrollmentNo ?? "").trim() || "0";
   const cleanCert = String(certificateNo || "").trim();
-  const cleanWebsite = verificationWebsite.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
-
-  /** Prefer live app origin so QR always hits this deployment's /verify page */
-  const [verifyOrigin, setVerifyOrigin] = useState<string>(() => {
-    const env =
-      typeof process !== "undefined"
-        ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim()
-        : "";
-    if (env) return env.replace(/\/+$/, "");
-    return `https://${cleanWebsite}`;
-  });
-
-  useEffect(() => {
-    const env = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim();
-    if (env) {
-      setVerifyOrigin(env.replace(/\/+$/, ""));
-      return;
-    }
-    if (typeof window !== "undefined" && window.location?.origin) {
-      const origin = window.location.origin.replace(/\/+$/, "");
-      const host = window.location.hostname || "";
-      const isLocal =
-        host === "localhost" ||
-        host === "127.0.0.1" ||
-        host.endsWith(".local");
-      // On localhost, fall back to configured public verification domain (phones can't open localhost)
-      setVerifyOrigin(isLocal ? `https://${cleanWebsite}` : origin);
-    }
-  }, [cleanWebsite]);
-
   // Dynamic verification URL — enrollment + certificate number change → QR regenerates
   const payload = useMemo(() => {
     if (customPayload) return customPayload;
     const typeCode = docType === "marksheet" ? "ms" : "cert";
-    const base = verifyOrigin || `https://${cleanWebsite}`;
     if (cleanCert && cleanEnr) {
-      return `${base}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}&id=${encodeURIComponent(cleanCert)}`;
+      return `${VERIFY_ORIGIN}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}&id=${encodeURIComponent(cleanCert)}`;
     }
-    return `${base}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}`;
-  }, [customPayload, docType, cleanCert, cleanEnr, cleanWebsite, verifyOrigin]);
+    return `${VERIFY_ORIGIN}/verify?type=${typeCode}&enr=${encodeURIComponent(cleanEnr)}`;
+  }, [customPayload, docType, cleanCert, cleanEnr]);
 
   useEffect(() => {
     let cancelled = false;

@@ -121,6 +121,13 @@ export default function CertificatePrintCenterPage() {
               Preview template
             </button>
             <Link
+              href="/certificates/official-print"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#C4A35A] px-3 text-xs font-bold text-[#0B1F3A] transition hover:bg-[#d4b56c]"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Official Print (Cert + Result 3)
+            </Link>
+            <Link
               href="/certificates/issued"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
             >

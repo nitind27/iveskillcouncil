@@ -91,7 +91,7 @@ export function CertificateDemoModal({
 
   useEffect(() => {
     if (open && initialType) {
-      setSelectedType(initialType);
+      setSelectedType(initialType === "marksheet" || initialType === "marksheet2" ? "marksheet3" : initialType);
     }
   }, [open, initialType]);
 

@@ -1425,6 +1425,8 @@ export default function CertificateCustomizerDrawer({
 
   const defaultDirectorSigH = isMarksheetV3 ? 36 : isMarksheetV2 ? 34 : isMarksheetV1 ? 44 : 48;
   const currentDirectorSigH = activeData.directorSigHeight || defaultDirectorSigH;
+  const defaultAtcSigH = 44;
+  const currentAtcSigH = activeData.authorizedSigHeight || defaultAtcSigH;
 
   const defaultGoldMedalSize = isMarksheetV3 ? 90 : 125;
   const currentGoldMedalSize = activeData.goldMedalSize || defaultGoldMedalSize;
@@ -2572,6 +2574,33 @@ export default function CertificateCustomizerDrawer({
               }}
             />
 
+            {isVocationalCert && (
+              <ImageUploaderWithSizer
+                category="atc-sig"
+                label="ATC Signature"
+                description="Signature of the Authorized Training Centre. Shown on the sign line between the Director and the QR code."
+                currentValue={activeData.atcSignatureUrl}
+                defaultPreview="/cert/sample-student-sig.png"
+                onUpload={(val) => onFieldChange("atcSignatureUrl", val)}
+                onResetAsset={() => onFieldChange("atcSignatureUrl", undefined)}
+                sizeControl={{
+                  label: "ATC Signature Height",
+                  value: currentAtcSigH,
+                  defaultValue: defaultAtcSigH,
+                  min: 28,
+                  max: 72,
+                  step: 2,
+                  quickPresets: [
+                    { label: "Compact", value: 36 },
+                    { label: "Standard", value: defaultAtcSigH },
+                    { label: "Large", value: 60 },
+                  ],
+                  onChange: (val) => onFieldChange("authorizedSigHeight", val),
+                  onReset: () => onFieldChange("authorizedSigHeight", undefined),
+                }}
+              />
+            )}
+
             {/* Director Designation Title */}
             <div className="rounded-xl border border-white/10 bg-slate-900/60 p-2.5">
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
@@ -2720,7 +2749,7 @@ export default function CertificateCustomizerDrawer({
                 <p>
                   <strong className="text-slate-300">Target URL:</strong>{" "}
                   <span className="font-mono text-sky-400 break-all">
-                    https://{activeData.verificationWebsite || "www.iveskillcouncil.edu.in"}/verify?type={isMarksheet ? "marksheet" : "certificate"}&amp;enr={activeData.registrationNumber || "4739846"}
+                    {(process.env.NEXT_PUBLIC_VERIFY_URL || "https://ivesdc.codeatinfotech.com").replace(/\/+$/, "")}/verify?type={isMarksheet ? "ms" : "cert"}&amp;enr={activeData.registrationNumber || "4739846"}
                   </span>
                 </p>
                 <p className="text-[9px] text-slate-500">
