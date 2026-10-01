@@ -9,6 +9,7 @@ import { Cinzel, Cormorant_Garamond, Libre_Baskerville, Montserrat, Source_Sans_
 import type { CertificateDemoData } from "./demo/types";
 import CertificateQRCode from "./CertificateQRCode";
 import EnrollmentBarcode from "./EnrollmentBarcode";
+import PartnerLogos from "./PartnerLogos";
 
 const fontInstitution = Montserrat({
   subsets: ["latin"],
@@ -387,16 +388,17 @@ export default function OfficialIvesdcCertTemplate({
             <p className={`${fontBody.className} font-bold uppercase`} style={{ color: C.navy, fontSize: "9px", letterSpacing: "0.08em" }}>
               Student Signature
             </p>
-            <div className="mt-1.5">
+            <div className="mt-1.5 self-start" style={{ marginLeft: -12 }}>
               <EnrollmentBarcode
                 enrollmentNo={enrollNo}
                 showLabel
                 showWords
                 label="Enrollment No. :"
                 barcodeHeight={26}
-                containerWidth={150}
-                color={C.navy}
-                align="center"
+                containerWidth={212}
+                color="#000"
+                align="left"
+                style={{ maxWidth: "none" }}
               />
             </div>
           </aside>
@@ -714,14 +716,7 @@ export default function OfficialIvesdcCertTemplate({
                     Empanelled with
                   </span>
                 </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/certificates/certificatebot.png"
-                  alt="Partner logos"
-                  draggable={false}
-                  className="block w-full object-cover object-center"
-                  style={{ height: 96 }}
-                />
+                <PartnerLogos height={96} padding={4} />
                 <div
                   className={`${fontBody.className} mt-1 flex items-center justify-center font-bold text-white`}
                   style={{

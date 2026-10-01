@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState, type FormEvent, type ReactN
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import ProtectedView from "@/components/verify/ProtectedView";
 import {
   AlertTriangle,
   Award,
@@ -287,6 +288,13 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
             <Detail icon={<CalendarDays className="h-4 w-4" />} label="Issue date" value={formatDate(doc.issueDate)} />
           </div>
 
+          {docType === "student" && verified && (
+            <p className="mt-6 flex items-center gap-2 rounded-xl border border-[#B8922A]/30 bg-[#FBF5E6] px-4 py-3 text-xs font-semibold text-[#6B5414]">
+              <ScanLine className="h-4 w-4 shrink-0" />
+              Student identity verified. Scan the Marksheet No. barcode or QR code on the result to view marks.
+            </p>
+          )}
+
           {doc.result && (
             <div className="mt-6 overflow-hidden rounded-2xl border border-[#B8922A]/30">
               <div className="flex flex-wrap items-center gap-4 bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-5 py-4 text-white">
@@ -472,7 +480,11 @@ function VerifyContent() {
                 <p className="text-sm text-slate-600">{error}</p>
               </div>
             ) : payload ? (
-              <ResultCard key={`${type}|${enr}|${id}`} payload={payload} query={{ type, enr, id }} />
+              <ProtectedView
+                watermark={`IVESDC VERIFICATION • ${payload.document?.enrollmentNo || enr || id} • ${new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`}
+              >
+                <ResultCard key={`${type}|${enr}|${id}`} payload={payload} query={{ type, enr, id }} />
+              </ProtectedView>
             ) : null}
 
             <div className="rounded-3xl border border-[#0B1F3A]/10 bg-white/70 p-5 shadow-lg backdrop-blur">

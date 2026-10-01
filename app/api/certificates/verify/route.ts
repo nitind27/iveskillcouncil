@@ -166,7 +166,9 @@ export async function GET(request: NextRequest) {
           reason: "MISMATCH",
           message: "The enrollment on this scan does not belong to that document number.",
           query,
-          document: scannedStudent ? { type, ...(await studentDetails(scannedStudent.id)) } : undefined,
+          document: scannedStudent
+            ? { type, ...(await studentDetails(scannedStudent.id)), result: null, subjects: [] }
+            : undefined,
         });
       }
       const status = String(certificate.status || "").toUpperCase();
@@ -206,7 +208,9 @@ export async function GET(request: NextRequest) {
           reason: "MISMATCH",
           message: "The enrollment on this scan does not belong to that marksheet number.",
           query,
-          document: scannedStudent ? { type, ...(await studentDetails(scannedStudent.id)) } : undefined,
+          document: scannedStudent
+            ? { type, ...(await studentDetails(scannedStudent.id)), result: null, subjects: [] }
+            : undefined,
         });
       }
       student ??= await prisma.student.findUnique({
@@ -234,6 +238,8 @@ export async function GET(request: NextRequest) {
     const document = {
       type,
       ...details,
+      // Enrollment / document-serial barcodes identify the student; marks are shown only for a marksheet scan.
+      ...(type === "student" ? { result: null, subjects: [] } : {}),
       certificateNumber: id || latestIssued?.certificateNumber || null,
       issueDate: latestIssued?.issueDate ? latestIssued.issueDate.toISOString() : null,
     };

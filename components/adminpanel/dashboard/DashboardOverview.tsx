@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/common/Card";
 import { cn } from "@/lib/utils";
 import DashboardStats, { type StatCardData } from "./DashboardStats";
+import CourseFeeSummary from "./CourseFeeSummary";
 import { ROLES } from "@/lib/permissions";
 import { canRoleAccessPath } from "@/lib/role-menu-config";
 
@@ -28,7 +29,6 @@ type DashboardStats = {
   activeFranchises?: number;
   totalStudents: number;
   totalStaff?: number;
-  totalRevenue: number;
   pendingFees?: number;
   pendingCertificates?: number;
   attendancePercent?: number;
@@ -60,6 +60,7 @@ type DashboardOverviewProps = {
   attendanceStats: Record<string, number>;
   recentSupportRequests?: SupportRequest[];
   onCardClick: (card: StatCardData) => void;
+  franchiseId?: string;
 };
 
 export default function DashboardOverview({
@@ -69,8 +70,10 @@ export default function DashboardOverview({
   attendanceStats,
   recentSupportRequests,
   onCardClick,
+  franchiseId,
 }: DashboardOverviewProps) {
   const isAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+  const showCourseFees = isAdmin || roleId === ROLES.SUB_ADMIN;
   const pendingTotal = (stats.pendingFees ?? 0) + (stats.pendingCertificates ?? 0);
   const leadTotal =
     (stats.courseEnquiriesCount ?? 0) +
@@ -126,11 +129,17 @@ export default function DashboardOverview({
 
       {/* Hero KPIs — full width */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <HeroKpi label="Students" value={(stats.totalStudents ?? 0).toLocaleString()} sub="Total enrolled" icon={GraduationCap} tone="green" onClick={() => onCardClick(buildCard("students", stats))} />
-        <HeroKpi label="Revenue" value={`₹${Number(stats.totalRevenue).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`} sub="Last 30 days" icon={IndianRupee} tone="emerald" onClick={() => onCardClick(buildCard("revenue", stats))} />
+        <HeroKpi label="Students" value={(stats.totalStudents ?? 0).toLocaleString("en-IN")} sub="Total enrolled" icon={GraduationCap} tone="navy" onClick={() => onCardClick(buildCard("students", stats))} />
+        {isAdmin ? (
+          <HeroKpi label="Franchises" value={(stats.totalFranchises ?? 0).toLocaleString("en-IN")} sub={`${stats.activeFranchises ?? 0} active centres`} icon={Building2} tone="emerald" onClick={() => onCardClick(buildCard("franchises", stats))} />
+        ) : (
+          <HeroKpi label="Staff" value={(stats.totalStaff ?? 0).toLocaleString("en-IN")} sub="Team members" icon={Users} tone="emerald" onClick={() => onCardClick(buildCard("staff", stats))} />
+        )}
         <HeroKpi label="Attendance" value={`${stats.attendancePercent ?? 0}%`} sub={`${stats.totalAttendanceToday ?? totalMarked} marked today`} icon={TrendingUp} tone="blue" onClick={() => onCardClick(buildCard("attendance", stats))} />
-        <HeroKpi label="Pending" value={String(pendingTotal)} sub="Fees + certificates" icon={AlertTriangle} tone="amber" onClick={() => onCardClick(buildCard("pending_fees", stats))} />
+        <HeroKpi label="Pending" value={String(pendingTotal)} sub={`${stats.pendingFees ?? 0} fees · ${stats.pendingCertificates ?? 0} certificates`} icon={AlertTriangle} tone="amber" onClick={() => onCardClick(buildCard("pending_fees", stats))} />
       </div>
+
+      {showCourseFees && <CourseFeeSummary franchiseId={franchiseId} />}
 
       {/* Quick Actions — compact single row, full width */}
       {quickActions.length > 0 && (
@@ -382,14 +391,14 @@ function HeroKpi({
   value: string;
   sub: string;
   icon: React.ElementType;
-  tone: "green" | "emerald" | "blue" | "amber";
+  tone: "navy" | "emerald" | "blue" | "amber";
   onClick?: () => void;
 }) {
   const tones = {
-    green: "from-emerald-500/10 to-emerald-500/5 border-emerald-200/60 text-emerald-700 dark:border-emerald-800/40 dark:text-emerald-400",
-    emerald: "from-teal-500/10 to-teal-500/5 border-teal-200/60 text-teal-700 dark:border-teal-800/40 dark:text-teal-400",
-    blue: "from-blue-500/10 to-blue-500/5 border-blue-200/60 text-blue-700 dark:border-blue-800/40 dark:text-blue-400",
-    amber: "from-amber-500/10 to-amber-500/5 border-amber-200/60 text-amber-700 dark:border-amber-800/40 dark:text-amber-400",
+    navy: "from-[#0B132B] via-[#163A6B] to-[#1E4A85] shadow-[#1E4A85]/25",
+    emerald: "from-emerald-600 via-emerald-500 to-teal-500 shadow-emerald-500/25",
+    blue: "from-indigo-600 via-blue-600 to-sky-500 shadow-blue-500/25",
+    amber: "from-amber-500 via-orange-500 to-rose-500 shadow-orange-500/25",
   };
 
   return (
@@ -397,17 +406,19 @@ function HeroKpi({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-xl border bg-gradient-to-br p-3.5 text-left shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
+        "group relative overflow-hidden rounded-2xl bg-gradient-to-br p-4 text-left text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl",
         tones[tone]
       )}
     >
-      <div className="flex items-start justify-between gap-2">
+      <span className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl transition-transform group-hover:scale-125" />
+      <span className="pointer-events-none absolute -bottom-10 -left-6 h-20 w-20 rounded-full bg-black/10 blur-xl" />
+      <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{label}</p>
-          <p className="mt-1 truncate text-2xl font-bold text-foreground">{value}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{sub}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">{label}</p>
+          <p className="mt-1.5 truncate text-[26px] font-extrabold leading-none tabular-nums">{value}</p>
+          <p className="mt-1.5 truncate text-xs text-white/80">{sub}</p>
         </div>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background/60">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
           <Icon className="h-5 w-5" />
         </span>
       </div>
@@ -466,7 +477,8 @@ function LeadRow({ icon: Icon, label, count, href }: { icon: React.ElementType; 
 function buildCard(type: StatDetailType, stats: DashboardStats): StatCardData {
   const map: Record<string, Partial<StatCardData>> = {
     students: { title: "Total Students", value: String(stats.totalStudents), change: "Enrolled", icon: GraduationCap },
-    revenue: { title: "Total Revenue", value: `₹${Number(stats.totalRevenue).toLocaleString("en-IN")}`, change: "Last 30 days", icon: IndianRupee },
+    franchises: { title: "Franchises", value: String(stats.totalFranchises ?? 0), change: `${stats.activeFranchises ?? 0} active`, icon: Building2 },
+    staff: { title: "Staff", value: String(stats.totalStaff ?? 0), change: "Team members", icon: Users },
     attendance: { title: "Attendance %", value: `${stats.attendancePercent ?? 0}%`, change: "Today", icon: TrendingUp },
     pending_fees: { title: "Pending Fees", value: String(stats.pendingFees ?? 0), change: "Students with balance", icon: IndianRupee },
   };

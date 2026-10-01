@@ -32,7 +32,6 @@ interface DashboardData {
     activeFranchises: number;
     totalStudents: number;
     totalStaff: number;
-    totalRevenue: number;
     pendingFees: number;
     pendingCertificates: number;
     attendancePercent: number;
@@ -197,6 +196,7 @@ export default function DashboardPage() {
               attendanceStats={attendanceStats}
               recentSupportRequests={recentSupportRequests}
               onCardClick={setSelectedCard}
+              franchiseId={franchiseFilter}
             />
           </motion.div>
         )}

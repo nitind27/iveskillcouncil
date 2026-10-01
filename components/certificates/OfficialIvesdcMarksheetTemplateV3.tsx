@@ -4,11 +4,12 @@
  * Result Form 3 — Board-style professional Statement of Marks
  * Institutional header (logo + title + orange ribbon) · particulars · marks table · seals
  */
-import React, { useId, type CSSProperties } from "react";
+import React, { useId, type CSSProperties, type ReactNode } from "react";
 import { Cinzel, Libre_Baskerville, Montserrat, Source_Sans_3 } from "next/font/google";
 import type { CertificateDemoData, MarksheetSubject } from "./demo/types";
 import { performanceLabelFromPercent } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
+import PartnerLogos from "./PartnerLogos";
 import CertificateQRCode from "./CertificateQRCode";
 
 /**
@@ -185,6 +186,22 @@ const DEFAULT_SUBJECTS: MarksheetSubject[] = [
   { code: "DCA-107", name: "Digital Financial Literacy", maxTheory: 100, marksTheory: 79, maxPractical: 0, marksPractical: 0, totalMax: 100, totalObtained: 79, grade: "Very Good" },
   { code: "DCA-108", name: "Practical / Project Work", maxTheory: 100, marksTheory: 90, maxPractical: 0, marksPractical: 0, totalMax: 100, totalObtained: 90, grade: "Excellent" },
 ];
+
+/** Pass mark matches the lowest passing grade (C: 40%). */
+const PASS_RATIO = 0.4;
+
+function minMarksFor(max: number): number | null {
+  return max > 0 ? Math.ceil(max * PASS_RATIO) : null;
+}
+
+/** Theory / practical split; subjects stored as a single total show it under Theory with no practical. */
+function subjectSplit(sub: MarksheetSubject): { theory: number | null; practical: number | null } {
+  const total = sub.totalObtained || sub.marksTheory || 0;
+  if ((sub.maxPractical || 0) > 0 || (sub.marksPractical || 0) > 0) {
+    return { theory: sub.marksTheory || 0, practical: sub.marksPractical || 0 };
+  }
+  return { theory: total, practical: null };
+}
 
 const DEFAULT_GRADE = [
   { grade: "A+", label: "Excellent", range: "85% & Above" },
@@ -386,6 +403,19 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     (a, s) => a + (s.totalObtained || s.marksTheory || 0),
     0
   );
+  const aggregateSplit = subjects
+    .filter((s) => s.name?.trim())
+    .reduce<{ min: number; theory: number; practical: number | null }>(
+      (acc, s) => {
+        const split = subjectSplit(s);
+        return {
+          min: acc.min + (minMarksFor(s.totalMax || s.maxTheory || 0) ?? 0),
+          theory: acc.theory + (split.theory ?? 0),
+          practical: split.practical == null ? acc.practical : (acc.practical ?? 0) + split.practical,
+        };
+      },
+      { min: 0, theory: 0, practical: null }
+    );
   const overallPctNum =
     totalMax > 0
       ? (totalObt / totalMax) * 100
@@ -826,7 +856,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 className={`${fontBody.className} font-semibold uppercase tracking-[0.08em]`}
                 style={{ fontSize: "7.5px", color: C.muted }}
               >
-                Maximum marks per subject · 100 (unless stated)
+                Min. marks to pass · 40% of maximum
               </span>
             }
           />
@@ -835,33 +865,53 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             className="w-full border-collapse"
             style={{ tableLayout: "fixed", background: "transparent" }}
           >
-            <thead>
-              <tr style={{ backgroundColor: C.tableHead, color: C.tableHeadText }}>
-                {[
-                  { label: "Sr.", w: 44, align: "center" as const },
-                  { label: "Code", w: 72, align: "center" as const },
-                  { label: "Subject / Paper", w: undefined, align: "left" as const },
-                  { label: "Max.", w: 88, align: "center" as const },
-                  { label: "Obtained", w: 96, align: "center" as const },
-                  { label: "Remark", w: 118, align: "center" as const },
-                ].map((col) => (
+            <colgroup>
+              {[38, 64, undefined, 58, 58, 62, 70, 62, 100].map((w, i) => (
+                <col key={i} style={{ width: w }} />
+              ))}
+            </colgroup>
+            <thead style={{ backgroundColor: C.tableHead, color: C.tableHeadText }}>
+              {(() => {
+                const th = (
+                  label: ReactNode,
+                  opts: { rowSpan?: number; colSpan?: number; align?: "left" | "center"; bottom?: boolean } = {}
+                ) => (
                   <th
-                    key={col.label}
-                    className={`${fontBody.className} px-1.5 py-[4px] font-bold uppercase`}
+                    rowSpan={opts.rowSpan}
+                    colSpan={opts.colSpan}
+                    className={`${fontBody.className} px-1 py-[2px] font-bold uppercase leading-[1.15]`}
                     style={{
-                      width: col.w,
                       fontSize: `${headFs}px`,
-                      letterSpacing: "0.08em",
-                      textAlign: col.align,
+                      letterSpacing: "0.06em",
+                      textAlign: opts.align ?? "center",
+                      verticalAlign: "middle",
                       color: C.tableHeadText,
-                      borderBottom: `2px solid ${C.gold}`,
+                      borderBottom: opts.bottom === false ? `1px solid ${C.ruleSoft}` : `2px solid ${C.gold}`,
                       borderRight: `1px solid ${C.ruleSoft}`,
                     }}
                   >
-                    {col.label}
+                    {label}
                   </th>
-                ))}
-              </tr>
+                );
+                return (
+                  <>
+                    <tr>
+                      {th("Sr.", { rowSpan: 2 })}
+                      {th("Code", { rowSpan: 2 })}
+                      {th("Subject / Paper", { rowSpan: 2, align: "left" })}
+                      {th(<>Max.<br />Marks</>, { rowSpan: 2 })}
+                      {th(<>Min.<br />Marks</>, { rowSpan: 2 })}
+                      {th("Marks Obtained", { colSpan: 3, bottom: false })}
+                      {th("Remark", { rowSpan: 2 })}
+                    </tr>
+                    <tr>
+                      {th("Theory")}
+                      {th("Practical")}
+                      {th("Total")}
+                    </tr>
+                  </>
+                );
+              })()}
             </thead>
             <tbody>
               {subjects.map((sub, idx) => {
@@ -869,6 +919,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 const max = sub.totalMax || sub.maxTheory || 0;
                 const obt = sub.totalObtained || sub.marksTheory || 0;
                 const pct = !empty && max > 0 && hasMarks ? (obt / max) * 100 : 0;
+                const split = subjectSplit(sub);
                 const isLetter = (v: string) => /^[A-D]\+?$/i.test(v.trim()) || v.includes("%");
                 const remark =
                   empty || !hasMarks
@@ -907,12 +958,24 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     >
                       {sub.name || ""}
                     </td>
-                    <td
-                      className={`${fontBody.className} px-1 text-center font-semibold align-middle tabular-nums`}
-                      style={{ color: C.muted, borderBottom: `1px solid ${C.ruleSoft}` }}
-                    >
-                      {empty || !hasMarks ? "" : max || ""}
-                    </td>
+                    {[
+                      max || null,
+                      minMarksFor(max),
+                      split.theory,
+                      split.practical,
+                    ].map((v, ci) => (
+                      <td
+                        key={ci}
+                        className={`${fontBody.className} px-1 text-center font-semibold align-middle tabular-nums`}
+                        style={{
+                          color: ci < 2 ? C.muted : C.ink,
+                          borderBottom: `1px solid ${C.ruleSoft}`,
+                          borderLeft: ci === 2 ? `1px solid ${C.ruleSoft}` : undefined,
+                        }}
+                      >
+                        {empty || !hasMarks ? "" : v ?? "—"}
+                      </td>
+                    ))}
                     <td
                       className={`${fontDisplay.className} px-1 text-center font-bold align-middle tabular-nums`}
                       style={{
@@ -966,6 +1029,20 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 >
                   {hasMarks ? totalMax : ""}
                 </td>
+                {[aggregateSplit.min, aggregateSplit.theory, aggregateSplit.practical].map((v, i) => (
+                  <td
+                    key={i}
+                    className={`${fontDisplay.className} px-1 text-center font-bold align-middle tabular-nums`}
+                    style={{
+                      color: C.navy,
+                      borderTop: `1.5px solid ${C.navy}`,
+                      borderLeft: i === 1 ? `1px solid ${C.ruleSoft}` : undefined,
+                      fontSize: `${tableFs + 0.5}px`,
+                    }}
+                  >
+                    {hasMarks ? v ?? "—" : ""}
+                  </td>
+                ))}
                 <td
                   className={`${fontDisplay.className} px-1 text-center font-bold align-middle tabular-nums`}
                   style={{
@@ -1270,7 +1347,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     alt="Examination Coordinator signature"
                     draggable={false}
                     className="object-contain object-bottom"
-                    style={{ maxWidth: Math.round(stampPx * 1.7), height: Math.max(coordSigH, Math.round(stampPx * 0.62)) }}
+                    style={{ maxWidth: Math.round(stampPx * 2), height: Math.max(coordSigH, Math.round(stampPx * 0.88)) }}
                   />
                 ) : null}
               </div>
@@ -1424,14 +1501,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 Empanelled with
               </span>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/certificates/certificatebot.png"
-              alt="Partner logos"
-              draggable={false}
-              className="block w-full object-cover object-center"
-              style={{ height: 122 }}
-            />
+            <PartnerLogos height={122} padding={5} />
             <div
               className={`${fontBody.className} mt-1.5 flex items-center justify-center font-bold text-white`}
               style={{

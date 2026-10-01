@@ -139,7 +139,6 @@ export async function GET(request: NextRequest) {
       activeFranchises,
       totalStudents,
       totalStaff,
-      totalRevenue,
       pendingFeesCount,
       pendingCertificates,
       recentPayments,
@@ -168,20 +167,6 @@ export async function GET(request: NextRequest) {
             where: { franchiseId: BigInt(franchiseId) },
           })
         : prisma.staff.count(),
-      
-      // Total revenue (last 30 days)
-      prisma.payment.aggregate({
-        where: {
-          status: 'SUCCESS',
-          paymentDate: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          },
-          ...(franchiseId && { franchiseId: BigInt(franchiseId) }),
-        },
-        _sum: {
-          amount: true,
-        },
-      }),
       
       // Pending fees (students with total_fee > paid_fee)
       franchiseId
@@ -237,7 +222,6 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const totalRev = Number(totalRevenue._sum.amount || 0);
     const attendancePercent = totalAttendanceToday > 0
       ? Math.round((Number(presentToday) / Number(totalAttendanceToday)) * 100)
       : 0;
@@ -291,7 +275,6 @@ export async function GET(request: NextRequest) {
         activeFranchises,
         totalStudents,
         totalStaff,
-        totalRevenue: totalRev,
         pendingFees: pendingFeesCount,
         pendingCertificates,
         attendancePercent,

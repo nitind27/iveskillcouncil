@@ -74,22 +74,65 @@ const CODE128_PATTERNS = [
   "114131", "311141", "411131", "211412", "211214", "211232", "2331112",
 ];
 
+const MAX_MODULE_PX = 1.6;
+
 interface BarSegment {
   width: number;
   isBlack: boolean;
 }
 
+const START_B = 104;
+const START_C = 105;
+const SWITCH_TO_C = 99;
+const SWITCH_TO_B = 100;
+
+/**
+ * Code 128 symbol values: set B for text, set C (two digits per symbol) for digit runs.
+ * Fewer symbols → wider bars in the same space → easier to scan from print.
+ */
+function code128Values(text: string): number[] {
+  const values: number[] = [];
+  let set: "B" | "C" | null = null;
+  const useB = () => {
+    if (set === "B") return;
+    values.push(set === null ? START_B : SWITCH_TO_B);
+    set = "B";
+  };
+  const useC = () => {
+    if (set === "C") return;
+    values.push(set === null ? START_C : SWITCH_TO_C);
+    set = "C";
+  };
+
+  let i = 0;
+  while (i < text.length) {
+    let run = 0;
+    while (i + run < text.length && /\d/.test(text[i + run])) run++;
+    const atEdge = i === 0 || i + run === text.length;
+    if (run >= 6 || (run >= 4 && atEdge)) {
+      if (run % 2 === 1) {
+        useB();
+        values.push(text.charCodeAt(i) - 32);
+        i++;
+        run--;
+      }
+      useC();
+      for (let k = 0; k < run; k += 2) values.push(Number(text.slice(i + k, i + k + 2)));
+      i += run;
+    } else {
+      useB();
+      values.push(Math.max(0, Math.min(95, text.charCodeAt(i) - 32)));
+      i++;
+    }
+  }
+  return values;
+}
+
 function generateCode128Bars(text: string): BarSegment[] {
   const clean = String(text || "4739846").trim();
-  const codes = [104];
-  let check = 104;
-
-  for (let i = 0; i < clean.length; i++) {
-    const val = clean.charCodeAt(i) - 32;
-    const clamped = Math.max(0, Math.min(105, val));
-    codes.push(clamped);
-    check += clamped * (i + 1);
-  }
+  const codes = code128Values(clean);
+  let check = codes[0];
+  for (let i = 1; i < codes.length; i++) check += codes[i] * i;
 
   codes.push(check % 103);
   codes.push(106);
@@ -151,8 +194,9 @@ export default function EnrollmentBarcode({
   );
 
   const boxW = Math.max(120, containerWidth);
-  const barAreaW = Math.max(96, boxW - 12);
-  const moduleWidth = totalModules > 0 ? barAreaW / totalModules : 1.4;
+  // Short values (e.g. "00005") would otherwise stretch into a few very thick bars.
+  const moduleWidth = totalModules > 0 ? Math.min(MAX_MODULE_PX, (Math.max(96, boxW - 12)) / totalModules) : 1.4;
+  const barAreaW = Math.round(totalModules * moduleWidth);
   const svgWidth = Math.max(1, Math.round(totalModules * moduleWidth));
   const barH = Math.max(24, Math.min(56, barcodeHeight));
 

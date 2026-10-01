@@ -35,7 +35,6 @@ interface DashboardStatsProps {
     activeFranchises?: number;
     totalStudents: number;
     totalStaff?: number;
-    totalRevenue: number;
     pendingFees?: number;
     pendingCertificates?: number;
     attendancePercent?: number;
@@ -78,11 +77,8 @@ const CARD_STYLES: Record<string, { accent: string; iconBg: string; iconColor: s
 };
 
 export default function DashboardStats({ stats, roleId, onCardClick }: DashboardStatsProps) {
-  const revenueFormatted = `₹${Number(stats.totalRevenue).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
-
   const allCards: StatCardData[] = [
     { type: "students", title: "Total Students", value: (stats.totalStudents ?? 0).toLocaleString(), change: "Enrolled students", icon: GraduationCap, description: "Students", color: "", bgColor: "", accent: "students", show: true },
-    { type: "revenue", title: "Total Revenue", value: revenueFormatted, change: "Last 30 days", icon: IndianRupee, description: "Revenue", color: "", bgColor: "", accent: "revenue", show: true },
     { type: "pending_fees", title: "Pending Fees", value: (stats.pendingFees ?? 0).toString(), change: "With balance due", icon: IndianRupee, description: "Pending", color: "", bgColor: "", accent: "pending_fees", show: true },
     { type: "attendance", title: "Attendance %", value: `${stats.attendancePercent ?? 0}%`, change: "Today's rate", icon: TrendingUp, description: "Present", color: "", bgColor: "", accent: "attendance", show: true },
     { type: "franchises", title: "Franchises", value: (stats.totalFranchises ?? 0).toString(), change: `${stats.activeFranchises ?? 0} active`, icon: Building2, description: "Locations", color: "", bgColor: "", accent: "franchises", show: roleId === 1 || roleId === 2 },
