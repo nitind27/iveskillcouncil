@@ -63,8 +63,12 @@ export default function HeroSection({ config }: HeroSectionProps) {
       ? [hero.backgroundImage]
       : [];
 
+  const [failed, setFailed] = useState<Set<string>>(() => new Set());
+  const markFailed = useCallback((src: string) => {
+    setFailed((prev) => (prev.has(src) ? prev : new Set(prev).add(src)));
+  }, []);
   const validConfigured = configured.filter(
-    (src): src is string => typeof src === "string" && src.trim().length > 0
+    (src): src is string => typeof src === "string" && src.trim().length > 0 && !failed.has(src)
   );
   const images = validConfigured.length > 0 ? validConfigured : DEFAULT_HERO_IMAGES;
 
@@ -142,6 +146,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
               alt="IVESDC Vocational Education & Training Council Banner"
               fetchPriority={currentIndex === 0 ? "high" : "low"}
               decoding="async"
+              onError={() => markFailed(images[currentIndex % images.length])}
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
           </motion.div>
@@ -154,6 +159,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
             alt=""
             className="hidden"
             aria-hidden
+            onError={() => markFailed(images[(currentIndex + 1) % images.length])}
           />
         )}
 

@@ -31,6 +31,16 @@ import WelcomePopupModal from "@/components/userpanel/WelcomePopupModal";
 import { ImageEditorModal } from "@/components/common/ImageEditorModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
+import { refreshSession } from "@/lib/session-client";
+
+/** Retries once after refreshing an expired session, so uploads/saves don't silently fail with 401. */
+async function authedFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, { credentials: "include", ...init });
+  if ((res.status === 401 || res.status === 403) && (await refreshSession())) {
+    return fetch(input, { credentials: "include", ...init });
+  }
+  return res;
+}
 
 const STAT_ICON_OPTIONS = [
   { value: "courses", label: "Courses" },
@@ -106,6 +116,8 @@ export default function ManageUserPanelForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [autoSavePending, setAutoSavePending] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("welcomePopup");
   const [welcomeUploading, setWelcomeUploading] = useState(false);
   const [welcomeUploadError, setWelcomeUploadError] = useState<string | null>(null);
@@ -249,6 +261,7 @@ export default function ManageUserPanelForm() {
               },
             };
           });
+          setAutoSavePending(true);
         }
       } else {
         await uploadHeroImages([file]);
@@ -273,9 +286,11 @@ export default function ManageUserPanelForm() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/hero-background-image", { method: "POST", body: fd });
+      const res = await authedFetch("/api/admin/hero-background-image", { method: "POST", body: fd });
       const data = await res.json();
-      return res.ok && data?.success && data?.data?.url ? (data.data.url as string) : null;
+      if (res.ok && data?.success && data?.data?.url) return data.data.url as string;
+      setHeroUploadError(data?.error || "Upload failed");
+      return null;
     } catch {
       return null;
     }
@@ -324,7 +339,7 @@ export default function ManageUserPanelForm() {
         const fd = new FormData();
         fd.append("file", file);
 
-        const res = await fetch("/api/admin/hero-background-image", {
+        const res = await authedFetch("/api/admin/hero-background-image", {
           method: "POST",
           body: fd,
         });
@@ -338,8 +353,11 @@ export default function ManageUserPanelForm() {
         uploadedUrls.push(data.data.url as string);
       }
 
-      const prev = getHeroImages(config);
-      setHeroImages([...prev, ...uploadedUrls]);
+      setConfig((c) => {
+        const next = [...getHeroImages(c), ...uploadedUrls];
+        return { ...c, hero: { ...c.hero, backgroundImages: next, backgroundImage: next[0] ?? "" } };
+      });
+      setAutoSavePending(true);
     } catch {
       setHeroUploadError("Network error. Please try again.");
     } finally {
@@ -351,22 +369,39 @@ export default function ManageUserPanelForm() {
     if (!isSuperAdminOrAdmin) return;
     setSaving(true);
     setSaved(false);
+    setSaveError(null);
     try {
-      const res = await fetch("/api/admin/userpanel-config", {
+      const res = await authedFetch("/api/admin/userpanel-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
       });
-      const data = await res.json();
-      if (data?.success) {
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
         setConfig(ensureConfig(data.data));
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+      } else {
+        setSaveError(
+          res.status === 401 || res.status === 403
+            ? "Session expired — changes were NOT saved. Please log in again and click Save changes."
+            : data?.error || "Changes were NOT saved. Please try again."
+        );
       }
+    } catch {
+      setSaveError("Network error — changes were NOT saved. Please try again.");
     } finally {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!autoSavePending || saving) return;
+    setAutoSavePending(false);
+    void handleSave();
+    // handleSave reads the latest `config` from this render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSavePending, saving, config]);
 
   if (loading) {
     return (
@@ -468,6 +503,12 @@ export default function ManageUserPanelForm() {
         <div className="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-200">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Config saved. Refresh the user panel tab to see changes.
+        </div>
+      )}
+      {saveError && (
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-200">
+          <Info className="h-5 w-5 shrink-0" />
+          {saveError}
         </div>
       )}
 
