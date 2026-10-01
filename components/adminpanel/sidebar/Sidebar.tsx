@@ -12,6 +12,7 @@ import {
   Building2,
 } from "lucide-react";
 import { useLogoConfig } from "@/hooks/useLogoConfig";
+import { useTrimmedImage } from "@/hooks/useTrimmedImage";
 import { cn } from "@/lib/utils";
 import { getMenuForRole, type RoleMenuItem } from "@/lib/role-menu-config";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -44,6 +45,14 @@ export default function Sidebar({
   const router = useRouter();
   const pn = pathname || "";
   const { logoUrl, siteName } = useLogoConfig();
+  const logoSrc = useTrimmedImage(logoUrl) ?? logoUrl;
+  const [tip, setTip] = useState<{ label: string; top: number } | null>(null);
+  const showTip = (e: React.MouseEvent<HTMLElement>, label: string) => {
+    if (!isCollapsed) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setTip({ label, top: r.top + r.height / 2 });
+  };
+  const hideTip = () => setTip(null);
   const { t } = useLanguage();
   const appHref = useFranchiseAppHref();
   const dashboardPath = useFranchiseDashboardPath();
@@ -72,7 +81,12 @@ export default function Sidebar({
     });
   }, [pn, appPath, appHref, menuSectionsFiltered]);
 
+  useEffect(() => {
+    if (!isCollapsed) setTip(null);
+  }, [isCollapsed]);
+
   const goTo = (href: string) => {
+    setTip(null);
     const target = appHref(href);
     if (isMobileOpen) onMobileClose();
     if (target && target !== "#" && target !== pn) {
@@ -108,14 +122,17 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => !isCollapsed && toggleExpanded(item.id)}
+            onMouseEnter={(e) => showTip(e, t(`menu.${item.id}`, item.label))}
+            onMouseLeave={hideTip}
             className={cn(
               "group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
               "text-white/70 hover:bg-white/10 hover:text-white",
+              !isCollapsed && "hover:translate-x-0.5",
               active && "bg-white/10 text-white",
               isCollapsed && "justify-center px-2",
               level > 0 && "pl-5"
             )}
-            title={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
+            aria-label={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
           >
             {active && (
               <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
@@ -166,14 +183,17 @@ export default function Sidebar({
           e.preventDefault();
           goTo(item.href || "/dashboard");
         }}
+        onMouseEnter={(e) => showTip(e, t(`menu.${item.id}`, item.label))}
+        onMouseLeave={hideTip}
         className={cn(
           "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
           "text-white/70 hover:bg-white/10 hover:text-white",
+          !isCollapsed && "hover:translate-x-0.5",
           active && "bg-[#C4A35A]/15 text-white",
           isCollapsed && "justify-center px-2",
           level > 0 && "pl-5"
         )}
-        title={isCollapsed ? item.label : undefined}
+        aria-label={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
       >
         {active && (
           <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
@@ -225,72 +245,78 @@ export default function Sidebar({
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(196,163,90,0.1),transparent_50%)]" />
 
-        <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-3">
-          {!isCollapsed && (
-            <Link
-              href={dashboardPath}
-              className="block min-w-0 flex-1 overflow-hidden pr-1"
-              aria-label={siteName || "Dashboard"}
-            >
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={logoUrl}
-                  alt={siteName}
-                  className="block h-12 w-full max-w-full object-contain object-left"
-                />
-              ) : (
-                <div className="min-w-0">
-                  <p className="truncate text-base font-bold tracking-tight text-white">
-                    {siteName || "IVESDC"}
-                  </p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C4A35A]">
-                    {t("common.adminPanel", "Admin Panel")}
-                  </p>
-                </div>
-              )}
-            </Link>
+        <div
+          className={cn(
+            "relative flex h-14 shrink-0 items-center justify-center border-b sm:h-[calc(3.75rem+1px)]",
+            logoSrc ? "border-slate-200/80 bg-white" : "border-white/10"
           )}
-          {isCollapsed && (
-            <Link
-              href={dashboardPath}
-              className="mx-auto flex h-10 w-10 shrink-0 items-center justify-center"
-              aria-label={siteName || "Dashboard"}
-            >
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={siteName} className="h-full w-full object-contain" />
-              ) : (
-                <Building2 className="h-5 w-5 text-[#C4A35A]" />
-              )}
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              if (window.innerWidth < 1024) onMobileClose();
-              else onToggleCollapse();
-            }}
-            className="hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white lg:flex"
-            aria-label="Toggle sidebar"
-          >
-            {isCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
+        >
+          <Link
+            href={dashboardPath}
+            aria-label={siteName || "Dashboard"}
+            className={cn(
+              "group/logo flex h-full w-full items-center justify-center",
+              isCollapsed ? "px-2" : "px-4"
             )}
-          </button>
+            onMouseEnter={(e) => showTip(e, siteName || "Dashboard")}
+            onMouseLeave={hideTip}
+          >
+            {logoSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoSrc}
+                alt={siteName}
+                draggable={false}
+                className={cn(
+                  "block select-none object-contain transition-transform duration-300 group-hover/logo:scale-105",
+                  isCollapsed ? "max-h-9 max-w-full" : "h-11 max-w-full sm:h-12"
+                )}
+              />
+            ) : isCollapsed ? (
+              <Building2 className="h-5 w-5 text-[#C4A35A]" />
+            ) : (
+              <span className="min-w-0">
+                <span className="block truncate text-lg font-bold tracking-tight text-white">{siteName || "IVESDC"}</span>
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-[#C4A35A]">
+                  {t("common.adminPanel", "Admin Panel")}
+                </span>
+              </span>
+            )}
+          </Link>
           <button
             type="button"
             onClick={onMobileClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 lg:hidden"
+            className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#0B1F3A]/80 text-white shadow transition hover:bg-[#0B1F3A] lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="relative flex-1 overflow-y-auto px-2.5 py-3 sidebar-scrollbar">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="absolute -right-3.5 top-[4.75rem] z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-[#C4A35A]/60 bg-[#0F2744] text-[#E8D5A3] shadow-lg shadow-black/30 transition-all duration-200 hover:scale-110 hover:bg-[#C4A35A] hover:text-[#0B132B] lg:flex"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
+        </button>
+
+        {isCollapsed && tip && (
+          <div
+            className="pointer-events-none fixed z-[60] -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#C4A35A]/40 bg-[#0B1F3A] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xl shadow-black/30"
+            style={{ top: tip.top, left: "calc(4.5rem + 10px)" }}
+          >
+            <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-[#C4A35A]/40 bg-[#0B1F3A]" />
+            {tip.label}
+          </div>
+        )}
+
+        <nav
+          className="relative flex-1 overflow-y-auto px-2.5 py-3 sidebar-scrollbar"
+          onScroll={hideTip}
+        >
           <div className="space-y-4">
             {menuSectionsFiltered.map((section, idx) => (
               <div key={section.id}>
