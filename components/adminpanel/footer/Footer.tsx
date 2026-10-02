@@ -10,7 +10,7 @@ export default function Footer() {
       <div className="px-4 lg:px-6 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Enterprise Admin Dashboard. All rights reserved.
+            © {currentYear} IVESDC. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>

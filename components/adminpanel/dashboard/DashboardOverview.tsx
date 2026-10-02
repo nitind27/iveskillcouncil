@@ -148,10 +148,10 @@ export default function DashboardOverview({
             <Link
               key={action.href}
               href={action.href}
-              className="group flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-2 py-3 text-center shadow-sm transition-all hover:border-[#1E4A85]/40 hover:bg-[#1E4A85]/5"
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-[#E3E9F2] bg-white px-2 py-3.5 text-center shadow-[0_8px_24px_-16px_rgba(6,27,54,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#124E96]/25 hover:shadow-[0_16px_32px_-18px_rgba(18,78,150,0.4)]"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1E4A85]/10 transition-colors group-hover:bg-[#1E4A85]">
-                <action.icon className="h-4 w-4 text-[#1E4A85] transition-colors group-hover:text-white" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#124E96]/10 transition-colors group-hover:bg-[#061B36]">
+                <action.icon className="h-4 w-4 text-[#124E96] transition-colors group-hover:text-white" />
               </span>
               <span className="text-[11px] font-semibold leading-tight text-foreground">{action.label}</span>
             </Link>
@@ -170,7 +170,7 @@ export default function DashboardOverview({
       {/* Bottom row — equal height cards */}
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
         {/* Recent Payments */}
-        <Card className="flex h-full flex-col rounded-xl border border-border/70 shadow-sm">
+        <Card className="flex h-full flex-col rounded-2xl border border-[#E3E9F2] bg-white shadow-[0_10px_28px_-18px_rgba(6,27,54,0.35)]">
           <CardHeader className="border-b border-border/50 bg-muted/30 !px-4 !py-2.5">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
               <IndianRupee className="h-4 w-4 text-emerald-600" />
@@ -208,7 +208,7 @@ export default function DashboardOverview({
         />
 
         {/* Leads + Support */}
-        <Card className="flex h-full flex-col rounded-xl border border-border/70 shadow-sm md:col-span-2 xl:col-span-1">
+        <Card className="flex h-full flex-col rounded-2xl border border-[#E3E9F2] bg-white shadow-[0_10px_28px_-18px_rgba(6,27,54,0.35)] md:col-span-2 xl:col-span-1">
           <CardHeader className="border-b border-border/50 bg-[#1E4A85]/5 !px-4 !py-2.5">
             <CardTitle className="text-sm font-semibold text-[#1E4A85] dark:text-[#8EB6E8]">
               Leads &amp; Support
@@ -290,7 +290,7 @@ function TodayAttendanceCard({
   const maxCount = Math.max(markedToday, ...statusRows.map((r) => r.count), 1);
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-xl border border-border/70 shadow-sm">
+    <Card className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#E3E9F2] bg-white shadow-[0_10px_28px_-18px_rgba(6,27,54,0.35)]">
       <CardHeader className="border-b border-border/50 bg-muted/30 !px-4 !py-2.5">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -395,33 +395,26 @@ function HeroKpi({
   onClick?: () => void;
 }) {
   const tones = {
-    navy: "from-[#0B132B] via-[#163A6B] to-[#1E4A85] shadow-[#1E4A85]/25",
-    emerald: "from-emerald-600 via-emerald-500 to-teal-500 shadow-emerald-500/25",
-    blue: "from-indigo-600 via-blue-600 to-sky-500 shadow-blue-500/25",
-    amber: "from-amber-500 via-orange-500 to-rose-500 shadow-orange-500/25",
+    navy: "bg-[#124E96]/10 text-[#124E96]",
+    emerald: "bg-[#159A70]/10 text-[#159A70]",
+    blue: "bg-[#061B36]/8 text-[#061B36]",
+    amber: "bg-[#FF8500]/12 text-[#E67600]",
   };
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "group relative overflow-hidden rounded-2xl bg-gradient-to-br p-4 text-left text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl",
-        tones[tone]
-      )}
+      className="group relative flex min-h-[112px] w-full items-start justify-between gap-3 overflow-hidden rounded-2xl border border-[#E3E9F2] bg-white p-4 text-left shadow-[0_10px_28px_-18px_rgba(6,27,54,0.4)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#124E96]/20 hover:shadow-[0_18px_36px_-18px_rgba(18,78,150,0.35)]"
     >
-      <span className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl transition-transform group-hover:scale-125" />
-      <span className="pointer-events-none absolute -bottom-10 -left-6 h-20 w-20 rounded-full bg-black/10 blur-xl" />
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/80">{label}</p>
-          <p className="mt-1.5 truncate text-[26px] font-extrabold leading-none tabular-nums">{value}</p>
-          <p className="mt-1.5 truncate text-xs text-white/80">{sub}</p>
-        </div>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-          <Icon className="h-5 w-5" />
-        </span>
-      </div>
+      <span className="min-w-0">
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5B6B82]">{label}</span>
+        <span className="mt-1.5 block truncate text-[26px] font-extrabold leading-none tabular-nums text-[#061B36]">{value}</span>
+        <span className="mt-1.5 block truncate text-xs text-[#5B6B82]">{sub}</span>
+      </span>
+      <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tones[tone])}>
+        <Icon className="h-5 w-5" />
+      </span>
     </button>
   );
 }

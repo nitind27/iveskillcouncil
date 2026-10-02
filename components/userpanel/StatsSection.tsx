@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { FiBook, FiCalendar, FiTag } from "react-icons/fi";
 import { FaGraduationCap, FaStore } from "react-icons/fa";
 import AnimatedCounter from "./AnimatedCounter";
 import type { StatItem, UserPanelConfig } from "@/config/userpanel.config";
+import { EASE_OUT, VIEWPORT } from "./ui/motion";
 
 const ICON_MAP = {
   courses: FiBook,
@@ -14,12 +15,12 @@ const ICON_MAP = {
   offers: FiTag,
 } as const;
 
-const CARD_COLORS = [
-  { gradient: "from-[#003366] to-[#002244]", ring: "group-hover:ring-[#003366]/20" },
-  { gradient: "from-[#FF7F0E] to-[#E66A00]", ring: "group-hover:ring-[#FF7F0E]/25" },
-  { gradient: "from-[#28A745] to-[#1E7E34]", ring: "group-hover:ring-[#28A745]/25" },
-  { gradient: "from-[#0056b3] to-[#003366]", ring: "group-hover:ring-[#0056b3]/20" },
-  { gradient: "from-[#FF7F0E] to-[#CC5500]", ring: "group-hover:ring-[#FF7F0E]/25" },
+const TONES = [
+  "bg-ive-navy text-white",
+  "bg-ive-saffron text-white",
+  "bg-ive-emerald text-white",
+  "bg-ive-royal text-white",
+  "bg-[#FFB15C] text-ive-navy",
 ];
 
 interface StatsSectionProps {
@@ -27,52 +28,40 @@ interface StatsSectionProps {
 }
 
 export default function StatsSection({ config }: StatsSectionProps) {
+  const reduce = useReducedMotion();
   const stats = config.stats || [];
   if (stats.length === 0) return null;
 
   return (
-    <section className="relative z-10 overflow-hidden bg-[#F8F9FA] px-4 py-12 sm:px-6 lg:px-8">
-      <div className="up-wave-decor" aria-hidden />
-      <div className="relative z-[1] mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
-          {stats.map((stat: StatItem, i: number) => {
-            const Icon = ICON_MAP[stat.iconKey] || FiBook;
-            const color = CARD_COLORS[i % CARD_COLORS.length];
-            return (
-              <motion.div
-                key={stat.id}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -6 }}
-                className="group"
-              >
-                <div
-                  className={`relative flex h-full flex-col items-center justify-center overflow-hidden rounded-xl border border-[#E5E7EB] bg-white px-3 py-6 shadow-[0_4px_16px_rgba(0,51,102,0.06)] ring-1 ring-transparent transition-all duration-300 group-hover:shadow-[0_12px_32px_rgba(0,51,102,0.12)] ${color.ring}`}
-                >
-                  <div className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${color.gradient}`} />
-                  <motion.div
-                    whileHover={{ scale: 1.08, rotate: -4 }}
-                    transition={{ type: "spring", stiffness: 320, damping: 18 }}
-                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${color.gradient} shadow-md`}
-                  >
-                    <Icon className="h-[18px] w-[18px] text-white" />
-                  </motion.div>
-                  <div className="text-center">
-                    <div className="text-[1.75rem] font-black leading-none tabular-nums tracking-tight text-[#1A1A1A]">
-                      <AnimatedCounter value={stat.value} duration={1.5} />
-                    </div>
-                    <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B7280]">
-                      {stat.label}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+    <section aria-label="Key statistics" className="relative z-10 bg-white px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-x-0 top-0 h-1/2 bg-[#E9F1FB]" aria-hidden />
+      <ul className="relative mx-auto -mt-24 grid max-w-7xl grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:-mt-28 lg:grid-cols-5 lg:gap-5">
+        {stats.map((stat: StatItem, i: number) => {
+          const Icon = ICON_MAP[stat.iconKey] || FiBook;
+          return (
+            <motion.li
+              key={stat.id}
+              initial={{ opacity: 0, y: reduce ? 0 : 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={VIEWPORT}
+              transition={{ duration: 0.6, delay: reduce ? 0 : i * 0.08, ease: EASE_OUT }}
+              whileHover={reduce ? undefined : { y: -6, scale: 1.02 }}
+              className={`group relative overflow-hidden rounded-2xl border border-white bg-white/90 p-5 text-center shadow-[0_24px_50px_-24px_rgba(6,27,54,0.35)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_30px_60px_-24px_rgba(6,27,54,0.45)] sm:p-6 ${
+                stats.length % 2 === 1 && i === stats.length - 1 ? "col-span-2 sm:col-span-1" : ""
+              }`}
+            >
+              <span className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-gradient-to-r from-ive-saffron via-white to-ive-emerald transition-transform duration-500 group-hover:scale-x-100" aria-hidden />
+              <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${TONES[i % TONES.length]}`}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <div className="mt-4 text-3xl font-extrabold leading-none tracking-tight text-ive-navy tabular-nums sm:text-[2.1rem]">
+                <AnimatedCounter value={stat.value} duration={1.6} />
+              </div>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-ive-slate">{stat.label}</p>
+            </motion.li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

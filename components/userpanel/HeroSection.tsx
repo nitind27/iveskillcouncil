@@ -1,20 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  FiArrowRight,
-  FiChevronLeft,
-  FiChevronRight,
-  FiBookOpen,
-  FiTag,
-  FiCheckCircle,
-  FiAward,
-} from "react-icons/fi";
-import { FaGraduationCap } from "react-icons/fa";
+import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
+import { FiArrowRight, FiPlay, FiAward, FiCheckCircle } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { COUNCIL } from "./ui/council";
+import { upButton } from "./ui/button";
+import { EASE_OUT } from "./ui/motion";
+import Magnetic from "./ui/Magnetic";
+import FlagWave from "./ui/FlagWave";
 
 function heroCtaHref(href: string): string {
   if (!href) return "/userpanel/courses";
@@ -23,30 +19,7 @@ function heroCtaHref(href: string): string {
   return href;
 }
 
-const HERO_ROTATE_INTERVAL_MS = 6000;
-const SLIDE_EASE = [0.22, 1, 0.36, 1] as const;
-
-const DEFAULT_HERO_IMAGES = [
-  "/uploads/userpanel/hero/banner-1.jpg",
-  "/uploads/userpanel/hero/banner-2.jpg",
-  "/uploads/userpanel/hero/banner-3.jpg",
-  "/uploads/userpanel/hero/banner-4.jpg",
-];
-
-const imageVariants = {
-  enter: (dir: number) => ({
-    x: dir > 0 ? "100%" : "-100%",
-    opacity: 0.95,
-  }),
-  center: {
-    x: "0%",
-    opacity: 1,
-  },
-  exit: (dir: number) => ({
-    x: dir > 0 ? "-100%" : "100%",
-    opacity: 0.95,
-  }),
-};
+const HERO_IMAGE = "/assets/home/hero-skills-india.jpg";
 
 interface HeroSectionProps {
   config: UserPanelConfig;
@@ -56,220 +29,196 @@ interface HeroSectionProps {
 export default function HeroSection({ config }: HeroSectionProps) {
   const { hero } = config;
   const up = useUserPanelHref();
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 90]);
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1, reduce ? 1 : 1.06]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -50]);
 
-  const configured = hero?.backgroundImages?.length
-    ? hero.backgroundImages
-    : hero?.backgroundImage
-      ? [hero.backgroundImage]
-      : [];
+  const enrollments = config.stats?.find((s) => s.id === "enrollments")?.value ?? 0;
+  const avatars = (config.testimonials?.items || []).map((t) => t.avatar).filter(Boolean).slice(0, 4);
+  const highlightCount = hero?.backgroundImages?.filter(Boolean).length || (hero?.backgroundImage ? 1 : 0);
 
-  const [failed, setFailed] = useState<Set<string>>(() => new Set());
-  const markFailed = useCallback((src: string) => {
-    setFailed((prev) => (prev.has(src) ? prev : new Set(prev).add(src)));
-  }, []);
-  const validConfigured = configured.filter(
-    (src): src is string => typeof src === "string" && src.trim().length > 0 && !failed.has(src)
+  const container: Variants = { hidden: {}, show: { transition: { staggerChildren: reduce ? 0 : 0.1, delayChildren: 0.1 } } };
+  const item: Variants = {
+    hidden: { opacity: 0, y: reduce ? 0 : 24 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE_OUT } },
+  };
+
+  const scrollToHighlights = () => {
+    document.getElementById("highlights")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
+
+  const journeyCard = (
+    <button
+      type="button"
+      onClick={scrollToHighlights}
+      className="group flex items-center gap-3.5 rounded-2xl border border-white/70 bg-white/85 py-2.5 pl-2.5 pr-5 text-left shadow-[0_20px_50px_-20px_rgba(6,27,54,0.45)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
+    >
+      <span className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-ive-saffron text-white shadow-[0_10px_24px_-8px_rgba(255,133,0,0.8)]">
+        <span className="absolute inset-0 animate-ping rounded-full bg-ive-saffron/40 motion-reduce:animate-none" aria-hidden />
+        <FiPlay className="relative ml-0.5 h-5 w-5 fill-white" />
+      </span>
+      <span>
+        <span className="block text-sm font-bold text-ive-navy">Explore Our Journey</span>
+        <span className="block text-xs text-ive-slate">
+          {highlightCount > 0 ? `${highlightCount} official highlights` : "Official highlights"}
+        </span>
+      </span>
+    </button>
   );
-  const images = validConfigured.length > 0 ? validConfigured : DEFAULT_HERO_IMAGES;
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
-  const [paused, setPaused] = useState(false);
-  const pausedRef = useRef(false);
-
-  const count = Math.max(images.length, 1);
-
-  const goTo = useCallback(
-    (next: number, dir: number) => {
-      setDirection(dir);
-      setCurrentIndex(((next % count) + count) % count);
-    },
-    [count]
-  );
-
-  const goNext = useCallback(() => goTo(currentIndex + 1, 1), [currentIndex, goTo]);
-  const goPrev = useCallback(() => goTo(currentIndex - 1, -1), [currentIndex, goTo]);
-
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
-
-  useEffect(() => {
-    if (count <= 1) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    const id = window.setInterval(() => {
-      if (!pausedRef.current) goNext();
-    }, HERO_ROTATE_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [count, goNext]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [goNext, goPrev]);
 
   return (
     <section
       id="home"
-      className="group relative z-0 w-full bg-white"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      ref={ref}
+      className="relative isolate overflow-hidden bg-gradient-to-b from-white via-[#F4F8FD] to-[#E9F1FB]"
     >
-      {/* Indian Tricolor Top Line */}
-      <div className="flex h-[3px] w-full">
-        <span className="flex-1 bg-[#FF9933]" />
-        <span className="flex-1 bg-white" />
-        <span className="flex-1 bg-[#138808]" />
-      </div>
+      {/* Desktop image layer */}
+      <motion.div
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-[66%] lg:block"
+        style={{ y: imageY, scale: imageScale }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.1, ease: EASE_OUT }}
+        aria-hidden
+      >
+        <img
+          src={HERO_IMAGE}
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="h-full w-full object-cover object-[65%_30%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F6F9FE] via-[#F6F9FE]/55 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#E9F1FB] to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/70 to-transparent" />
+      </motion.div>
 
-      {/* Hero Banner Carousel (100% Unobstructed Full View) */}
-      <div className="up-hero relative w-full overflow-hidden bg-[#EEF2F7]">
-        <AnimatePresence initial={false} custom={direction}>
-          <motion.div
-            key={currentIndex}
-            custom={direction}
-            variants={imageVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.65, ease: SLIDE_EASE }}
-            className="absolute inset-0"
-          >
-            <img
-              src={images[currentIndex % images.length]}
-              alt="IVESDC Vocational Education & Training Council Banner"
-              fetchPriority={currentIndex === 0 ? "high" : "low"}
-              decoding="async"
-              onError={() => markFailed(images[currentIndex % images.length])}
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-          </motion.div>
-        </AnimatePresence>
+      {/* Atmosphere */}
+      <FlagWave
+        rotate={-10}
+        opacity={0.14}
+        className="-left-40 top-16 w-[560px] sm:w-[720px] lg:-left-56 lg:top-10 lg:w-[920px]"
+      />
+      <div className="up-dot-pattern pointer-events-none absolute left-0 top-0 h-72 w-72 opacity-70 [mask-image:radial-gradient(circle_at_top_left,#000,transparent_70%)]" aria-hidden />
+      <div className="pointer-events-none absolute -left-40 top-24 h-[420px] w-[420px] rounded-full bg-ive-saffron/[0.10] blur-[120px]" aria-hidden />
+      <div className="pointer-events-none absolute bottom-10 left-1/3 h-72 w-72 rounded-full bg-ive-royal/[0.10] blur-[110px]" aria-hidden />
+      <span className="up-float pointer-events-none absolute left-[46%] top-28 hidden h-16 w-16 rounded-full border-2 border-dashed border-ive-saffron/40 lg:block" aria-hidden />
+      <span className="up-float pointer-events-none absolute bottom-48 left-[8%] hidden h-3 w-3 rounded-full bg-ive-emerald/60 lg:block [animation-delay:-3s]" aria-hidden />
 
-        {/* Preload Next Banner */}
-        {images.length > 1 && (
-          <img
-            src={images[(currentIndex + 1) % images.length]}
-            alt=""
-            className="hidden"
-            aria-hidden
-            onError={() => markFailed(images[(currentIndex + 1) % images.length])}
-          />
-        )}
-
-        {/* Subtle Side Navigation Arrows (Hover activated) */}
-        {count > 1 && (
-          <>
-            <button
-              type="button"
-              aria-label="Previous slide"
-              onClick={goPrev}
-              className="absolute left-3 sm:left-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#003366] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
+      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-36 pt-10 sm:px-6 sm:pt-14 lg:min-h-[640px] lg:grid-cols-12 lg:px-8 lg:pb-44 lg:pt-16">
+        <motion.div style={{ y: contentY }} className="lg:col-span-6 xl:col-span-6">
+          <motion.div variants={container} initial="hidden" animate="show">
+            <motion.span
+              variants={item}
+              className="inline-flex items-center gap-2 rounded-full border border-ive-royal/15 bg-white/80 py-1 pl-1 pr-3.5 text-xs font-semibold text-ive-royal shadow-sm backdrop-blur"
             >
-              <FiChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next slide"
-              onClick={goNext}
-              className="absolute right-3 sm:right-5 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#003366] shadow-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110 active:scale-95"
+              <span className="rounded-full bg-ive-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                {COUNCIL.shortName}
+              </span>
+              {COUNCIL.mission}
+            </motion.span>
+
+            <motion.h1
+              variants={item}
+              className="mt-6 text-[2.35rem] font-extrabold leading-[1.08] tracking-tight text-ive-navy sm:text-5xl lg:text-[3.6rem]"
             >
-              <FiChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+              Empowering Skills,
+              <br />
+              Building a{" "}
+              <span className="relative inline-block text-ive-saffron">
+                Better India
+                <svg className="absolute -bottom-2 left-0 h-3 w-full text-ive-saffron/40" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden>
+                  <path d="M2 9C50 3 150 3 198 9" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+            </motion.h1>
 
-            {/* Minimal Slide Dots on Banner */}
-            <div className="absolute bottom-3 sm:bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/35 px-3 py-1 backdrop-blur-md">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => goTo(i, i > currentIndex ? 1 : -1)}
-                  className="h-1.5 rounded-full transition-all duration-300"
-                  style={{
-                    width: i === currentIndex ? 24 : 6,
-                    backgroundColor:
-                      i === currentIndex ? "#FF7F0E" : "rgba(255,255,255,0.6)",
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+            {hero?.subtitle && (
+              <motion.p variants={item} className="mt-6 max-w-xl text-base leading-relaxed text-ive-slate sm:text-lg">
+                {hero.subtitle}
+              </motion.p>
+            )}
 
-      {/* Seamless Action & Brand Ribbon (Directly below banner on clean white / light slate) */}
-      <div className="border-b border-[#E5E7EB] bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3.5 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          {/* Council & Mission Indicator */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#003366] to-[#002244] text-[#FF7F0E] shadow-sm">
-              <FaGraduationCap className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#138808]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#138808] animate-pulse" />
+            <motion.div variants={item} className="mt-8 flex flex-wrap gap-3">
+              <Magnetic>
+                <Link href={up(heroCtaHref(hero?.ctaPrimary?.href || "/userpanel/courses"))} className={upButton("primary", "lg", "px-7")}>
+                  {hero?.ctaPrimary?.label || "View Courses"}
+                  <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                </Link>
+              </Magnetic>
+              <Link href={up(heroCtaHref(hero?.ctaSecondary?.href || "/userpanel#offers"))} className={upButton("outline", "lg", "px-7")}>
+                {hero?.ctaSecondary?.label || "Explore Offers"}
+              </Link>
+            </motion.div>
+
+            <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+              {enrollments > 0 && (
+                <div className="flex items-center gap-3">
+                  {avatars.length > 0 && (
+                    <span className="flex -space-x-2.5">
+                      {avatars.map((src, i) => (
+                        <img key={src + i} src={src} alt="" loading="lazy" className="h-9 w-9 rounded-full border-2 border-white object-cover shadow-sm" />
+                      ))}
+                    </span>
+                  )}
+                  <span>
+                    <span className="block text-sm font-extrabold text-ive-navy">
+                      {new Intl.NumberFormat("en-IN").format(enrollments)} Active Enrollments
+                    </span>
+                    <span className="block text-xs text-ive-slate">Learners growing with {COUNCIL.shortName}</span>
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-ive-emerald/25 bg-ive-emerald/[0.08] px-2.5 py-1 text-[11px] font-bold text-ive-emerald">
+                  <FiCheckCircle className="h-3 w-3" />
                   Skill India Mission
                 </span>
-                <span className="text-[#D1D5DB]">•</span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#64748B]">
-                  <FiAward className="h-3 w-3 text-[#FF7F0E]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-ive-line bg-white px-2.5 py-1 text-[11px] font-semibold text-ive-slate">
+                  <FiAward className="h-3 w-3 text-ive-saffron" />
                   ISO 9001:2015
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-bold text-[#0F172A] tracking-tight">
-                National Council for Vocational Education & Training
-              </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-          {/* Quick Action CTAs: View Courses & Explore Offers */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Primary Action: View Courses */}
-            <Link href={up(heroCtaHref(hero?.ctaPrimary?.href || "/userpanel/courses"))}>
-              <motion.span
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="group inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] hover:bg-[#E66A00] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-[0_4px_14px_rgba(255,127,14,0.35)] transition-all hover:shadow-md"
-              >
-                <FiBookOpen className="h-4 w-4 text-white" />
-                {hero?.ctaPrimary?.label || "View Courses"}
-                <FiArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </motion.span>
-            </Link>
-
-            {/* Secondary Action: Explore Offers */}
-            <Link href={up(heroCtaHref(hero?.ctaSecondary?.href || "/userpanel#offers"))}>
-              <motion.span
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border-[1.5px] border-[#0056b3] bg-white hover:bg-[#F0F7FF] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#0056b3] transition-colors"
-              >
-                <FiTag className="h-4 w-4" />
-                {hero?.ctaSecondary?.label || "Explore Offers"}
-              </motion.span>
-            </Link>
-
-            {/* Quick Action: Verify Certificate */}
-            <Link href="/certificate" className="hidden md:inline-flex">
-              <motion.span
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#28A745]/40 bg-[#F0FFF4] hover:bg-[#D4EDDA] px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#1E7E34] transition-colors"
-              >
-                <FiCheckCircle className="h-4 w-4 text-[#28A745]" />
-                Verify Certificate
-              </motion.span>
-            </Link>
-          </div>
+        {/* Desktop: floating overlays positioned over the image layer */}
+        <div className="relative hidden h-full lg:col-span-6 lg:block">
+          <motion.div
+            initial={{ opacity: 0, y: reduce ? 0 : 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: EASE_OUT }}
+            className="absolute bottom-6 left-0"
+          >
+            {journeyCard}
+          </motion.div>
+          <motion.span
+            initial={{ opacity: 0, y: reduce ? 0 : -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8, ease: EASE_OUT }}
+            className="absolute right-0 top-4 rounded-2xl border border-white/70 bg-white/75 px-4 py-2.5 text-right shadow-lg backdrop-blur-md"
+          >
+            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-ive-slate">Our Motto</span>
+            <span className="block text-sm font-extrabold italic text-ive-saffron-dark">{COUNCIL.motto}</span>
+          </motion.span>
         </div>
+
+        {/* Mobile / tablet image */}
+        <motion.div
+          initial={{ opacity: 0, y: reduce ? 0 : 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT }}
+          className="relative lg:hidden"
+        >
+          <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border-4 border-white shadow-[0_30px_70px_-30px_rgba(6,27,54,0.5)]">
+            <img src={HERO_IMAGE} alt="" loading="eager" decoding="async" className="h-full w-full object-cover object-[70%_center]" />
+          </div>
+          <div className="absolute -bottom-6 left-4 right-4 flex justify-center sm:justify-start">{journeyCard}</div>
+        </motion.div>
       </div>
     </section>
   );

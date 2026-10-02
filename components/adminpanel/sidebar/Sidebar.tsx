@@ -126,23 +126,20 @@ export default function Sidebar({
             onMouseLeave={hideTip}
             className={cn(
               "group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
-              "text-white/70 hover:bg-white/10 hover:text-white",
-              !isCollapsed && "hover:translate-x-0.5",
-              active && "bg-white/10 text-white",
+              "text-white/65 hover:bg-white/[0.07] hover:text-white",
+              active && "bg-gradient-to-r from-[#1659A8] to-[#0E3A72] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
               isCollapsed && "justify-center px-2",
               level > 0 && "pl-5"
             )}
             aria-label={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
           >
             {active && (
-              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
+              <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#FF8500]" />
             )}
             <span
               className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition",
-                active
-                  ? "bg-[#C4A35A] text-[#0B132B]"
-                  : "bg-white/8 text-[#E8D5A3] group-hover:bg-white/12"
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition",
+                active ? "bg-white/15 text-white" : "text-white/55 group-hover:bg-white/10 group-hover:text-white"
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -153,7 +150,7 @@ export default function Sidebar({
                   {t(`menu.${item.id}`, item.label)}
                 </span>
                 {item.badge && (
-                  <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[9px] font-bold text-[#0B132B]">
+                  <span className="rounded-full bg-[#FF8500] px-1.5 py-0.5 text-[9px] font-bold text-white">
                     {item.badge}
                   </span>
                 )}
@@ -187,23 +184,20 @@ export default function Sidebar({
         onMouseLeave={hideTip}
         className={cn(
           "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
-          "text-white/70 hover:bg-white/10 hover:text-white",
-          !isCollapsed && "hover:translate-x-0.5",
-          active && "bg-[#C4A35A]/15 text-white",
+          "text-white/65 hover:bg-white/[0.07] hover:text-white",
+          active && "bg-gradient-to-r from-[#1659A8] to-[#0E3A72] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
           isCollapsed && "justify-center px-2",
           level > 0 && "pl-5"
         )}
         aria-label={isCollapsed ? t(`menu.${item.id}`, item.label) : undefined}
       >
         {active && (
-          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-[#C4A35A]" />
+          <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#FF8500]" />
         )}
         <span
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition",
-            active
-              ? "bg-[#C4A35A] text-[#0B132B] shadow-sm shadow-[#C4A35A]/30"
-              : "bg-white/[0.07] text-[#E8D5A3] group-hover:bg-white/12"
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition",
+            active ? "bg-white/15 text-white" : "text-white/55 group-hover:bg-white/10 group-hover:text-white"
           )}
         >
           <Icon className="h-3.5 w-3.5" />
@@ -214,7 +208,7 @@ export default function Sidebar({
               {t(`menu.${item.id}`, item.label)}
             </span>
             {item.badge && (
-              <span className="rounded-full bg-[#C4A35A] px-1.5 py-0.5 text-[9px] font-bold text-[#0B132B]">
+              <span className="rounded-full bg-[#FF8500] px-1.5 py-0.5 text-[9px] font-bold text-white">
                 {item.badge}
               </span>
             )}
@@ -236,14 +230,14 @@ export default function Sidebar({
       <aside
         className={cn(
           "fixed left-0 top-0 z-50 flex h-screen flex-col lg:sticky",
-          "bg-gradient-to-b from-[#0B1F3A] via-[#122B4D] to-[#0F2744]",
-          "border-r border-white/10 shadow-xl shadow-black/20",
+          "bg-[#061B36]",
+          "border-r border-white/[0.06] shadow-[8px_0_30px_-18px_rgba(6,27,54,0.55)]",
           "transition-all duration-300 ease-in-out",
           isCollapsed ? "w-[4.5rem]" : "w-[17rem]",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(196,163,90,0.1),transparent_50%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(18,78,150,0.35),transparent_55%)]" />
 
         <div
           className={cn(
@@ -296,7 +290,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-3.5 top-[4.75rem] z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-[#C4A35A]/60 bg-[#0F2744] text-[#E8D5A3] shadow-lg shadow-black/30 transition-all duration-200 hover:scale-110 hover:bg-[#C4A35A] hover:text-[#0B132B] lg:flex"
+          className="absolute -right-3.5 top-[4.75rem] z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-[#0B2A52] text-white shadow-lg shadow-black/25 transition-all duration-200 hover:border-[#FF8500] hover:bg-[#FF8500] hover:text-white lg:flex"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -305,10 +299,10 @@ export default function Sidebar({
 
         {isCollapsed && tip && (
           <div
-            className="pointer-events-none fixed z-[60] -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#C4A35A]/40 bg-[#0B1F3A] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xl shadow-black/30"
+            className="pointer-events-none fixed z-[60] -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-[#0B2A52] px-2.5 py-1.5 text-xs font-semibold text-white shadow-xl shadow-black/30"
             style={{ top: tip.top, left: "calc(4.5rem + 10px)" }}
           >
-            <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-[#C4A35A]/40 bg-[#0B1F3A]" />
+            <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rotate-45 border-b border-l border-white/10 bg-[#0B2A52]" />
             {tip.label}
           </div>
         )}
@@ -322,7 +316,7 @@ export default function Sidebar({
               <div key={section.id}>
                 {!isCollapsed && section.label ? (
                   <div className="mb-1.5 flex items-center gap-2 px-2.5">
-                    <h3 className="shrink-0 text-[10px] font-bold uppercase tracking-[0.14em] text-[#C4A35A]/90">
+                    <h3 className="shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                       {t(`sections.${section.id}`, section.label)}
                     </h3>
                     <div className="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent" />
@@ -341,16 +335,21 @@ export default function Sidebar({
 
         <div className="relative shrink-0 border-t border-white/10 p-2.5">
           {!isCollapsed ? (
-            <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
-              <p className="truncate text-xs font-bold text-white">
-                {user?.fullName || siteName || "IVESDC"}
-              </p>
-              <p className="truncate text-[10px] text-[#E8D5A3]/90">
-                {user?.roleName || "Management System"}
-              </p>
+            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.05] px-2.5 py-2">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#FF9A1F] to-[#E67600] text-xs font-bold text-white">
+                {(user?.fullName || "U").charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <p className="truncate text-xs font-bold text-white">{user?.fullName || siteName || "IVESDC"}</p>
+                <p className="truncate text-[10px] text-white/50">{user?.roleName || "Management System"}</p>
+              </span>
             </div>
           ) : (
-            <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#C4A35A]/20 text-xs font-bold text-[#E8D5A3]">
+            <div
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#FF9A1F] to-[#E67600] text-xs font-bold text-white"
+              onMouseEnter={(e) => showTip(e, user?.fullName || "Account")}
+              onMouseLeave={hideTip}
+            >
               {(user?.fullName || "U").charAt(0).toUpperCase()}
             </div>
           )}

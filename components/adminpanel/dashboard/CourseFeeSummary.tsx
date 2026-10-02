@@ -191,9 +191,9 @@ function SummaryTile({
 }) {
   const tones = {
     navy: "from-[#1E4A85]/10 to-[#1E4A85]/[0.02] border-[#1E4A85]/20 text-[#1E4A85] dark:text-[#8EB6E8]",
-    violet: "from-violet-500/10 to-violet-500/[0.02] border-violet-300/40 text-violet-700 dark:text-violet-400",
-    emerald: "from-emerald-500/10 to-emerald-500/[0.02] border-emerald-300/40 text-emerald-700 dark:text-emerald-400",
-    gold: "from-[#C4A35A]/20 to-[#C4A35A]/[0.04] border-[#C4A35A]/40 text-[#9A7A1E] dark:text-[#E8C46A]",
+    violet: "from-[#124E96]/10 to-[#124E96]/[0.02] border-[#124E96]/20 text-[#124E96] dark:text-[#8EB6E8]",
+    emerald: "from-[#159A70]/10 to-[#159A70]/[0.02] border-[#159A70]/25 text-[#159A70] dark:text-emerald-400",
+    gold: "from-[#FF8500]/12 to-[#FF8500]/[0.03] border-[#FF8500]/30 text-[#E67600] dark:text-[#FFB45A]",
   };
   return (
     <div className={cn("rounded-xl border bg-gradient-to-br px-3.5 py-3", tones[tone])}>

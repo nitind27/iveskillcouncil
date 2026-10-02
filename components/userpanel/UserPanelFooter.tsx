@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
-  FiMail, FiPhone, FiMapPin, FiFacebook, FiTwitter,
-  FiLinkedin, FiInstagram, FiYoutube, FiUser, FiArrowRight,
+  FiMail, FiPhone, FiMapPin, FiFacebook, FiTwitter, FiLinkedin, FiInstagram, FiYoutube,
+  FiArrowUp, FiShield, FiChevronRight,
 } from "react-icons/fi";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { COUNCIL, COUNCIL_TEAM } from "./ui/council";
+import Reveal from "./ui/Reveal";
 
 function quickLinkHref(href: string): string {
   if (href === "#home" || href === "/" || href === "") return "/userpanel";
@@ -24,207 +25,187 @@ const SOCIAL_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   youtube: FiYoutube,
 };
 
-const TEAM = [
-  { name: "Yashvantbhai Prajapati", role: "Managing Director", phone: "9824817111" },
-  { name: "Sonali Prajapati", role: "Chief Executive Officer", phone: "9689271627" },
-  { name: "Rajendra Sandanshiv", role: "Executive Director", phone: "9638019997" },
+const STUDENT_ZONE = [
+  { label: "Student Login", href: "/login", external: true },
+  { label: "Verify Certificate", href: "/verify", external: true },
+  { label: "All Courses", href: "/userpanel/courses" },
+  { label: "Current Offers", href: "/userpanel#offers" },
+  { label: "Apply for Franchise", href: "/userpanel/apply-franchise" },
 ];
-
-const FIXED_CONTACT = {
-  helpline: "9925222523",
-  address: "Shivaji Nagar, Fort-Songadh, Dist-Tapi, Gujarat - 394670",
-  cin: "U88900GJ2026NPL175855",
-  email: "iveskillcouncil@gmail.com",
-};
 
 interface UserPanelFooterProps {
   config: UserPanelConfig;
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function ColumnTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="mb-5 text-sm font-bold uppercase tracking-[0.16em] text-white">
+    <h4 className="mb-5 text-sm font-bold uppercase tracking-[0.14em] text-white">
       {children}
-      <span className="mt-2 block h-[2px] w-10 rounded-full bg-[#FF7F0E]" />
+      <span className="mt-2.5 flex gap-1" aria-hidden>
+        <span className="h-[3px] w-6 rounded-full bg-ive-saffron" />
+        <span className="h-[3px] w-2 rounded-full bg-white/60" />
+        <span className="h-[3px] w-3 rounded-full bg-ive-emerald" />
+      </span>
     </h4>
   );
 }
+
+const linkClass = "group inline-flex items-center gap-1.5 text-sm text-white/65 transition-colors hover:text-white";
 
 export default function UserPanelFooter({ config }: UserPanelFooterProps) {
   const up = useUserPanelHref();
   const { site, footer } = config;
 
   return (
-    <footer id="contact" className="relative overflow-hidden bg-[#070F1C]">
-      <div className="h-[3px] bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#003366]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-[#FF7F0E]/10 blur-3xl" />
+    <footer id="contact" className="relative overflow-hidden bg-[#04132A] text-white">
+      <div className="up-grid-pattern pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+      <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full border border-white/[0.05]" aria-hidden />
+      <div className="pointer-events-none absolute -right-20 -top-20 h-[360px] w-[360px] rounded-full border border-white/[0.05]" aria-hidden />
+      <div className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-ive-royal/25 blur-[120px]" aria-hidden />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-12 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="space-y-5"
-          >
-            <div>
-              {site.logoUrl ? (
-                <img
-                  src={site.logoUrl}
-                  alt={site.name}
-                  className="h-14 w-auto max-w-[180px] object-contain"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#003366] text-xl font-bold text-white">
-                    {site.logoLetter}
-                  </span>
-                  <span className="text-lg font-bold text-white">{site.name}</span>
-                </div>
-              )}
+      <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-16 sm:px-6 sm:pt-20 lg:px-8">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+          <Reveal className="space-y-5 sm:col-span-2 lg:col-span-4">
+            <div className="flex items-center gap-3">
+              <span className="flex-shrink-0 rounded-2xl bg-white p-2 shadow-lg">
+                {site.logoUrl ? (
+                  <img
+                    src={site.logoUrl}
+                    alt={site.name}
+                    loading="lazy"
+                    className="h-12 w-auto max-w-[120px] object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-ive-navy text-xl font-bold text-white">{site.logoLetter}</span>
+                )}
+              </span>
+              <span>
+                <span className="block text-lg font-extrabold leading-tight">{site.name}</span>
+                <span className="mt-0.5 block max-w-[220px] text-[10px] font-semibold uppercase leading-snug tracking-wider text-white/55">
+                  {COUNCIL.fullName}
+                </span>
+              </span>
             </div>
-            <p className="text-sm leading-relaxed text-white/65">{footer.tagline}</p>
-            <div className="inline-flex rounded-lg border border-[#FF7F0E]/25 bg-[#FF7F0E]/10 px-3 py-2">
-              <p className="text-[11px] leading-snug text-white/70">
-                <span className="font-semibold text-[#FF7F0E]">CIN</span>
-                <span className="mt-0.5 block font-mono text-white/80">{FIXED_CONTACT.cin}</span>
-              </p>
-            </div>
-            <div className="flex gap-2 pt-1">
-              {(footer.social || []).map((s) => {
-                const Icon = SOCIAL_ICONS[s.iconKey] || FiFacebook;
-                return (
-                  <a
-                    key={s.iconKey}
-                    href={s.href}
-                    aria-label={s.label || s.iconKey}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-all hover:-translate-y-0.5 hover:border-[#FF7F0E]/40 hover:bg-[#003366] hover:text-white"
-                  >
-                    <Icon className="h-4 w-4" />
-                  </a>
-                );
-              })}
-            </div>
-          </motion.div>
+            <p className="max-w-sm text-sm leading-relaxed text-white/60">{footer.tagline}</p>
+            <p className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/70">
+              <FiShield className="h-3.5 w-3.5 text-ive-emerald" />
+              CIN: <span className="font-mono">{COUNCIL.cin}</span>
+            </p>
+            {(footer.social || []).length > 0 && (
+              <div className="flex gap-2">
+                {(footer.social || []).map((s) => {
+                  const Icon = SOCIAL_ICONS[s.iconKey] || FiFacebook;
+                  return (
+                    <a
+                      key={s.iconKey}
+                      href={s.href}
+                      aria-label={s.label || s.iconKey}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-all duration-300 hover:-translate-y-1 hover:border-ive-saffron hover:bg-ive-saffron hover:text-white"
+                    >
+                      <Icon className="h-4 w-4" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.08 }}
-          >
-            <SectionTitle>Quick Links</SectionTitle>
-            <ul className="space-y-2.5">
+          <Reveal delay={0.06} className="lg:col-span-2">
+            <ColumnTitle>Quick Links</ColumnTitle>
+            <ul className="space-y-3">
               {(footer.quickLinks || []).map((link) => (
                 <li key={link.href + link.label}>
-                  <Link
-                    href={up(quickLinkHref(link.href))}
-                    className="group inline-flex items-center gap-2 text-sm text-white/65 transition-colors hover:text-[#FF7F0E]"
-                  >
-                    <FiArrowRight className="h-3.5 w-3.5 text-[#FF7F0E] opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
-                    <span className="transition-transform group-hover:translate-x-0.5">{link.label}</span>
+                  <Link href={up(quickLinkHref(link.href))} className={linkClass}>
+                    <FiChevronRight className="h-3.5 w-3.5 text-ive-saffron transition-transform group-hover:translate-x-0.5" />
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.16 }}
-          >
-            <SectionTitle>Our Team</SectionTitle>
+          <Reveal delay={0.12} className="lg:col-span-2">
+            <ColumnTitle>Student Zone</ColumnTitle>
             <ul className="space-y-3">
-              {TEAM.map((member) => (
-                <li key={member.name} className="rounded-xl border border-white/8 bg-white/[0.04] p-3 transition-colors hover:border-[#FF7F0E]/25 hover:bg-white/[0.06]">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
-                      <FiUser className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight text-white">{member.name}</p>
-                      <p className="mt-0.5 text-[11px] font-medium text-[#FF7F0E]">{member.role}</p>
-                      <a
-                        href={`tel:${member.phone}`}
-                        className="mt-1 inline-flex items-center gap-1.5 text-xs text-white/55 transition-colors hover:text-white"
-                      >
-                        <FiPhone className="h-3 w-3" />
-                        {member.phone}
-                      </a>
-                    </div>
-                  </div>
+              {STUDENT_ZONE.map((link) => (
+                <li key={link.label}>
+                  <Link href={link.external ? link.href : up(link.href)} className={linkClass}>
+                    <FiChevronRight className="h-3.5 w-3.5 text-ive-saffron transition-transform group-hover:translate-x-0.5" />
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.24 }}
-          >
-            <SectionTitle>Contact Us</SectionTitle>
-            <ul className="space-y-3">
-              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#FF7F0E]/15 text-[#FF7F0E]">
-                    <FiPhone className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Help Line</p>
-                    <a href={`tel:${FIXED_CONTACT.helpline}`} className="text-sm font-semibold text-white transition-colors hover:text-[#FF7F0E]">
-                      {FIXED_CONTACT.helpline}
-                    </a>
-                  </div>
-                </div>
+          <Reveal delay={0.18} className="sm:col-span-2 lg:col-span-4">
+            <ColumnTitle>Contact Us</ColumnTitle>
+            <ul className="space-y-4 text-sm">
+              <li className="flex items-start gap-3">
+                <FiMapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-ive-saffron" />
+                <span className="leading-relaxed text-white/75">{COUNCIL.address}</span>
               </li>
-              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
-                    <FiMail className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Email</p>
-                    <a href={`mailto:${FIXED_CONTACT.email}`} className="break-all text-sm font-semibold text-white transition-colors hover:text-[#FF7F0E]">
-                      {FIXED_CONTACT.email}
-                    </a>
-                  </div>
-                </div>
+              <li className="flex items-center gap-3">
+                <FiPhone className="h-4 w-4 flex-shrink-0 text-ive-saffron" />
+                <span className="text-white/75">
+                  Help Line:{" "}
+                  <a href={`tel:${COUNCIL.helpline}`} className="font-semibold text-white hover:text-ive-saffron">+91 {COUNCIL.helpline}</a>
+                </span>
               </li>
-              <li className="rounded-xl border border-white/8 bg-white/[0.04] p-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#003366]/40 text-[#FF7F0E]">
-                    <FiMapPin className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Office Address</p>
-                    <p className="text-sm leading-relaxed text-white/80">{FIXED_CONTACT.address}</p>
-                  </div>
-                </div>
+              <li className="flex items-center gap-3">
+                <FiMail className="h-4 w-4 flex-shrink-0 text-ive-saffron" />
+                <a href={`mailto:${COUNCIL.email}`} className="break-all text-white/75 hover:text-white">{COUNCIL.email}</a>
               </li>
             </ul>
-          </motion.div>
+            <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#FFB15C]">{COUNCIL.mission}</p>
+          </Reveal>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
+        <Reveal className="mt-12 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/50">Our Team</p>
+          <ul className="grid gap-3 sm:grid-cols-3">
+            {COUNCIL_TEAM.map((member) => (
+              <li key={member.name} className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-3 transition-colors hover:bg-white/[0.07]">
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ive-royal/50 text-sm font-bold text-white">
+                  {member.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-white">{member.name}</span>
+                  <span className="block text-[11px] font-medium text-ive-saffron">{member.role}</span>
+                  <a href={`tel:${member.phone}`} className="inline-flex items-center gap-1 text-xs text-white/55 hover:text-white">
+                    <FiPhone className="h-3 w-3" />
+                    {member.phone}
+                  </a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
           <p className="text-center text-xs text-white/45 sm:text-left">
             © {new Date().getFullYear()} <span className="font-semibold text-white/70">{site.name}</span>. {footer.copyrightText}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-white/45">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#FF7F0E]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-ive-emerald" />
               All services operational
             </span>
-            <span className="hidden sm:inline text-white/20">|</span>
-            <span>CIN {FIXED_CONTACT.cin}</span>
+            <span className="hidden text-white/20 sm:inline">|</span>
+            <span className="italic text-white/55">{COUNCIL.motto}</span>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              aria-label="Back to top"
+              className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-ive-saffron text-white transition-transform hover:-translate-y-0.5"
+            >
+              <FiArrowUp className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
+      <div className="up-tricolor h-1" aria-hidden />
     </footer>
   );
 }

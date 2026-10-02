@@ -2,21 +2,46 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { FiSend, FiArrowRight, FiCheckCircle, FiMail } from "react-icons/fi";
+import { motion, useReducedMotion } from "framer-motion";
+import { FiSend, FiArrowRight, FiCheck } from "react-icons/fi";
+import { FaGraduationCap } from "react-icons/fa";
 import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { upButton } from "./ui/button";
+import Reveal from "./ui/Reveal";
+import Magnetic from "./ui/Magnetic";
+import FlagWave from "./ui/FlagWave";
 
-const perks = [
-  "Course updates",
-  "Exclusive offers",
-  "Learning tips",
-  "No spam, ever",
-];
+const perks = ["Course updates", "Exclusive offers", "Learning tips", "No spam, ever"];
+
+function FlowLines({ animate }: { animate: boolean }) {
+  const paths = [
+    "M-50 140 C 250 40, 450 220, 750 110 S 1250 30, 1500 120",
+    "M-50 190 C 300 110, 500 260, 820 160 S 1300 90, 1500 180",
+  ];
+  return (
+    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 1440 280" preserveAspectRatio="none" aria-hidden>
+      {paths.map((d, i) => (
+        <motion.path
+          key={d}
+          d={d}
+          fill="none"
+          stroke={i === 0 ? "rgba(255,133,0,0.35)" : "rgba(255,255,255,0.12)"}
+          strokeWidth={1.5}
+          initial={{ pathLength: animate ? 0 : 1 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 2.4, delay: i * 0.3, ease: "easeInOut" }}
+        />
+      ))}
+    </svg>
+  );
+}
 
 export default function CTAStrip() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const up = useUserPanelHref();
+  const reduce = useReducedMotion();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,115 +49,88 @@ export default function CTAStrip() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#070F1C] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(255,127,14,0.14),transparent_58%)]" />
-      <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-[#003366]/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 top-8 h-56 w-56 rounded-full bg-[#FF7F0E]/12 blur-3xl" />
+    <section className="relative isolate overflow-hidden bg-gradient-to-r from-ive-navy via-ive-navy-2 to-ive-royal px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <div className="up-grid-pattern pointer-events-none absolute inset-0 opacity-60" aria-hidden />
+      <FlowLines animate={!reduce} />
+      <FlagWave tone="dark" rotate={-6} opacity={0.16} className="-right-40 top-1/2 w-[620px] -translate-y-1/2 sm:w-[760px] lg:-right-24 lg:w-[880px]" />
+      <div className="pointer-events-none absolute -left-20 top-0 h-72 w-72 rounded-full bg-ive-saffron/15 blur-[100px]" aria-hidden />
+      <div className="up-tricolor absolute inset-x-0 top-0 h-[3px]" aria-hidden />
 
-      <div className="relative mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-3xl border border-[#FF7F0E]/25 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#002244] via-[#002244] to-[#001a33]" />
-          <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
+      <Reveal className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[auto_1fr_minmax(0,460px)] lg:gap-12">
+        <div className="relative mx-auto flex h-28 w-28 items-center justify-center lg:mx-0" aria-hidden>
+          <span className="absolute inset-0 rounded-full border border-white/15" />
+          <span className="absolute inset-3 rounded-full border border-dashed border-ive-saffron/40 up-spin-slow" />
+          <span className="up-float flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-ive-saffron to-ive-saffron-dark text-white shadow-[0_16px_40px_-10px_rgba(255,133,0,0.8)]">
+            <FaGraduationCap className="h-8 w-8" />
+          </span>
+        </div>
 
-          <div className="relative grid items-center gap-10 p-8 sm:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14 lg:p-12">
-            <div>
-              <span className="mb-4 inline-flex rounded-full border border-[#FF7F0E]/35 bg-[#FF7F0E]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#FF7F0E]">
-                Get started today
+        <div className="text-center lg:text-left">
+          <h2 className="text-[1.9rem] font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+            Start Your <span className="text-ive-saffron">Learning Journey</span>
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-white/70 lg:mx-0">
+            Get course updates, exclusive offers and learning tips. Stay connected with IVESDC — no spam, ever.
+          </p>
+          <ul className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
+            {perks.map((perk) => (
+              <li key={perk} className="inline-flex items-center gap-1.5 text-xs font-medium text-white/80">
+                <FiCheck className="h-3.5 w-3.5 text-[#3DDC97]" />
+                {perk}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="w-full">
+          {submitted ? (
+            <motion.div
+              initial={{ scale: reduce ? 1 : 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              role="status"
+              className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur"
+            >
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-ive-emerald text-white">
+                <FiCheck className="h-6 w-6" />
               </span>
-              <h2 className="text-3xl font-extrabold leading-tight text-white md:text-4xl">
-                Start Your Learning Journey
-              </h2>
-              <p className="mt-3 max-w-lg text-base leading-relaxed text-white/70">
-                Get course updates, exclusive offers and learning tips. Stay connected with IVESDC — no spam, ever.
-              </p>
-
-              <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
-                {perks.map((perk, i) => (
-                  <motion.div
-                    key={perk}
-                    initial={{ opacity: 0, x: -8 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.12 + i * 0.06 }}
-                    className="flex items-center gap-2.5 text-sm text-white/85"
-                  >
-                    <FiCheckCircle className="h-4 w-4 flex-shrink-0 text-[#FF7F0E]" />
-                    {perk}
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href={up("/userpanel/courses")}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] px-5 py-3 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#E66A00]"
-                >
-                  Browse Courses
-                  <FiArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href={up("/userpanel/franchise-plans")}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/12"
-                >
-                  Franchise Plans
-                  <FiArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/12 bg-black/25 p-6 backdrop-blur-sm sm:p-7">
-              {submitted ? (
-                <motion.div
-                  initial={{ scale: 0.94, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="flex min-h-[180px] flex-col items-center justify-center text-center"
-                >
-                  <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#28A745] text-lg font-bold text-white">
-                    ✓
-                  </span>
-                  <p className="text-lg font-bold text-white">You&apos;re subscribed</p>
-                  <p className="mt-1 text-sm text-white/65">We&apos;ll send useful updates to your inbox.</p>
-                </motion.div>
-              ) : (
-                <>
-                  <div className="mb-5 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF7F0E]/15 text-[#FF7F0E]">
-                      <FiMail className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="font-bold text-white">Subscribe for updates</p>
-                      <p className="text-xs text-white/55">One email. Relevant news only.</p>
-                    </div>
-                  </div>
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      required
-                      className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm text-white placeholder-white/45 outline-none transition-colors focus:border-[#FF7F0E]/60 focus:bg-white/12"
-                    />
-                    <button
-                      type="submit"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF7F0E] py-3.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,127,14,0.28)] transition-colors hover:bg-[#E66A00]"
-                    >
-                      Subscribe
-                      <FiSend className="h-4 w-4" />
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
+              <span>
+                <span className="block font-bold text-white">You&apos;re subscribed</span>
+                <span className="block text-sm text-white/65">We&apos;ll send useful updates to your inbox.</span>
+              </span>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)] sm:flex-row">
+              <label htmlFor="cta-email" className="sr-only">Email address</label>
+              <input
+                id="cta-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                required
+                autoComplete="email"
+                className="min-w-0 flex-1 rounded-xl px-4 py-3 text-sm text-ive-ink placeholder:text-ive-slate/70 focus:outline-none focus:ring-2 focus:ring-ive-royal/20"
+              />
+              <button type="submit" className={upButton("navy", "lg", "flex-shrink-0")}>
+                Subscribe
+                <FiSend className="h-4 w-4" />
+              </button>
+            </form>
+          )}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <Magnetic>
+              <Link href={up("/userpanel/courses")} className={upButton("primary", "lg")}>
+                Apply Now
+                <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+              </Link>
+            </Magnetic>
+            <Link href={up("/userpanel/franchise-plans")} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 transition-colors hover:text-white">
+              Franchise Plans
+              <FiArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </Reveal>
     </section>
   );
 }

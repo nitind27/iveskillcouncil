@@ -2,302 +2,269 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  FiArrowRight,
-  FiAward,
-  FiUsers,
-  FiZap,
-  FiShield,
-} from "react-icons/fi";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { FiArrowRight, FiAward, FiUsers, FiZap, FiShield, FiTarget, FiCompass, FiChevronDown } from "react-icons/fi";
+import { FaGraduationCap } from "react-icons/fa";
 import type { UserPanelConfig } from "@/config/userpanel.config";
 import { cn } from "@/lib/utils";
 import { useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { COUNCIL } from "./ui/council";
+import { upButton } from "./ui/button";
+import Reveal from "./ui/Reveal";
+import FlagWave from "./ui/FlagWave";
+import AnimatedCounter from "./AnimatedCounter";
 
 function aboutButtonHref(href: string): string {
   if (href.startsWith("#")) return `/userpanel${href}`;
   return href;
 }
 
-/** Founder / main owner gallery — `public/owner` */
+/** Founder / main owner gallery — originals in `public/owner`, web copies in `public/assets/home`. */
 const OWNER_SLIDES = [
-  {
-    src: "/owner/1.png",
-    caption: "Maharashtra Excellence Awards & Conclave 2026",
-    role: "Founder · Leadership",
-  },
-  {
-    src: "/owner/2.png",
-    caption: "Digital Excellence Awards 2026",
-    role: "Founder · Vision",
-  },
-  {
-    src: "/owner/3.png",
-    caption: "Excellence · Recognition · Growth",
-    role: "Founder · Achievement",
-  },
-  {
-    src: "/owner/4.png",
-    caption: "Leadership · Vision · Impact",
-    role: "Founder · Dedication",
-  },
+  { src: "/assets/home/owner-1.jpg", caption: "Maharashtra Excellence Awards & Conclave 2026", role: "Founder · Leadership" },
+  { src: "/assets/home/owner-2.jpg", caption: "Digital Excellence Awards 2026", role: "Founder · Vision" },
+  { src: "/assets/home/owner-3.jpg", caption: "Excellence · Recognition · Growth", role: "Founder · Achievement" },
+  { src: "/assets/home/owner-4.jpg", caption: "Leadership · Vision · Impact", role: "Founder · Dedication" },
 ] as const;
 
 const AUTO_MS = 4500;
 
-interface AboutSectionProps {
-  config: UserPanelConfig;
-}
-
 const features = [
-  {
-    icon: FiZap,
-    label: "Fast-Track Learning",
-    desc: "Structured curriculum for quick skill gains",
-    color: "text-[#FF7F0E] bg-[#FF7F0E]/10",
-  },
-  {
-    icon: FiShield,
-    label: "Certified Programs",
-    desc: "Industry-recognized certifications",
-    color: "text-[#28A745] bg-[#28A745]/10",
-  },
-  {
-    icon: FiUsers,
-    label: "Expert Mentors",
-    desc: "Learn from experienced professionals",
-    color: "text-[#0056b3] bg-[#0056b3]/10",
-  },
-  {
-    icon: FiAward,
-    label: "Award Winning",
-    desc: "National & global recognitions",
-    color: "text-[#FF7F0E] bg-[#FF7F0E]/10",
-  },
+  { icon: FiZap, label: "Fast-Track Learning", desc: "Structured curriculum for quick skill gains", color: "bg-ive-saffron/10 text-ive-saffron" },
+  { icon: FiShield, label: "Certified Programs", desc: "Industry-recognized certifications", color: "bg-ive-emerald/10 text-ive-emerald" },
+  { icon: FiUsers, label: "Expert Mentors", desc: "Learn from experienced professionals", color: "bg-ive-royal/10 text-ive-royal" },
+  { icon: FiAward, label: "Award Winning", desc: "National & global recognitions", color: "bg-ive-saffron/10 text-ive-saffron" },
 ];
 
-function OwnerShowcase() {
+function OwnerSlideshow() {
+  const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
-  const len = OWNER_SLIDES.length;
+  const [paused, setPaused] = useState(false);
   const slide = OWNER_SLIDES[index];
 
   useEffect(() => {
-    const t = window.setInterval(() => {
-      setIndex((i) => (i + 1) % len);
-    }, AUTO_MS);
+    if (reduce || paused) return;
+    const t = window.setInterval(() => setIndex((i) => (i + 1) % OWNER_SLIDES.length), AUTO_MS);
     return () => window.clearInterval(t);
-  }, [len]);
+  }, [reduce, paused]);
 
   return (
-    <div className="relative mx-auto w-full max-w-[440px] lg:max-w-none">
-      <div className="pointer-events-none absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-[#003366]/20 via-transparent to-[#FF7F0E]/25 opacity-80 blur-[1px]" />
-      <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full border border-[#FF7F0E]/30" />
-      <div className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-[#003366]/10" />
-
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/60 bg-[#001a33] shadow-[0_28px_70px_rgba(15,23,42,0.22)] ring-1 ring-[#003366]/15">
-        <div className="relative aspect-[3/4] w-full">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={slide.src}
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
+    <div className="relative h-full w-full" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <AnimatePresence initial={false}>
+        <motion.img
+          key={slide.src}
+          src={slide.src}
+          alt={slide.caption}
+          loading="lazy"
+          decoding="async"
+          initial={{ opacity: 0, scale: reduce ? 1 : 1.06 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduce ? 0.2 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0 h-full w-full object-cover object-[center_22%]"
+        />
+      </AnimatePresence>
+      <div className="absolute inset-0 bg-gradient-to-t from-ive-navy/90 via-ive-navy/10 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-4">
+        <p className="text-[9.5px] font-bold uppercase tracking-[0.16em] text-[#FFD4A8]">{slide.role}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-snug text-white sm:text-[13px]">{slide.caption}</p>
+        <div className="mt-2 flex gap-1">
+          {OWNER_SLIDES.map((s, i) => (
+            <button
+              key={s.src}
+              type="button"
+              aria-label={`Show photo ${i + 1}`}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => setIndex(i)}
+              className="flex h-4 items-center"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <motion.img
-                src={slide.src}
-                alt={slide.caption}
-                className="h-full w-full object-cover object-[center_20%]"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#001a33] via-[#001a33]/20 to-transparent" />
-            </motion.div>
-          </AnimatePresence>
-
-          <div className="absolute left-0 right-0 top-0 z-20 h-1 bg-white/10">
-            <motion.div
-              key={`progress-${index}`}
-              className="h-full origin-left bg-gradient-to-r from-[#FF7F0E] to-[#FFD4A8]"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
-            />
-          </div>
-
-          <div className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF7F0E] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF7F0E]" />
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/95">
-              Leadership
-            </span>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 z-20 p-5 sm:p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={slide.caption}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.4 }}
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#FFD4A8]">
-                  {slide.role}
-                </p>
-                <p className="mt-1 max-w-[95%] text-sm font-semibold leading-snug text-white sm:text-base">
-                  {slide.caption}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="mt-4 flex items-center gap-1.5">
-              {OWNER_SLIDES.map((_, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-300",
-                    i === index ? "w-7 bg-[#FF7F0E]" : "w-1.5 bg-white/40"
-                  )}
-                />
-              ))}
-            </div>
-          </div>
+              <span className={cn("h-1 rounded-full transition-all duration-300", i === index ? "w-5 bg-ive-saffron" : "w-1.5 bg-white/50")} />
+            </button>
+          ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Collage({ enrollments }: { enrollments: number }) {
+  const reduce = useReducedMotion();
+  const frame = "overflow-hidden rounded-[1.75rem] border-[6px] border-white bg-ive-mist shadow-[0_30px_60px_-30px_rgba(6,27,54,0.45)]";
+
+  return (
+    <div className="relative mx-auto w-full max-w-[600px]">
+      <div className="up-dot-pattern pointer-events-none absolute -left-6 -top-6 h-40 w-40 rounded-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-6 -right-6 h-48 w-48 rounded-full bg-ive-saffron/10 blur-2xl" aria-hidden />
+
+      <div className="relative grid h-[440px] grid-cols-12 grid-rows-12 sm:h-[540px]">
+        <motion.div
+          whileHover={reduce ? undefined : { scale: 1.015 }}
+          className={cn(frame, "relative z-10 col-span-7 col-start-1 row-span-11 row-start-2")}
+        >
+          <img src="/assets/home/about-student.jpg" alt="Student at a skill development campus" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        </motion.div>
+
+        <div className={cn(frame, "relative z-20 col-span-5 col-start-8 row-span-6 row-start-1 ml-3")}>
+          <OwnerSlideshow />
+        </div>
+
+        <motion.div
+          whileHover={reduce ? undefined : { scale: 1.02 }}
+          className={cn(frame, "relative z-30 col-span-6 col-start-7 row-span-5 row-start-8 -ml-6")}
+        >
+          <img src="/assets/home/about-classroom.jpg" alt="Students learning in a computer training lab" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        </motion.div>
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: reduce ? 0 : 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: 0.2, duration: 0.45 }}
-        className="absolute -left-2 top-8 z-30 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-3.5 py-2.5 shadow-xl backdrop-blur-sm sm:flex lg:-left-4"
+        transition={{ delay: 0.25, duration: 0.6 }}
+        className="up-float absolute -left-3 top-[18%] z-40 flex max-w-[190px] items-start gap-2.5 rounded-2xl border border-ive-line bg-white p-3 shadow-xl sm:-left-6"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#003366] to-[#002244]">
-          <FiUsers className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <div className="text-lg font-black leading-none text-[#1A1A1A]">10k+</div>
-          <div className="mt-0.5 text-[11px] font-medium text-[#6B7280]">
-            Happy Students
-          </div>
-        </div>
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-ive-saffron text-white">
+          <FaGraduationCap className="h-5 w-5" />
+        </span>
+        <span>
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-ive-slate">Our Mission</span>
+          <span className="block text-xs font-bold leading-snug text-ive-navy">{COUNCIL.mission}</span>
+        </span>
       </motion.div>
 
+      {enrollments > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: reduce ? 0 : 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="absolute -bottom-4 left-6 z-40 flex items-center gap-3 rounded-2xl bg-ive-navy px-4 py-3 text-white shadow-xl"
+        >
+          <FiUsers className="h-5 w-5 text-ive-saffron" />
+          <span>
+            <span className="block text-lg font-extrabold leading-none">
+              <AnimatedCounter value={enrollments} />
+            </span>
+            <span className="block text-[11px] text-white/65">Active Enrollments</span>
+          </span>
+        </motion.div>
+      )}
+
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: reduce ? 0 : 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: 0.35, duration: 0.45 }}
-        className="absolute -right-2 bottom-28 z-30 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-3.5 py-2.5 shadow-xl backdrop-blur-sm sm:flex lg:-right-3"
+        transition={{ delay: 0.5, duration: 0.6 }}
+        className="absolute right-0 top-[52%] z-40 hidden items-center gap-2.5 rounded-2xl border border-ive-line bg-white px-3.5 py-2.5 shadow-xl sm:flex"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7F0E] to-[#E66A00]">
-          <FiAward className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <div className="text-lg font-black leading-none text-[#1A1A1A]">Excellence</div>
-          <div className="mt-0.5 text-[11px] font-medium text-[#6B7280]">
-            Awards 2026
-          </div>
-        </div>
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-ive-saffron to-ive-saffron-dark text-white">
+          <FiAward className="h-4 w-4" />
+        </span>
+        <span>
+          <span className="block text-sm font-extrabold leading-none text-ive-navy">Excellence</span>
+          <span className="mt-0.5 block text-[11px] text-ive-slate">Awards 2026</span>
+        </span>
       </motion.div>
     </div>
   );
 }
 
+interface AboutSectionProps {
+  config: UserPanelConfig;
+}
+
 export default function AboutSection({ config }: AboutSectionProps) {
-  const { about, site } = config;
+  const { about } = config;
   const up = useUserPanelHref();
-  const heading = site?.name
-    ? `About ${site.name}`
-    : about.title || "About Our Institute";
+  const reduce = useReducedMotion();
+  const [missionOpen, setMissionOpen] = useState(false);
+  const enrollments = config.stats?.find((s) => s.id === "enrollments")?.value ?? 0;
 
   return (
-    <section
-      id="about"
-      className="relative overflow-hidden bg-gradient-to-b from-[#F7F9FC] via-white to-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
-    >
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
+    <section id="about" className="relative isolate overflow-hidden bg-white px-4 pb-24 pt-20 sm:px-6 sm:pt-28 lg:px-8">
+      <FlagWave rotate={9} opacity={0.09} className="-right-48 bottom-6 w-[560px] sm:w-[720px] lg:-right-64 lg:w-[880px]" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+        <Reveal x={-30}>
+          <Collage enrollments={enrollments} />
+        </Reveal>
 
-      <div className="relative mx-auto max-w-7xl">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <motion.div
-            initial={{ opacity: 0, x: -32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <OwnerShowcase />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-7"
-          >
-            <div>
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/20 bg-[#003366]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FF7F0E]" />
-                Our Story
-              </span>
-              <h2 className="mb-4 text-3xl font-extrabold leading-tight tracking-tight text-[#1A1A1A] md:text-4xl lg:text-[2.6rem]">
-                {heading}
-              </h2>
-              <p className="text-base leading-relaxed text-[#4B5563] md:text-lg">
-                {about.description}
-              </p>
+        <div>
+          <Reveal>
+            <span className="inline-flex items-center gap-2 rounded-full bg-ive-saffron/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-saffron-dark">
+              <span className="h-1.5 w-1.5 rounded-full bg-ive-saffron" />
+              About {COUNCIL.shortName}
+            </span>
+            <h2 className="mt-4 text-[1.9rem] font-extrabold leading-[1.15] tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+              Institute of Vocational Education &amp; <span className="text-ive-royal">Skill Development Council</span>
+            </h2>
+            <div className="mt-5 flex items-center gap-1.5" aria-hidden>
+              <span className="h-1 w-10 rounded-full bg-ive-saffron" />
+              <span className="h-1 w-3 rounded-full bg-ive-line" />
+              <span className="h-1 w-6 rounded-full bg-ive-emerald" />
             </div>
+            <p className="mt-5 text-base leading-relaxed text-ive-slate md:text-[17px]">{about.description}</p>
+          </Reveal>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {features.map((f, i) => (
-                <motion.div
-                  key={f.label}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.08 + i * 0.07, duration: 0.4 }}
-                  whileHover={{ y: -3 }}
-                  className="flex items-start gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] p-4 transition-shadow duration-300 hover:border-[#0056b3]/25 hover:bg-white hover:shadow-md"
-                >
-                  <div
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${f.color}`}
-                  >
-                    <f.icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#1A1A1A]">
-                      {f.label}
-                    </div>
-                    <div className="mt-0.5 text-xs leading-relaxed text-[#6B7280]">
-                      {f.desc}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Link href={up(aboutButtonHref(about.buttonHref))}>
-                <span className="inline-flex items-center gap-2 rounded-xl bg-[#FF7F0E] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_14px_rgba(255,127,14,0.3)] transition-colors hover:bg-[#E66A00]">
-                  {about.buttonLabel}
-                  <FiArrowRight className="h-4 w-4" />
+          <ul className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {features.map((f, i) => (
+              <Reveal
+                as="li"
+                key={f.label}
+                delay={0.06 + i * 0.06}
+                className="group rounded-2xl border border-ive-line bg-white p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)]"
+              >
+                <span className={cn("mx-auto flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", f.color)}>
+                  <f.icon className="h-5 w-5" />
                 </span>
-              </Link>
-              <Link href={up("/userpanel/courses")}>
-                <span className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-[#0056b3] bg-white px-6 py-3 text-sm font-bold text-[#0056b3] transition-colors hover:bg-[#F0F7FF]">
-                  View Courses
-                  <FiArrowRight className="h-4 w-4" />
-                </span>
-              </Link>
-            </div>
-          </motion.div>
+                <span className="mt-3 block text-[13px] font-bold leading-tight text-ive-navy">{f.label}</span>
+                <span className="mt-1 block text-[11.5px] leading-snug text-ive-slate">{f.desc}</span>
+              </Reveal>
+            ))}
+          </ul>
+
+          <Reveal delay={0.1} className="mt-8 flex flex-wrap gap-3">
+            <Link href={up(aboutButtonHref(about.buttonHref))} className={upButton("primary", "lg")}>
+              {about.buttonLabel}
+              <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMissionOpen((o) => !o)}
+              aria-expanded={missionOpen}
+              aria-controls="about-mission"
+              className={upButton("outline", "lg")}
+            >
+              Our Mission
+              <FiChevronDown className={cn("h-4 w-4 transition-transform duration-300", missionOpen && "rotate-180")} />
+            </button>
+          </Reveal>
+
+          <AnimatePresence initial={false}>
+            {missionOpen && (
+              <motion.div
+                id="about-mission"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: reduce ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="relative overflow-hidden rounded-2xl bg-ive-navy p-5 text-white">
+                    <div className="up-grid-pattern absolute inset-0 opacity-60" aria-hidden />
+                    <FiTarget className="relative h-6 w-6 text-ive-saffron" />
+                    <p className="relative mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#FFB15C]">Our Mission</p>
+                    <p className="relative mt-1 text-lg font-bold leading-snug">{COUNCIL.mission}</p>
+                  </div>
+                  <div className="rounded-2xl border border-ive-line bg-ive-mist p-5">
+                    <FiCompass className="h-6 w-6 text-ive-emerald" />
+                    <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-emerald">Our Motto</p>
+                    <p className="mt-1 text-lg font-bold leading-snug text-ive-navy">{COUNCIL.motto}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>

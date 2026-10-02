@@ -97,7 +97,7 @@ function NotificationIcon({ type }: { type: string }) {
 type OpenPanel = null | "notifications" | "profile" | "search" | "certificates";
 
 const iconBtn =
-  "flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[#1E4A85] shadow-sm transition hover:border-[#C4A35A]/45 hover:bg-[#C4A35A]/8 dark:border-white/10 dark:bg-white/5 dark:text-[#E8D5A3]";
+  "flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[#124E96] transition hover:bg-[#F4F7FB] hover:text-[#061B36] dark:border-white/10 dark:text-[#E8D5A3] dark:hover:bg-white/10";
 
 export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
@@ -113,6 +113,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
   const barRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
 
   const canSearchStudents =
     Number(user?.roleId) === ROLES.SUPER_ADMIN ||
@@ -172,6 +173,18 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
       searchInputRef.current?.focus();
     }
   }, [openPanel]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOpenPanel("search");
+        (window.innerWidth >= 1024 ? desktopSearchRef : searchInputRef).current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const togglePanel = (panel: OpenPanel) => {
     setOpenPanel((prev) => (prev === panel ? null : panel));
@@ -258,8 +271,9 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
           <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
             {/* Desktop search — Student ID */}
             <div className="relative hidden lg:block">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-[#8C9DB4]" />
               <input
+                ref={desktopSearchRef}
                 value={quickSearch}
                 onChange={(e) => {
                   setQuickSearch(e.target.value);
@@ -271,8 +285,11 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                     ? t("nav.searchStudent", "Student ID…")
                     : t("nav.search", "Search…")
                 }
-                className="h-9 w-40 rounded-xl border border-slate-200/90 bg-slate-50/80 py-1.5 pl-8 pr-3 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:w-56 focus:border-[#1E4A85]/30 focus:bg-white focus:ring-2 focus:ring-[#1E4A85]/10 xl:w-48 dark:border-slate-700 dark:bg-white/5 dark:text-white"
+                className="h-10 w-52 rounded-xl border border-[#E3E9F2] bg-[#F4F7FB] py-1.5 pl-9 pr-14 text-[13px] text-[#061B36] outline-none transition-[width,border-color,box-shadow] placeholder:text-[#8C9DB4] focus:w-72 focus:border-[#124E96]/35 focus:bg-white focus:ring-4 focus:ring-[#124E96]/10 xl:w-64 dark:border-slate-700 dark:bg-white/5 dark:text-white"
               />
+              <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-md border border-[#E3E9F2] bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#8C9DB4] xl:inline">
+                Ctrl K
+              </kbd>
               {showLookup && openPanel === "search" && (
                 <div className="absolute right-0 top-[calc(100%+0.45rem)] z-[80] w-[min(22rem,calc(100vw-1.25rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
                   <p className="border-b border-slate-100 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#1E4A85]/70">
@@ -566,7 +583,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#C4A35A] px-1 text-[9px] font-bold text-[#0B132B] ring-2 ring-white dark:ring-[#0F172A]">
+                  <span className="absolute -right-1 -top-1 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#FF8500] px-1 text-[9px] font-bold text-white ring-2 ring-white dark:ring-[#0F172A]">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -653,7 +670,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                 )}
                 aria-label="User menu"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#C4A35A] to-[#A8893E] text-[11px] font-bold text-[#0B132B] sm:h-8 sm:w-8 sm:text-xs">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#FF9A1F] to-[#E67600] text-[11px] font-bold text-white sm:h-8 sm:w-8 sm:text-xs">
                   {initials}
                 </span>
                 <div className="hidden min-w-0 text-left xl:block">
@@ -670,7 +687,7 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
                   <p
                     className={cn(
                       "max-w-[100px] truncate text-[10px]",
-                      openPanel === "profile" ? "text-[#E8D5A3]" : "text-[#C4A35A]"
+                      openPanel === "profile" ? "text-white/75" : "text-[#5B6B82]"
                     )}
                   >
                     {user?.roleName || "User"}

@@ -1,135 +1,82 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { useLogoConfig } from "@/hooks/useLogoConfig";
 
 interface PageLoaderProps {
   /** Text shown below the animation. Defaults to "Loading..." */
   text?: string;
-  /** Use userpanel brand colors (blue/green/orange). Default: true */
+  /** Kept for existing call sites. Both variants use the same logo loader. */
   variant?: "userpanel" | "admin";
 }
 
-/**
- * Full-screen animated page loader.
- * Replaces all plain spinner loaders across the app.
- */
-export default function PageLoader({ text = "Loading...", variant = "userpanel" }: PageLoaderProps) {
-  const isAdmin = variant === "admin";
+function LogoLoader({ compact = false }: { compact?: boolean }) {
+  const { logoUrl, siteName } = useLogoConfig();
+  const reduce = useReducedMotion();
+  const size = compact ? "h-36 w-36" : "h-48 w-48";
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center gap-8 ${isAdmin ? "bg-background" : "bg-[#F8F9FA]"}`}>
-      {/* ── Animated logo mark ── */}
-      <div className="relative flex items-center justify-center">
-        {/* outer slow ring */}
-        <motion.span
-          animate={{ rotate: 360 }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className={`absolute w-20 h-20 rounded-full border-2 border-dashed ${isAdmin ? "border-[#2D5DA8]/20" : "border-[#003366]/20"}`}
-        />
-
-        {/* middle ring — counter-rotate */}
-        <motion.span
-          animate={{ rotate: -360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className={`absolute w-14 h-14 rounded-full border-2 ${isAdmin ? "border-[#A8C63A]/30" : "border-[#28A745]/30"}`}
-          style={{
-            borderTopColor: isAdmin ? "#A8C63A" : "#28A745",
-            borderRightColor: "transparent",
-            borderBottomColor: "transparent",
-            borderLeftColor: "transparent",
-          }}
-        />
-
-        {/* inner fast arc */}
-        <motion.span
-          animate={{ rotate: 360 }}
-          transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
-          className="absolute w-9 h-9 rounded-full"
-          style={{
-            border: "2.5px solid transparent",
-            borderTopColor: isAdmin ? "#F39C12" : "#FF7F0E",
-            borderRightColor: isAdmin ? "#F39C12" : "#FF7F0E",
-          }}
-        />
-
-        {/* center dot — pulse */}
-        <motion.span
-          animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-          className={`w-4 h-4 rounded-full ${isAdmin ? "bg-[#2D5DA8]" : "bg-[#FF7F0E]"}`}
-        />
-      </div>
-
-      {/* ── Animated dots text ── */}
-      <div className="flex flex-col items-center gap-2">
-        <p className={`text-sm font-semibold tracking-wide ${isAdmin ? "text-muted-foreground" : "text-[#003366]"}`}>
-          {text}
-        </p>
-
-        {/* three bouncing dots */}
-        <div className="flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <motion.span
-              key={i}
-              animate={{ y: [0, -6, 0] }}
-              transition={{
-                duration: 0.7,
-                repeat: Infinity,
-                delay: i * 0.15,
-                ease: "easeInOut",
-              }}
-              className={`w-1.5 h-1.5 rounded-full ${isAdmin ? "bg-[#2D5DA8]/50" : "bg-[#FF7F0E]/50"}`}
-            />
-          ))}
-        </div>
-      </div>
+    <div className={`relative flex items-center justify-center ${size}`}>
+      <span aria-hidden className="absolute inset-0 rounded-full border border-[#E3E9F2]" />
+      <motion.span
+        aria-hidden
+        className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#FF8500] border-r-[#124E96]"
+        animate={reduce ? undefined : { rotate: 360 }}
+        transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+      />
+      <span className="relative flex h-[62%] w-[74%] items-center justify-center">
+        {logoUrl ? (
+          <img src={logoUrl} alt={siteName || "IVESDC"} className="max-h-full max-w-full object-contain" draggable={false} />
+        ) : (
+          <span className="text-sm font-extrabold tracking-wide text-[#061B36]">{siteName || "IVESDC"}</span>
+        )}
+      </span>
     </div>
   );
 }
 
 /**
- * Inline mini loader — for buttons, small sections.
- * Usage: <MiniLoader />
+ * Full-screen loader with the institute logo.
  */
+export default function PageLoader({ text = "Loading..." }: PageLoaderProps) {
+  const reduce = useReducedMotion();
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[linear-gradient(180deg,#FFFFFF_0%,#F4F8FE_100%)]">
+      <LogoLoader />
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-sm font-semibold tracking-wide text-[#061B36]">{text}</p>
+        <span className="relative h-[3px] w-28 overflow-hidden rounded-full bg-[#E3E9F2]" aria-hidden>
+          <motion.span
+            className="absolute inset-y-0 left-0 w-1/2 rounded-full bg-gradient-to-r from-[#FF8500] via-[#124E96] to-[#159A70]"
+            animate={reduce ? { x: "40%" } : { x: ["-100%", "220%"] }}
+            transition={{ duration: 1.15, repeat: reduce ? 0 : Infinity, ease: "easeInOut" }}
+          />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Inline mini loader — for buttons and small slots. */
 export function MiniLoader({ className = "" }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 ${className}`}>
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.18, ease: "easeInOut" }}
-          className="w-1.5 h-1.5 rounded-full bg-current"
-        />
-      ))}
+    <span className={`inline-flex items-center gap-1 ${className}`}>
+      <motion.span
+        aria-hidden
+        className="h-3.5 w-3.5 rounded-full border-2 border-current border-r-transparent"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: "linear" }}
+      />
     </span>
   );
 }
 
-/**
- * Section loader — for partial page areas (not full screen).
- */
+/** Section loader — for part of a page, not the full screen. */
 export function SectionLoader({ text = "Loading..." }: { text?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-5">
-      <div className="relative flex items-center justify-center">
-        <motion.span
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-          className="absolute w-12 h-12 rounded-full"
-          style={{
-            border: "2px solid transparent",
-            borderTopColor: "#2D5DA8",
-            borderRightColor: "#A8C63A",
-          }}
-        />
-        <motion.span
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-3 h-3 rounded-full bg-[#2D5DA8]"
-        />
-      </div>
-      <p className="text-sm font-medium text-[#6B7280]">{text}</p>
+    <div className="flex flex-col items-center justify-center gap-4 py-16">
+      <LogoLoader compact />
+      <p className="text-sm font-medium text-[#5B6B82]">{text}</p>
     </div>
   );
 }

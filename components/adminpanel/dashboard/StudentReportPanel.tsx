@@ -156,7 +156,7 @@ export default function StudentReportPanel({ franchiseId }: { franchiseId?: stri
               type="button"
               onClick={download}
               disabled={downloading || !data || !!noResults}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#C4A35A] px-4 text-xs font-bold text-[#0B132B] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#D4B46A] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#FF9A1F] to-[#F06A00] px-4 text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
               {downloading ? "Preparing PDF..." : "Download PDF"}

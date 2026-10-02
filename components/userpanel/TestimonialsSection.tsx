@@ -1,162 +1,129 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { FiStar } from "react-icons/fi";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { FiStar, FiChevronLeft, FiChevronRight, FiMessageSquare } from "react-icons/fi";
 import { FaQuoteLeft } from "react-icons/fa";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import type { TestimonialItem } from "@/config/userpanel.config";
+import { cn } from "@/lib/utils";
+import Reveal from "./ui/Reveal";
+import FlagWave from "./ui/FlagWave";
+import { EASE_OUT, VIEWPORT } from "./ui/motion";
 
 const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face";
 
-function TestimonialCard({
-  item,
-  index,
-  featured,
-  onSelect,
-}: {
-  item: TestimonialItem;
-  index: number;
-  featured: boolean;
-  onSelect: () => void;
-}) {
+function TestimonialCard({ item, index }: { item: TestimonialItem; index: number }) {
+  const reduce = useReducedMotion();
   const [avatar, setAvatar] = useState(item.avatar || FALLBACK_AVATAR);
   const stars = Math.min(5, Math.max(1, item.rating || 5));
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 32 }}
+    <motion.figure
+      data-card
+      initial={{ opacity: 0, y: reduce ? 0 : 28 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
-      onClick={onSelect}
-      className={`group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl border bg-white p-7 transition-all duration-500 md:p-8 ${
-        featured
-          ? "border-[#003366]/25 shadow-[0_24px_50px_rgba(0,51,102,0.14)] -translate-y-1.5"
-          : "border-[#E5E7EB] shadow-[0_10px_28px_rgba(15,23,42,0.05)] hover:-translate-y-1 hover:border-[#003366]/20 hover:shadow-[0_18px_40px_rgba(0,51,102,0.1)]"
-      }`}
+      viewport={VIEWPORT}
+      transition={{ duration: 0.6, delay: reduce ? 0 : index * 0.1, ease: EASE_OUT }}
+      className="group relative flex w-[86%] flex-shrink-0 snap-start flex-col rounded-[1.5rem] border border-ive-line bg-white p-6 shadow-[var(--up-card-shadow)] transition-all duration-500 hover:-translate-y-1.5 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)] sm:w-[calc(50%-0.75rem)] sm:p-7 lg:w-[calc(33.333%-1rem)]"
     >
-      <div
-        className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#002244] via-[#003366] to-[#FF7F0E] transition-opacity duration-500 ${
-          featured ? "opacity-100" : "opacity-40 group-hover:opacity-100"
-        }`}
-      />
-
-      <FaQuoteLeft
-        className={`mb-5 h-9 w-9 transition-colors duration-500 ${
-          featured ? "text-[#FF7F0E]" : "text-[#003366]/15 group-hover:text-[#FF7F0E]/70"
-        }`}
-      />
-
-      <div className="mb-4 flex gap-1">
-        {Array.from({ length: stars }).map((_, i) => (
-          <motion.span
-            key={`${item.id}-star-${i}`}
-            initial={{ scale: 0, rotate: -18 }}
-            whileInView={{ scale: 1, rotate: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 + i * 0.05, type: "spring", stiffness: 380, damping: 16 }}
-          >
-            <FiStar className="h-4 w-4 fill-[#FF7F0E] text-[#FF7F0E]" />
-          </motion.span>
-        ))}
+      <div className="flex items-center justify-between">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ive-saffron/10 text-ive-saffron transition-colors duration-300 group-hover:bg-ive-saffron group-hover:text-white">
+          <FaQuoteLeft className="h-4 w-4" />
+        </span>
+        <span className="flex gap-0.5" aria-label={`${stars} out of 5 stars`}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <FiStar key={i} className={cn("h-4 w-4", i < stars ? "fill-ive-saffron text-ive-saffron" : "text-ive-line")} />
+          ))}
+        </span>
       </div>
-
-      <p className="mb-8 flex-1 text-[15px] leading-relaxed text-[#334155] md:text-base">
-        &ldquo;{item.text}&rdquo;
-      </p>
-
-      <div className="mt-auto flex items-center gap-3.5 border-t border-[#EEF2F7] pt-5">
-        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-[#FF7F0E]/35 ring-offset-2 ring-offset-white">
-          <img
-            src={avatar}
-            alt={item.name}
-            className="h-full w-full object-cover"
-            onError={() => setAvatar(FALLBACK_AVATAR)}
-          />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate font-bold text-[#0F172A]">{item.name}</p>
-          <p className="truncate text-sm font-medium text-[#003366]">{item.role}</p>
-        </div>
-      </div>
-    </motion.article>
+      <blockquote className="mt-5 flex-1 text-[15px] leading-relaxed text-ive-ink">&ldquo;{item.text}&rdquo;</blockquote>
+      <figcaption className="mt-6 flex items-center gap-3.5 border-t border-ive-line pt-5">
+        <span className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-ive-saffron/40 ring-offset-2">
+          <img src={avatar} alt="" loading="lazy" decoding="async" onError={() => setAvatar(FALLBACK_AVATAR)} className="h-full w-full object-cover" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-bold text-ive-navy">{item.name}</span>
+          <span className="block truncate text-sm font-medium text-ive-royal">{item.role}</span>
+        </span>
+      </figcaption>
+    </motion.figure>
   );
 }
 
 export default function TestimonialsSection() {
   const config = useUserPanelConfig();
+  const reduce = useReducedMotion();
   const { testimonials } = config;
   const items: TestimonialItem[] = testimonials?.items || [];
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
 
   useEffect(() => {
-    if (items.length < 2 || paused) return;
-    const id = window.setInterval(() => {
-      setActive((i) => (i + 1) % items.length);
-    }, 4500);
-    return () => window.clearInterval(id);
-  }, [items.length, paused]);
+    updateArrows();
+    window.addEventListener("resize", updateArrows);
+    return () => window.removeEventListener("resize", updateArrows);
+  }, [updateArrows, items.length]);
+
+  const scrollByCard = (dir: 1 | -1) => {
+    const el = trackRef.current;
+    const card = el?.querySelector<HTMLElement>("[data-card]");
+    if (!el || !card) return;
+    el.scrollBy({ left: dir * (card.offsetWidth + 24), behavior: reduce ? "auto" : "smooth" });
+  };
 
   if (items.length === 0) return null;
 
-  return (
-    <section id="testimonials" className="relative overflow-hidden bg-white px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="pointer-events-none absolute -left-20 top-8 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-4 h-64 w-64 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
+  const arrowClass =
+    "flex h-11 w-11 items-center justify-center rounded-full border transition-all disabled:cursor-not-allowed disabled:opacity-35";
 
+  return (
+    <section id="testimonials" className="relative isolate overflow-hidden bg-white px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+      <FlagWave rotate={12} opacity={0.08} className="-right-44 top-4 w-[540px] sm:w-[700px] lg:-right-56 lg:w-[820px]" />
+      <div className="pointer-events-none absolute -left-24 top-16 h-72 w-72 rounded-full bg-ive-royal/[0.06] blur-3xl" aria-hidden />
       <div className="relative mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mb-12 text-center"
-        >
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
-            Testimonials
-          </span>
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
-            {testimonials?.sectionTitle || "What Our Students Say"}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-base text-[#64748B]">
-            Real outcomes from learners who trained with us.
-          </p>
-        </motion.div>
+        <Reveal className="mb-10 grid items-end gap-6 sm:mb-12 lg:grid-cols-[1fr_auto_1fr]">
+          <span className="hidden lg:block" />
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-ive-royal/[0.07] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-royal">
+              <FiMessageSquare className="h-3.5 w-3.5 text-ive-saffron" />
+              Testimonials
+            </span>
+            <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+              {testimonials?.sectionTitle || "What Our Students Say"}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">Real outcomes from learners who trained with us.</p>
+          </div>
+          {(canPrev || canNext) && (
+            <div className="flex justify-center gap-2 lg:justify-end">
+              <button type="button" onClick={() => scrollByCard(-1)} disabled={!canPrev} aria-label="Previous testimonials" className={cn(arrowClass, "border-ive-line bg-white text-ive-navy hover:border-ive-navy")}>
+                <FiChevronLeft className="h-5 w-5" />
+              </button>
+              <button type="button" onClick={() => scrollByCard(1)} disabled={!canNext} aria-label="Next testimonials" className={cn(arrowClass, "border-ive-navy bg-ive-navy text-white hover:bg-ive-navy-2")}>
+                <FiChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </Reveal>
 
         <div
-          className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+          ref={trackRef}
+          onScroll={updateArrows}
+          className="-mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-4 pb-4 pt-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, index) => (
-            <TestimonialCard
-              key={item.id}
-              item={item}
-              index={index}
-              featured={index === active}
-              onSelect={() => setActive(index)}
-            />
+            <TestimonialCard key={item.id} item={item} index={index} />
           ))}
         </div>
-
-        {items.length > 1 && (
-          <div className="mt-8 flex justify-center gap-2">
-            {items.map((item, i) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={`Show ${item.name}`}
-                onClick={() => setActive(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === active ? "w-8 bg-[#003366]" : "w-2 bg-[#E5E7EB] hover:bg-[#003366]/40"
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );

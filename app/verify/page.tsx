@@ -1,10 +1,14 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Children, Suspense, useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ProtectedView from "@/components/verify/ProtectedView";
+import { SectionLoader } from "@/components/common/PageLoader";
+import { COUNCIL } from "@/components/userpanel/ui/council";
+import { upButton } from "@/components/userpanel/ui/button";
+import { useLogoConfig } from "@/hooks/useLogoConfig";
 import {
   AlertTriangle,
   Award,
@@ -14,8 +18,9 @@ import {
   CalendarDays,
   FileText,
   Hash,
-  Loader2,
+  Mail,
   MapPin,
+  Phone,
   ScanLine,
   Search,
   ShieldCheck,
@@ -43,6 +48,8 @@ type VerifyDoc = {
   centreName?: string | null;
   centreCode?: string | null;
   centreLocation?: string | null;
+  trainingStart?: string | null;
+  trainingEnd?: string | null;
   result?: {
     percent: number;
     grade: string | null;
@@ -67,12 +74,34 @@ const DOC_LABEL: Record<string, string> = {
   student: "Student Enrollment",
 };
 
+const FALLBACK_LOGO = "/logo/IVESDC%20LOGO-01.png";
+
 function formatDate(iso?: string | null) {
   if (!iso) return null;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso;
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? iso
     : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function CouncilLogo({ className }: { className?: string }) {
+  const { logoUrl, siteName } = useLogoConfig();
+  const [src, setSrc] = useState(logoUrl || FALLBACK_LOGO);
+
+  useEffect(() => {
+    setSrc(logoUrl || FALLBACK_LOGO);
+  }, [logoUrl]);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={siteName && siteName !== "Edu Institute" ? siteName : COUNCIL.shortName}
+      className={className}
+      onError={() => setSrc(FALLBACK_LOGO)}
+    />
+  );
 }
 
 /** Turns any scanned text (QR URL, document number, enrollment barcode) into verify query params. */
@@ -116,13 +145,23 @@ function initials(name?: string) {
 function Detail({ icon, label, value }: { icon: ReactNode; label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <div className="flex gap-3 rounded-xl border border-[#0B1F3A]/[0.07] bg-white/70 px-3.5 py-2.5">
-      <span className="mt-0.5 shrink-0 text-[#B8922A]">{icon}</span>
+    <div className="flex gap-3 rounded-2xl border border-ive-line bg-white px-3.5 py-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ive-royal/10 text-ive-royal">{icon}</span>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
-        <p className="break-words text-sm font-semibold text-[#0B1F3A]">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-ive-slate">{label}</p>
+        <p className="break-words text-sm font-semibold text-ive-navy">{value}</p>
       </div>
     </div>
+  );
+}
+
+function DetailGroup({ title, children }: { title: string; children: ReactNode }) {
+  if (Children.toArray(children).length === 0) return null;
+  return (
+    <section>
+      <h4 className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-ive-slate">{title}</h4>
+      <div className="grid gap-2.5 sm:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -137,48 +176,41 @@ function SearchPanel({ onScan, compact }: { onScan: () => void; compact?: boolea
   };
 
   return (
-    <div className={compact ? "" : "rounded-3xl border border-[#0B1F3A]/10 bg-white/80 p-5 shadow-xl shadow-[#0B1F3A]/5 backdrop-blur sm:p-7"}>
+    <div className={compact ? "" : "rounded-[1.4rem] border border-ive-line bg-white p-5 shadow-[0_18px_50px_-28px_rgba(6,27,54,0.35)] sm:p-7"}>
       {!compact && (
         <div className="mb-5 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B1F3A] to-[#1E4A85] text-[#E8C46A] shadow-lg">
+          <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-ive-navy text-ive-saffron shadow-lg">
             <ShieldCheck className="h-7 w-7" />
-          </div>
-          <h2 className="text-lg font-bold text-[#0B1F3A]">Verify a certificate or result</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          </span>
+          <h2 className="text-lg font-extrabold text-ive-navy">Verify a certificate or result</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-ive-slate">
             Scan the QR code or barcode printed on the document, or type the enrollment / document number.
           </p>
         </div>
       )}
-      <button
-        type="button"
-        onClick={onScan}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#0B1F3A]/20 transition hover:brightness-110"
-      >
-        <ScanLine className="h-5 w-5 text-[#E8C46A]" />
+      <button type="button" onClick={onScan} className={upButton("navy", "lg", "w-full")}>
+        <ScanLine className="h-5 w-5 text-ive-saffron" />
         Scan QR / Barcode with camera
       </button>
-      <div className="my-4 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" />
+      <div className="my-4 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-ive-slate/70">
+        <span className="h-px flex-1 bg-ive-line" />
         or enter number
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-ive-line" />
       </div>
-      <form onSubmit={submit} className="flex gap-2">
+      <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row">
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           autoFocus={!compact}
-          placeholder="e.g. STU-2026-000001 or Marksheet No. 00001"
-          className="h-12 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-[#0B1F3A] outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:border-[#B8922A] focus:ring-2 focus:ring-[#E8C46A]/40"
+          placeholder="Enrollment, certificate or marksheet number"
+          className="h-12 min-w-0 flex-1 rounded-xl border border-ive-line bg-ive-mist/60 px-4 text-sm font-semibold uppercase tracking-wide text-ive-navy outline-none placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:border-ive-royal/40 focus:bg-white focus:ring-4 focus:ring-ive-royal/10"
         />
-        <button
-          type="submit"
-          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[#B8922A] px-4 text-sm font-bold text-white hover:bg-[#a5821f]"
-        >
+        <button type="submit" className={upButton("primary", "lg", "sm:px-6")}>
           <Search className="h-4 w-4" />
           Verify
         </button>
       </form>
-      <p className="mt-2 text-[11px] text-slate-500">USB barcode scanners work too — click the box and scan.</p>
+      <p className="mt-3 text-[11px] text-ive-slate">USB barcode scanners work too — click the box and scan.</p>
     </div>
   );
 }
@@ -211,10 +243,10 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
   }[tone];
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[#0B1F3A]/10 bg-[#FFFDF8] shadow-2xl shadow-[#0B1F3A]/10">
+    <div className="overflow-hidden rounded-[1.5rem] border border-ive-line bg-white shadow-[0_24px_60px_-32px_rgba(6,27,54,0.45)]">
       <div className={`relative bg-gradient-to-r ${banner.wrap} px-5 py-6 text-white sm:px-7`}>
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 ring-4 ring-white/30">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/25">
             {banner.icon}
           </div>
           <div className="min-w-0">
@@ -234,11 +266,11 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
                 <img
                   src={doc.photoUrl}
                   alt={doc.studentName}
-                  className="h-32 w-28 rounded-2xl border-4 border-white object-cover shadow-lg ring-2 ring-[#E8C46A]"
+                  className="h-32 w-28 rounded-2xl border-4 border-white object-cover shadow-lg ring-2 ring-ive-saffron"
                   onError={() => setPhotoFailed(true)}
                 />
               ) : (
-                <div className="flex h-32 w-28 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-[#0B1F3A] to-[#1E4A85] text-3xl font-bold text-[#E8C46A] shadow-lg ring-2 ring-[#E8C46A]">
+                <div className="flex h-32 w-28 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-ive-navy to-ive-royal text-3xl font-bold text-ive-saffron shadow-lg ring-2 ring-ive-saffron">
                   {initials(doc.studentName)}
                 </div>
               )}
@@ -249,11 +281,12 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-2xl font-extrabold uppercase tracking-wide text-[#0B1F3A]">{doc.studentName}</h3>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ive-royal">{COUNCIL.shortName} registry</p>
+              <h3 className="mt-1 text-2xl font-extrabold uppercase tracking-wide text-ive-navy">{doc.studentName}</h3>
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                 {doc.enrollmentNo && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#0B1F3A] px-3 py-1 text-xs font-bold tracking-wide text-[#E8C46A]">
-                    <Hash className="h-3.5 w-3.5" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-ive-navy px-3 py-1 text-xs font-bold tracking-wide text-white">
+                    <Hash className="h-3.5 w-3.5 text-ive-saffron" />
                     {doc.enrollmentNo}
                   </span>
                 )}
@@ -263,7 +296,7 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
                       doc.studentStatus === "COMPLETED"
                         ? "bg-emerald-100 text-emerald-700"
                         : doc.studentStatus === "ACTIVE"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-blue-100 text-blue-800"
                           : "bg-slate-200 text-slate-600"
                     }`}
                   >
@@ -271,34 +304,45 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
                   </span>
                 )}
               </div>
-              {doc.courseName && <p className="mt-3 text-sm font-semibold text-slate-700">{doc.courseName}</p>}
+              {doc.courseName && <p className="mt-3 text-sm font-semibold text-ive-slate">{doc.courseName}</p>}
             </div>
           </div>
 
-          <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
-            <Detail icon={<User className="h-4 w-4" />} label="Father / Husband" value={doc.fatherName} />
-            <Detail icon={<User className="h-4 w-4" />} label="Mother" value={doc.motherName} />
-            <Detail icon={<BookOpen className="h-4 w-4" />} label="Course code" value={doc.courseCode && doc.courseCode.length <= 20 ? doc.courseCode : null} />
-            <Detail icon={<CalendarDays className="h-4 w-4" />} label="Duration" value={doc.duration} />
-            <Detail icon={<CalendarDays className="h-4 w-4" />} label="Session" value={doc.session} />
-            <Detail icon={<Building2 className="h-4 w-4" />} label="Training centre (ATC)" value={doc.centreName} />
-            <Detail icon={<Hash className="h-4 w-4" />} label="ATC code" value={doc.centreCode} />
-            <Detail icon={<MapPin className="h-4 w-4" />} label="Centre location" value={doc.centreLocation} />
-            <Detail icon={<FileText className="h-4 w-4" />} label="Document number" value={doc.certificateNumber} />
-            <Detail icon={<CalendarDays className="h-4 w-4" />} label="Issue date" value={formatDate(doc.issueDate)} />
+          <div className="mt-6 space-y-5">
+            <DetailGroup title="Student">
+              <Detail icon={<User className="h-4 w-4" />} label="Father / Husband" value={doc.fatherName} />
+              <Detail icon={<User className="h-4 w-4" />} label="Mother" value={doc.motherName} />
+            </DetailGroup>
+            <DetailGroup title="Programme">
+              <Detail icon={<BookOpen className="h-4 w-4" />} label="Course code" value={doc.courseCode && doc.courseCode.length <= 20 ? doc.courseCode : null} />
+              <Detail icon={<CalendarDays className="h-4 w-4" />} label="Duration" value={doc.duration} />
+              <Detail icon={<CalendarDays className="h-4 w-4" />} label="Session" value={doc.session} />
+              <Detail icon={<CalendarDays className="h-4 w-4" />} label="Training start" value={formatDate(doc.trainingStart)} />
+              <Detail icon={<CalendarDays className="h-4 w-4" />} label="Training end" value={formatDate(doc.trainingEnd)} />
+            </DetailGroup>
+            <DetailGroup title="Training centre">
+              <Detail icon={<Building2 className="h-4 w-4" />} label="Centre (ATC)" value={doc.centreName} />
+              <Detail icon={<Hash className="h-4 w-4" />} label="ATC code" value={doc.centreCode} />
+              <Detail icon={<MapPin className="h-4 w-4" />} label="Location" value={doc.centreLocation} />
+            </DetailGroup>
+            <DetailGroup title="Document">
+              <Detail icon={<FileText className="h-4 w-4" />} label="Document number" value={doc.certificateNumber} />
+              <Detail icon={<CalendarDays className="h-4 w-4" />} label="Issue date" value={formatDate(doc.issueDate)} />
+              <Detail icon={<ShieldCheck className="h-4 w-4" />} label="Record status" value={doc.status} />
+            </DetailGroup>
           </div>
 
           {docType === "student" && verified && (
-            <p className="mt-6 flex items-center gap-2 rounded-xl border border-[#B8922A]/30 bg-[#FBF5E6] px-4 py-3 text-xs font-semibold text-[#6B5414]">
+            <p className="mt-6 flex items-center gap-2 rounded-2xl border border-ive-saffron/30 bg-[#FFF6EB] px-4 py-3 text-xs font-semibold text-[#9A4E00]">
               <ScanLine className="h-4 w-4 shrink-0" />
               Student identity verified. Scan the Marksheet No. barcode or QR code on the result to view marks.
             </p>
           )}
 
           {doc.result && (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-[#B8922A]/30">
-              <div className="flex flex-wrap items-center gap-4 bg-gradient-to-r from-[#0B1F3A] to-[#1E4A85] px-5 py-4 text-white">
-                <Award className="h-6 w-6 text-[#E8C46A]" />
+            <div className="mt-6 overflow-hidden rounded-2xl border border-ive-line">
+              <div className="flex flex-wrap items-center gap-4 bg-gradient-to-r from-ive-navy to-ive-royal px-5 py-4 text-white">
+                <Award className="h-6 w-6 text-ive-saffron" />
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Result</p>
                   <p className="text-2xl font-extrabold">{doc.result.percent.toFixed(2)}%</p>
@@ -318,7 +362,7 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
                   <span
                     className={`ml-auto rounded-full border px-4 py-1 text-sm font-extrabold tracking-wider ${
                       doc.result.status === "PASS"
-                        ? "border-[#E8C46A] bg-[#E8C46A]/15 text-[#F6DE9A]"
+                        ? "border-ive-saffron bg-ive-saffron/15 text-[#FFD7A8]"
                         : "border-rose-300 bg-rose-500/20 text-rose-100"
                     }`}
                   >
@@ -327,28 +371,28 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
                 )}
               </div>
               {doc.result.division && (
-                <p className="border-b border-[#B8922A]/20 bg-[#FBF5E6] px-5 py-2 text-xs font-semibold text-[#6B5414]">
+                <p className="border-b border-ive-line bg-ive-mist px-5 py-2 text-xs font-semibold text-ive-navy">
                   Division: {doc.result.division}
                 </p>
               )}
               {doc.subjects && doc.subjects.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-[#FBF5E6] text-left text-[10px] font-bold uppercase tracking-wider text-[#6B5414]">
+                    <thead className="bg-ive-mist text-left text-[10px] font-bold uppercase tracking-wider text-ive-slate">
                       <tr>
-                        <th className="px-4 py-2">#</th>
-                        <th className="px-2 py-2">Subject</th>
-                        <th className="px-2 py-2 text-right">Max</th>
-                        <th className="px-4 py-2 text-right">Obtained</th>
+                        <th className="px-4 py-2.5">#</th>
+                        <th className="px-2 py-2.5">Subject</th>
+                        <th className="px-2 py-2.5 text-right">Max</th>
+                        <th className="px-4 py-2.5 text-right">Obtained</th>
                       </tr>
                     </thead>
                     <tbody>
                       {doc.subjects.map((s, i) => (
-                        <tr key={`${s.code}-${i}`} className="border-t border-[#B8922A]/10">
-                          <td className="px-4 py-2 text-xs text-slate-500">{i + 1}</td>
-                          <td className="px-2 py-2 font-semibold text-[#0B1F3A]">{s.name}</td>
-                          <td className="px-2 py-2 text-right tabular-nums text-slate-600">{s.max}</td>
-                          <td className="px-4 py-2 text-right font-bold tabular-nums text-[#0B1F3A]">{s.obtained}</td>
+                        <tr key={`${s.code}-${i}`} className="border-t border-ive-line">
+                          <td className="px-4 py-2.5 text-xs text-ive-slate">{i + 1}</td>
+                          <td className="px-2 py-2.5 font-semibold text-ive-navy">{s.name}</td>
+                          <td className="px-2 py-2.5 text-right tabular-nums text-ive-slate">{s.max}</td>
+                          <td className="px-4 py-2.5 text-right font-bold tabular-nums text-ive-navy">{s.obtained}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -358,30 +402,33 @@ function ResultCard({ payload, query }: { payload: VerifyPayload; query: { type:
             </div>
           )}
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#0B1F3A]/[0.04] px-4 py-3 text-[11px] text-slate-600">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ive-mist px-4 py-3 text-[11px] text-ive-slate">
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-[#B8922A]" />
-              Checked against the IVESDC registry on{" "}
+              <ShieldCheck className="h-4 w-4 text-ive-saffron" />
+              Checked against the {COUNCIL.shortName} registry on{" "}
               {checkedAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
             </span>
             {payload.reason && !verified ? <span className="font-mono">Code: {payload.reason}</span> : null}
           </div>
         </div>
       ) : (
-        <div className="space-y-1 p-5 text-sm text-slate-600 sm:p-7">
+        <div className="space-y-2 p-5 text-sm text-ive-slate sm:p-7">
           {query.enr && (
             <p>
-              <span className="font-semibold text-[#0B1F3A]">Enrollment:</span> {query.enr}
+              <span className="font-semibold text-ive-navy">Enrollment:</span> {query.enr}
             </p>
           )}
           {query.id && (
             <p>
-              <span className="font-semibold text-[#0B1F3A]">Document number:</span> {query.id}
+              <span className="font-semibold text-ive-navy">Document number:</span> {query.id}
             </p>
           )}
-          <p className="pt-2 text-xs text-slate-500">
-            Check that the number is typed correctly. If you believe this document is genuine, contact the training
-            centre or IVESDC.
+          <p className="pt-2 text-xs leading-relaxed">
+            Check that the number is typed correctly. If you believe this document is genuine, contact the training centre or {COUNCIL.shortName} on{" "}
+            <a href={`tel:+91${COUNCIL.helpline}`} className="font-semibold text-ive-royal hover:underline">
+              +91 {COUNCIL.helpline}
+            </a>
+            .
           </p>
         </div>
       )}
@@ -450,57 +497,87 @@ function VerifyContent() {
   );
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(184,146,42,0.22),transparent_60%),linear-gradient(165deg,#f6f1e6_0%,#ece4d2_50%,#e3d8c2_100%)] text-[#0B1F3A]">
-      <div className="mx-auto max-w-2xl px-4 pb-14 pt-8 sm:pt-12">
-        <header className="mb-7 text-center">
-          <Link href="/verify" className="inline-block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo/IVESDC LOGO-01.png" alt="IVESDC" className="mx-auto h-16 w-auto object-contain sm:h-20" />
+    <div className="userpanel min-h-screen bg-[#F4F7FB] text-ive-navy">
+      <header className="border-b border-ive-line bg-white">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+          <Link href="/verify" className="min-w-0">
+            <CouncilLogo className="h-14 w-auto max-w-[min(16rem,58vw)] object-contain object-left sm:h-[4.5rem]" />
           </Link>
-          <h1 className="mt-3 text-xl font-extrabold tracking-wide sm:text-2xl">Official Document Verification</h1>
-          <p className="mt-1 text-xs text-slate-600 sm:text-sm">
-            Institute of Vocational Education &amp; Skill Development Council
-          </p>
-        </header>
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ive-saffron">Official portal</p>
+            <p className="text-sm font-extrabold text-ive-navy">Document verification</p>
+          </div>
+        </div>
+        <div className="h-1 bg-gradient-to-r from-ive-saffron via-white to-ive-emerald" />
+      </header>
 
+      <section className="bg-gradient-to-br from-ive-navy via-[#0A2748] to-ive-royal">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#FFB15C]">{COUNCIL.shortName}</p>
+          <h1 className="mt-2 max-w-xl text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+            Official document <span className="text-ive-saffron">verification</span>
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/75">{COUNCIL.fullName}</p>
+          <p className="mt-1 text-sm text-white/60">{COUNCIL.mission}</p>
+        </div>
+      </section>
+
+      <main className="mx-auto -mt-6 max-w-3xl px-4 pb-10 sm:px-6">
         {!hasQuery ? (
           <SearchPanel onScan={() => setScanning(true)} />
         ) : (
           <div className="space-y-5">
-          {loading ? (
-              <div className="flex flex-col items-center gap-3 rounded-3xl border border-[#0B1F3A]/10 bg-white/80 px-6 py-16 text-center shadow-xl">
-                <Loader2 className="h-10 w-10 animate-spin text-[#B8922A]" />
-                <p className="text-lg font-bold">Verifying…</p>
-                <p className="text-sm text-slate-600">Checking the IVESDC registry for this document.</p>
-            </div>
-          ) : error ? (
-              <div className="rounded-3xl border border-rose-200 bg-white/90 px-6 py-10 text-center shadow-xl">
+            {loading ? (
+              <div className="rounded-[1.4rem] border border-ive-line bg-white text-center shadow-[0_18px_50px_-28px_rgba(6,27,54,0.35)]">
+                <SectionLoader text="Checking the IVESDC registry..." />
+              </div>
+            ) : error ? (
+              <div className="rounded-[1.4rem] border border-rose-200 bg-white px-6 py-10 text-center shadow-sm">
                 <XCircle className="mx-auto h-10 w-10 text-rose-500" />
-                <p className="mt-2 text-lg font-bold">Verification unavailable</p>
-                <p className="text-sm text-slate-600">{error}</p>
+                <p className="mt-2 text-lg font-extrabold text-ive-navy">Verification unavailable</p>
+                <p className="text-sm text-ive-slate">{error}</p>
               </div>
             ) : payload ? (
               <ProtectedView
-                watermark={`IVESDC VERIFICATION • ${payload.document?.enrollmentNo || enr || id} • ${new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`}
+                watermark={`${COUNCIL.shortName} VERIFICATION • ${payload.document?.enrollmentNo || enr || id} • ${new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`}
               >
                 <ResultCard key={`${type}|${enr}|${id}`} payload={payload} query={{ type, enr, id }} />
               </ProtectedView>
             ) : null}
 
-            <div className="rounded-3xl border border-[#0B1F3A]/10 bg-white/70 p-5 shadow-lg backdrop-blur">
-              <p className="mb-3 text-sm font-bold">Verify another document</p>
+            <div className="rounded-[1.4rem] border border-ive-line bg-white p-5 shadow-sm">
+              <p className="mb-3 text-sm font-extrabold text-ive-navy">Verify another document</p>
               <SearchPanel compact onScan={() => setScanning(true)} />
             </div>
-                    </div>
-                  )}
+          </div>
+        )}
+      </main>
 
-        <p className="mt-8 text-center text-[11px] text-slate-500">
-          Official verification portal of IVESDC ·{" "}
-          <Link href="/" className="font-semibold text-[#0B1F3A] hover:underline">
-            Home
-          </Link>
-        </p>
-      </div>
+      <footer className="border-t border-ive-line bg-white">
+        <div className="mx-auto grid max-w-3xl gap-4 px-4 py-6 text-sm text-ive-slate sm:grid-cols-2 sm:px-6">
+          <div>
+            <p className="font-extrabold text-ive-navy">{COUNCIL.fullName}</p>
+            <p className="mt-1 flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-ive-saffron" />
+              {COUNCIL.address}
+            </p>
+            <p className="mt-1 text-xs">CIN: {COUNCIL.cin}</p>
+          </div>
+          <div className="sm:text-right">
+            <a href={`tel:+91${COUNCIL.helpline}`} className="inline-flex items-center gap-2 font-semibold text-ive-navy hover:text-ive-royal">
+              <Phone className="h-4 w-4 text-ive-saffron" />
+              +91 {COUNCIL.helpline}
+            </a>
+            <a href={`mailto:${COUNCIL.email}`} className="mt-1 flex items-center gap-2 hover:text-ive-royal sm:justify-end">
+              <Mail className="h-4 w-4 text-ive-royal" />
+              {COUNCIL.email}
+            </a>
+            <Link href="/userpanel" className="mt-3 inline-block text-xs font-bold text-ive-royal hover:underline">
+              Back to website
+            </Link>
+          </div>
+        </div>
+      </footer>
 
       {scanning && <VerifyScanner onResult={onScanResult} onClose={() => setScanning(false)} />}
     </div>
@@ -511,7 +588,7 @@ export default function VerifyPage() {
   return (
     <Suspense
       fallback={
-        <div className="grid min-h-screen place-items-center bg-[#f4efe4] text-[#132a4a]">Loading verification…</div>
+        <div className="grid min-h-screen place-items-center bg-[#F4F7FB] text-ive-navy">Loading verification…</div>
       }
     >
       <VerifyContent />

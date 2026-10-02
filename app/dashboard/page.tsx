@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { Card, CardContent } from "@/components/common/Card";
 import {
-  Loader2,
   Sparkles,
   BarChart3,
   Clock3,
@@ -26,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { ROLES } from "@/lib/permissions";
 import { fetcher } from "@/lib/fetcher";
+import { SectionLoader } from "@/components/common/PageLoader";
 
 interface DashboardData {
   stats: {
@@ -92,16 +92,7 @@ export default function DashboardPage() {
     : null;
 
   if (isLoading && !data) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center rounded-xl border border-[#1E4A85]/15 bg-[#0B132B] px-4 py-12 text-white">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-[#C4A35A]" />
-            <span className="text-sm font-medium">Loading dashboard...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <SectionLoader text="Loading dashboard..." />;
   }
 
   if (errorMsg && !data) {
@@ -131,7 +122,7 @@ export default function DashboardPage() {
   const isSuperAdminOrAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
 
   return (
-    <div className="space-y-3 pb-2">
+    <div className="space-y-4 pb-2">
       {/* Compact top bar: greeting + clock + filter */}
       <DashboardWelcomePanel
         userName={user?.fullName}
@@ -145,14 +136,14 @@ export default function DashboardPage() {
                 id: f.id,
                 name: f.name,
               }))}
-              variant="dark"
+              variant="light"
             />
           ) : null
         }
       />
 
       {/* Slim tabs */}
-      <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-lg border border-border/70 bg-card p-1 sm:w-auto">
+      <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-xl border border-[#D7E3F4] bg-white p-1 shadow-sm sm:w-auto">
         {DASHBOARD_TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -161,13 +152,13 @@ export default function DashboardPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={[
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+                "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all",
                 isActive
-                  ? "bg-[#1E4A85] text-white shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-[#061B36] text-white shadow-sm"
+                  : "text-[#5B6B82] hover:bg-[#F4F7FB] hover:text-[#061B36]",
               ].join(" ")}
             >
-              <Icon className={isActive ? "h-3.5 w-3.5 text-[#C4A35A]" : "h-3.5 w-3.5"} />
+              <Icon className={isActive ? "h-3.5 w-3.5 text-[#FF8500]" : "h-3.5 w-3.5"} />
               {tab.label}
             </button>
           );
@@ -283,18 +274,18 @@ function DashboardWelcomePanel({
   });
 
   return (
-    <div className="relative z-10 overflow-visible rounded-xl border border-[#1E4A85]/25 bg-gradient-to-r from-[#0B132B] via-[#163A6B] to-[#1E4A85] text-white shadow-md">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl opacity-40 [background:radial-gradient(circle_at_10%_20%,rgba(196,163,90,.18),transparent_40%)]" />
-      <div className="relative flex flex-col gap-2.5 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-4">
-        <div className="min-w-0 flex items-center gap-2.5">
-          <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${greeting.iconBg}`}>
-            <GreetingIcon className={`h-4 w-4 ${greeting.iconColor}`} />
+    <div className="relative z-10 overflow-visible rounded-2xl border border-[#D7E3F4] bg-gradient-to-r from-white via-[#F4F8FE] to-[#EAF2FC] text-[#061B36] shadow-[0_10px_30px_-18px_rgba(6,27,54,0.35)]">
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 [background:radial-gradient(circle_at_80%_20%,rgba(255,133,0,0.18),transparent_42%),radial-gradient(circle_at_100%_80%,rgba(21,154,112,0.16),transparent_40%)]" />
+      <div className="relative flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
+        <div className="min-w-0 flex items-center gap-3">
+          <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${greeting.iconBg}`}>
+            <GreetingIcon className={`h-5 w-5 ${greeting.iconColor}`} />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold leading-tight sm:text-lg">
-              {greeting.label}, <span className="text-[#C4A35A]">{firstName}</span>
+            <h1 className="truncate text-lg font-extrabold leading-tight tracking-tight sm:text-xl [font-family:var(--font-jakarta)]">
+              {greeting.label}, <span className="text-[#FF8500]">{firstName}</span>
             </h1>
-            <p className="truncate text-[11px] text-white/65">
+            <p className="truncate text-xs text-[#5B6B82]">
               {roleName || "Admin"} · {dateText}
             </p>
           </div>
@@ -302,9 +293,9 @@ function DashboardWelcomePanel({
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {franchiseFilter}
-          <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.08] px-2.5 py-1.5">
-            <Clock3 className="h-3.5 w-3.5 text-[#C4A35A]" />
-            <span className="font-mono text-sm font-semibold tabular-nums tracking-wide">{timeText}</span>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-[#D7E3F4] bg-white px-3 py-2 shadow-sm">
+            <Clock3 className="h-3.5 w-3.5 text-[#124E96]" />
+            <span className="font-mono text-sm font-semibold tabular-nums tracking-wide text-[#061B36]">{timeText}</span>
           </div>
         </div>
       </div>
@@ -319,30 +310,30 @@ function getTimeGreeting(date: Date) {
     return {
       label: "Good Morning",
       icon: Sun,
-      iconBg: "bg-amber-400/20",
-      iconColor: "text-amber-300",
+      iconBg: "bg-[#FF8500]/12",
+      iconColor: "text-[#E67600]",
     };
   }
   if (hour >= 12 && hour < 17) {
     return {
       label: "Good Afternoon",
       icon: Sun,
-      iconBg: "bg-[#C4A35A]/25",
-      iconColor: "text-[#E8D5A3]",
+      iconBg: "bg-[#124E96]/10",
+      iconColor: "text-[#124E96]",
     };
   }
   if (hour >= 17 && hour < 21) {
     return {
       label: "Good Evening",
       icon: Sunset,
-      iconBg: "bg-orange-400/20",
-      iconColor: "text-orange-300",
+      iconBg: "bg-[#FF8500]/12",
+      iconColor: "text-[#E67600]",
     };
   }
   return {
     label: "Good Night",
     icon: Moon,
-    iconBg: "bg-indigo-400/20",
-    iconColor: "text-indigo-300",
+      iconBg: "bg-[#061B36]/8",
+      iconColor: "text-[#061B36]",
   };
 }

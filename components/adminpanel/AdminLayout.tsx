@@ -175,7 +175,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F4F7FB] dark:bg-background">
       <div className="flex h-screen overflow-hidden">
         <Sidebar
           isCollapsed={isCollapsed}
@@ -190,7 +190,7 @@ export default function AdminLayout({
             <Navbar onSidebarToggle={() => setIsMobileOpen(!isMobileOpen)} user={user} />
           </div>
           <main className="relative z-0 min-h-0 flex-1 overflow-y-auto scrollbar-thin">
-            <div className="container mx-auto bg-background px-4 py-6 dark:bg-background lg:px-6">
+            <div className="container mx-auto bg-[#F4F7FB] px-4 py-5 dark:bg-background lg:px-6">
               {children}
             </div>
           </main>

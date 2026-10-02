@@ -9,6 +9,7 @@ import StatsSection from "./StatsSection";
 import AboutSection from "./AboutSection";
 import CoursesSection from "./CoursesSection";
 
+const HighlightsSection = dynamic(() => import("./HighlightsSection"));
 const FranchiseSection = dynamic(() => import("./FranchiseSection"));
 const OffersSection = dynamic(() => import("./OffersSection"));
 const TestimonialsSection = dynamic(() => import("./TestimonialsSection"));
@@ -38,6 +39,7 @@ export default function UserDashboard() {
       <StatsSection config={config} />
       <AboutSection config={config} />
       <CoursesSection config={config} />
+      <HighlightsSection config={config} />
       <FranchiseSection config={config} />
       <OffersSection config={config} />
       <TestimonialsSection />

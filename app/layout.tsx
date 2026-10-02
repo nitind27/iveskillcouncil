@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Devanagari, Noto_Sans_Gujarati } from "next/font/google";
+import { Inter, Noto_Sans_Devanagari, Noto_Sans_Gujarati, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -8,8 +8,16 @@ import AppShell from "@/components/AppShell";
 import ToastProvider from "@/components/common/ToastProvider";
 import { ConfirmDialogHost } from "@/components/common/ConfirmDialog";
 import SWRProvider from "@/components/SWRProvider";
+import GlobalLoader from "@/components/common/GlobalLoader";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
+  preload: false,
+});
 const notoDevanagari = Noto_Sans_Devanagari({
   subsets: ["devanagari"],
   display: "swap",
@@ -43,8 +51,9 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${notoDevanagari.variable} ${notoGujarati.variable} ${inter.className} font-sans antialiased`}
+        className={`${inter.variable} ${jakarta.variable} ${notoDevanagari.variable} ${notoGujarati.variable} ${inter.className} font-sans antialiased`}
       >
+        <GlobalLoader />
         <ToastProvider />
         <ConfirmDialogHost />
         <ThemeProvider>

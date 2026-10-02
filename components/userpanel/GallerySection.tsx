@@ -1,17 +1,33 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiImage, FiX, FiChevronLeft, FiChevronRight, FiMaximize2 } from "react-icons/fi";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { FiImage, FiX, FiChevronLeft, FiChevronRight, FiMaximize2, FiGrid } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import type { UserPanelConfig, GalleryImage } from "@/config/userpanel.config";
+import { cn } from "@/lib/utils";
+import Reveal from "./ui/Reveal";
+import { upButton } from "./ui/button";
+import { EASE_OUT } from "./ui/motion";
 
 interface GallerySectionProps {
   config: UserPanelConfig;
 }
 
 const ALL = "All";
-const INITIAL_VISIBLE = 12;
+const INITIAL_VISIBLE = 8;
+
+/** Repeating editorial rhythm: feature, square, tall, square, wide, square, square, wide. */
+const SPANS = [
+  "col-span-2 row-span-2",
+  "",
+  "row-span-2",
+  "",
+  "col-span-2",
+  "",
+  "",
+  "col-span-2",
+];
 
 function GalleryTile({
   item,
@@ -24,44 +40,52 @@ function GalleryTile({
   onOpen: () => void;
   onError: () => void;
 }) {
+  const reduce = useReducedMotion();
   const [loaded, setLoaded] = useState(false);
   const [useThumb, setUseThumb] = useState(Boolean(item.thumb && item.thumb !== item.src));
+  const span = SPANS[index % SPANS.length];
+  const large = span.includes("row-span-2") && span.includes("col-span-2");
 
   return (
     <motion.button
       type="button"
-      initial={{ opacity: 0, y: 24 }}
+      layout={!reduce}
+      initial={{ opacity: 0, y: reduce ? 0 : 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-30px" }}
-      transition={{ duration: 0.45, delay: (index % 6) * 0.06, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.5, delay: reduce ? 0 : (index % 8) * 0.05, ease: EASE_OUT }}
       onClick={onOpen}
-      className="group relative mb-4 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#EEF2F7] text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] transition-all duration-500 hover:-translate-y-1 hover:border-[#003366]/25 hover:shadow-[0_20px_44px_rgba(0,51,102,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7F0E] md:mb-5"
+      className={cn(
+        "group relative block h-full w-full overflow-hidden rounded-2xl bg-ive-line text-left shadow-[0_12px_30px_-18px_rgba(6,27,54,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ive-saffron focus-visible:ring-offset-2",
+        span
+      )}
       aria-label={`Open ${item.alt || "image"}`}
     >
-      {!loaded && <div className="aspect-[4/3] w-full animate-pulse bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]" />}
+      {!loaded && <span className="absolute inset-0 animate-pulse bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]" aria-hidden />}
       <img
-        src={useThumb ? item.thumb : item.src}
+        src={useThumb && !large ? item.thumb : item.src}
         alt={item.alt || "Gallery image"}
-        loading={index < 3 ? "eager" : "lazy"}
+        loading={index < 4 ? "eager" : "lazy"}
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => (useThumb ? setUseThumb(false) : onError())}
-        className={`block h-auto w-full transition-transform duration-700 ease-out group-hover:scale-[1.06] ${loaded ? "" : "absolute inset-0 opacity-0"}`}
+        className={cn(
+          "absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-700 ease-out group-hover:scale-[1.06]",
+          loaded ? "opacity-100" : "opacity-0"
+        )}
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#001a33]/85 via-[#001a33]/10 to-transparent opacity-80 transition-opacity duration-500 group-hover:opacity-100" />
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ive-navy/85 via-ive-navy/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
       {item.category && (
-        <span className="absolute left-3 top-3 rounded-full border border-white/25 bg-[#001a33]/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-ive-navy shadow-sm">
           {item.category}
         </span>
       )}
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
-        <span className="line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-sm">
-          {item.alt}
-        </span>
-        <span className="flex h-9 w-9 flex-shrink-0 translate-y-1 items-center justify-center rounded-full bg-[#FF7F0E] text-[#1A1408] opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+      <span className="absolute inset-x-0 bottom-0 flex translate-y-2 items-end justify-between gap-3 p-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+        <span className={cn("line-clamp-2 font-semibold leading-snug text-white", large ? "text-base" : "text-[13px]")}>{item.alt}</span>
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-ive-saffron text-white shadow-lg">
           <FiMaximize2 className="h-4 w-4" />
         </span>
-      </div>
+      </span>
     </motion.button>
   );
 }
@@ -141,7 +165,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex flex-col bg-[#070F1C]/95 backdrop-blur-md"
+          className="fixed inset-0 z-[9999] flex flex-col bg-[#040F20]/95 backdrop-blur-md"
           onClick={() => setLightboxIndex(null)}
           onTouchStart={(e) => (touchX.current = e.touches[0]?.clientX ?? null)}
           onTouchEnd={(e) => {
@@ -156,13 +180,13 @@ export default function GallerySection({ config }: GallerySectionProps) {
           aria-label="Gallery image"
         >
           <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6" onClick={(e) => e.stopPropagation()}>
-            <span className="rounded-full border border-[#FF7F0E]/35 bg-[#FF7F0E]/15 px-3 py-1 text-xs font-semibold text-[#FF7F0E]">
+            <span className="rounded-full border border-ive-saffron/35 bg-ive-saffron/15 px-3 py-1 text-xs font-semibold text-ive-saffron">
               {lightboxIndex + 1} / {total}
             </span>
             <button
               type="button"
               onClick={() => setLightboxIndex(null)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-ive-saffron"
               aria-label="Close"
             >
               <FiX className="h-5 w-5" />
@@ -175,7 +199,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); go(-1); }}
-                  className="absolute left-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408] sm:left-5 sm:flex"
+                  className="absolute left-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-ive-saffron sm:left-5 sm:flex"
                   aria-label="Previous"
                 >
                   <FiChevronLeft className="h-6 w-6" />
@@ -183,7 +207,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); go(1); }}
-                  className="absolute right-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-[#FF7F0E] hover:text-[#1A1408] sm:right-5 sm:flex"
+                  className="absolute right-2 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-ive-saffron sm:right-5 sm:flex"
                   aria-label="Next"
                 >
                   <FiChevronRight className="h-6 w-6" />
@@ -222,9 +246,10 @@ export default function GallerySection({ config }: GallerySectionProps) {
                     key={img.src + i}
                     type="button"
                     onClick={() => setLightboxIndex(i)}
-                    className={`h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                      i === lightboxIndex ? "border-[#FF7F0E] opacity-100" : "border-transparent opacity-50 hover:opacity-90"
-                    }`}
+                    className={cn(
+                      "h-14 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all",
+                      i === lightboxIndex ? "border-ive-saffron opacity-100" : "border-transparent opacity-50 hover:opacity-90"
+                    )}
                     aria-label={`Show ${img.alt || `image ${i + 1}`}`}
                   >
                     <img src={img.thumb || img.src} alt="" loading="lazy" className="h-full w-full object-cover" />
@@ -239,33 +264,32 @@ export default function GallerySection({ config }: GallerySectionProps) {
   );
 
   return (
-    <section id="gallery" className="relative overflow-hidden bg-[#F7F8FA] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-      <div className="pointer-events-none absolute -left-16 top-10 h-72 w-72 rounded-full bg-[#003366]/[0.06] blur-3xl" />
-      <div className="pointer-events-none absolute -right-12 bottom-6 h-56 w-56 rounded-full bg-[#FF7F0E]/[0.08] blur-3xl" />
-
+    <section id="gallery" className="relative overflow-hidden bg-ive-mist px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
       <div className="relative mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 text-center"
-        >
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#003366]/15 bg-[#003366]/8 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#003366]">
-            <FiImage className="h-3.5 w-3.5" />
-            Moments &amp; Achievements
-          </span>
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0F172A] md:text-4xl">
-            {gallery.sectionTitle}
-          </h2>
-          <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-[#003366] to-[#FF7F0E]" />
-          <p className="mx-auto mt-4 max-w-xl text-base text-[#64748B]">
-            Awards, events and proud moments — a glimpse of our institute&apos;s journey.
-          </p>
-        </motion.div>
+        <Reveal className="mb-8 grid items-end gap-6 lg:grid-cols-[1fr_auto_1fr]">
+          <span className="hidden lg:block" />
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-royal shadow-sm">
+              <FiImage className="h-3.5 w-3.5 text-ive-saffron" />
+              Moments &amp; Achievements
+            </span>
+            <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">{gallery.sectionTitle}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
+              Awards, events and proud moments — a glimpse of our institute&apos;s journey.
+            </p>
+          </div>
+          {filtered.length > INITIAL_VISIBLE && (
+            <div className="flex justify-center lg:justify-end">
+              <button type="button" onClick={() => setShowAll((v) => !v)} className={upButton("outline", "md")}>
+                <FiGrid className="h-4 w-4" />
+                {showAll ? "Show less" : `View All Photos (${filtered.length})`}
+              </button>
+            </div>
+          )}
+        </Reveal>
 
         {categories.length > 1 && (
-          <div className="mb-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Gallery categories">
+          <div className="-mx-4 mb-8 flex justify-start gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Gallery categories">
             {[{ name: ALL, count: images.length }, ...categories].map(({ name, count }) => {
               const active = filter === name;
               return (
@@ -278,18 +302,16 @@ export default function GallerySection({ config }: GallerySectionProps) {
                     setFilter(name);
                     setShowAll(false);
                   }}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-300 ${
-                    active
-                      ? "border-[#003366] bg-[#003366] text-white shadow-[0_8px_20px_rgba(0,51,102,0.25)]"
-                      : "border-[#E2E8F0] bg-white text-[#334155] hover:border-[#003366]/30 hover:text-[#003366]"
-                  }`}
+                  className={cn(
+                    "relative inline-flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-300",
+                    active ? "text-white" : "bg-white text-ive-ink hover:text-ive-navy"
+                  )}
                 >
-                  {name}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                      active ? "bg-[#FF7F0E] text-[#1A1408]" : "bg-[#F1F5F9] text-[#64748B]"
-                    }`}
-                  >
+                  {active && (
+                    <motion.span layoutId="gallery-filter" className="absolute inset-0 rounded-full bg-ive-navy shadow-[0_8px_20px_-6px_rgba(6,27,54,0.45)]" transition={{ type: "spring", stiffness: 380, damping: 32 }} />
+                  )}
+                  <span className="relative">{name}</span>
+                  <span className={cn("relative rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none", active ? "bg-ive-saffron text-white" : "bg-ive-mist text-ive-slate")}>
                     {count}
                   </span>
                 </button>
@@ -298,29 +320,11 @@ export default function GallerySection({ config }: GallerySectionProps) {
           </div>
         )}
 
-        <div key={filter} className="columns-1 gap-4 sm:columns-2 md:gap-5 lg:columns-3">
+        <div className="grid auto-rows-[140px] grid-cols-2 gap-3 [grid-auto-flow:dense] sm:auto-rows-[180px] sm:gap-4 md:grid-cols-4 lg:auto-rows-[200px]">
           {visible.map((item, i) => (
-            <GalleryTile
-              key={item.src + i}
-              item={item}
-              index={i}
-              onOpen={() => setLightboxIndex(i)}
-              onError={() => markFailed(item.src)}
-            />
+            <GalleryTile key={filter + item.src + i} item={item} index={i} onOpen={() => setLightboxIndex(i)} onError={() => markFailed(item.src)} />
           ))}
         </div>
-
-        {filtered.length > INITIAL_VISIBLE && (
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="rounded-full border border-[#003366]/20 bg-white px-6 py-2.5 text-sm font-semibold text-[#003366] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#003366] hover:shadow-md"
-            >
-              {showAll ? "Show less" : `View all ${filtered.length} photos`}
-            </button>
-          </div>
-        )}
       </div>
 
       {mounted && createPortal(lightboxContent, document.body)}

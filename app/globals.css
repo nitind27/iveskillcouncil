@@ -298,42 +298,156 @@ html.lang-gu body {
 
   /* User Panel: IVESDC Brand Theme (saffron / white / green + navy) */
   .userpanel {
+    font-family: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     /* Backgrounds */
-    --up-bg: #F8F9FA;
+    --up-bg: #F4F7FB;
     --up-bg-card: #FFFFFF;
-    --up-bg-muted: #F0F4F8;
+    --up-bg-muted: #EEF3F9;
     /* Text */
-    --up-text: #0F172A;
-    --up-text-muted: #64748B;
+    --up-text: #0B1426;
+    --up-text-muted: #5B6B82;
     --up-text-subtle: #94A3B8;
-    --up-heading: #003366;
+    --up-heading: #061B36;
     /* Borders */
-    --up-border: #E5E7EB;
-    --up-border-strong: #D1D5DB;
-    /* Primary — Deep Navy */
-    --up-accent: #003366;
-    --up-accent-hover: #002244;
+    --up-border: #E3E9F2;
+    --up-border-strong: #D1D9E6;
+    /* Primary — Deep Navy / Royal Blue */
+    --up-accent: #061B36;
+    --up-accent-hover: #0B2A52;
     --up-accent-muted: #5A8AB8;
-    --up-blue: #0056b3;
-    /* Secondary — India Green */
-    --up-green: #28A745;
-    --up-green-hover: #1E7E34;
-    --up-green-muted: #D4EDDA;
-    /* Accent — Saffron / Orange (primary CTAs) */
-    --up-orange: #FF7F0E;
-    --up-orange-hover: #E66A00;
-    --up-orange-muted: #FFE4CC;
+    --up-blue: #124E96;
+    /* Secondary — Emerald */
+    --up-green: #159A70;
+    --up-green-hover: #0F7D5A;
+    --up-green-muted: #D3F2E6;
+    /* Accent — Saffron (primary CTAs) */
+    --up-orange: #FF8500;
+    --up-orange-hover: #E67600;
+    --up-orange-muted: #FFE6CC;
     /* Navbar glass */
-    --up-nav-bg: rgba(255, 255, 255, 0.98);
-    --up-nav-border: rgba(0, 51, 102, 0.08);
-    --up-nav-shadow: 0 4px 20px rgba(0, 51, 102, 0.06);
-    --up-card-shadow: 0 4px 16px rgba(0, 51, 102, 0.06);
-    --up-card-shadow-hover: 0 12px 32px rgba(0, 51, 102, 0.12);
-    --up-radius: 12px;
-    /* Fixed header + marquee heights */
+    --up-nav-bg: rgba(255, 255, 255, 0.86);
+    --up-nav-border: rgba(6, 27, 54, 0.08);
+    --up-nav-shadow: 0 10px 30px -12px rgba(6, 27, 54, 0.18);
+    --up-card-shadow: 0 1px 2px rgba(6, 27, 54, 0.04), 0 8px 24px -12px rgba(6, 27, 54, 0.12);
+    --up-card-shadow-hover: 0 2px 4px rgba(6, 27, 54, 0.04), 0 24px 48px -16px rgba(6, 27, 54, 0.22);
+    --up-radius: 16px;
+    /* Fixed header: info bar + main navigation */
+    --up-topbar-height: 2rem;
     --up-header-height: 3.75rem;
-    --up-marquee-height: 1.75rem;
-    --up-nav-height: calc(var(--up-header-height) + var(--up-marquee-height) + 3px);
+    --up-nav-height: calc(var(--up-topbar-height) + var(--up-header-height));
+  }
+  @media (min-width: 1024px) {
+    .userpanel {
+      --up-topbar-height: 2.25rem;
+      --up-header-height: 4.75rem;
+    }
+  }
+  .userpanel ::selection {
+    background: rgba(255, 133, 0, 0.22);
+  }
+  /* Subtle blueprint grid used on dark navy surfaces */
+  .userpanel .up-grid-pattern {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 85%);
+  }
+  .userpanel .up-dot-pattern {
+    background-image: radial-gradient(rgba(18, 78, 150, 0.14) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  /* Gradient hairline border (saffron → white → emerald) without extra markup */
+  .userpanel .up-gradient-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .userpanel .up-gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255, 133, 0, 0.75), rgba(255, 255, 255, 0.35) 45%, rgba(21, 154, 112, 0.7));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .userpanel .up-glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .userpanel .up-glass-dark {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .userpanel .up-tricolor {
+    background: linear-gradient(90deg, #FF8500 0 33.33%, #FFFFFF 33.33% 66.66%, #159A70 66.66% 100%);
+  }
+  .userpanel .up-text-gradient {
+    background: linear-gradient(100deg, #FF8500 0%, #FFB15C 45%, #FFFFFF 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  @keyframes up-float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -12px, 0); }
+  }
+  .userpanel .up-float {
+    animation: up-float 7s ease-in-out infinite;
+  }
+  @keyframes up-spin-slow {
+    to { transform: rotate(360deg); }
+  }
+  .userpanel .up-spin-slow {
+    animation: up-spin-slow 40s linear infinite;
+  }
+  @keyframes up-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes up-flag-drift {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    50% { transform: translate3d(14px, -10px, 0) rotate(1.5deg) scale(1.02); }
+  }
+  .userpanel .up-flag-drift {
+    animation: up-flag-drift 16s ease-in-out infinite;
+  }
+  @keyframes up-sheen {
+    0% { transform: translateX(-120%) skewX(-20deg); }
+    100% { transform: translateX(220%) skewX(-20deg); }
+  }
+  .userpanel .up-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .userpanel .up-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    pointer-events: none;
+  }
+  .userpanel .up-sheen:hover::after {
+    animation: up-sheen 0.9s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .userpanel .up-float,
+    .userpanel .up-spin-slow,
+    .userpanel .up-flag-drift,
+    .userpanel .up-sheen:hover::after {
+      animation: none;
+    }
   }
   .userpanel .up-card {
     background: var(--up-bg-card);
@@ -481,105 +595,35 @@ html.lang-gu body {
     .marquee-track {
       animation: none;
     }
-    .login-mesh-bg::before {
-      animation: none !important;
-    }
-    .login-brand-logo-box,
-    .login-feature-pill-3d {
+    .login-flag-drift {
       animation: none !important;
     }
   }
 }
 
-/* Login page — dark glass + mesh */
-.login-page {
-  background: linear-gradient(135deg, #0b132b 0%, #1c2541 45%, #0f1a33 100%);
+/* Login page — light institutional portal.
+   Sizes track the viewport so a short laptop stays compact and a large screen opens up. */
+.login-stage {
+  --login-logo: clamp(4.75rem, 11vh, 7.75rem);
+  --login-title: clamp(2.4rem, 5.5vh, 3.55rem);
+  --login-gap: clamp(1.05rem, 2.4vh, 2.75rem);
+  --login-pad-x: clamp(1.25rem, 3.6vw, 5rem);
+  --login-pad-top: clamp(0.85rem, 2.6vh, 2.75rem);
 }
-.login-mesh-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.35;
+.login-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
-  pointer-events: none;
+    linear-gradient(rgba(18, 78, 150, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 78, 150, 0.06) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(ellipse 80% 70% at 30% 35%, #000 15%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 35%, #000 15%, transparent 75%);
 }
-.login-mesh-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(30, 74, 133, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 80% 70%, rgba(196, 163, 90, 0.12) 0%, transparent 40%);
-  pointer-events: none;
+@keyframes login-flag-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(18px, -12px, 0) rotate(1.4deg) scale(1.02); }
 }
-.login-glass-card {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-.login-feature-pill {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
-}
-.login-brand-panel {
-  background: linear-gradient(160deg, rgba(11, 19, 43, 0.6) 0%, rgba(28, 37, 65, 0.2) 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-}
-.login-brand-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.22;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(180deg, black 0%, transparent 92%);
-  pointer-events: none;
-}
-.login-brand-glow {
-  background:
-    radial-gradient(ellipse 70% 50% at 30% 20%, rgba(30, 74, 133, 0.35) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(196, 163, 90, 0.12) 0%, transparent 55%);
-}
-.login-brand-logo-scene {
-  perspective: 1200px;
-}
-.login-brand-logo-box {
-  transform-style: preserve-3d;
-}
-.login-brand-logo {
-  filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.45));
-}
-.login-brand-divider {
-  background: linear-gradient(90deg, #c4a35a 0%, rgba(196, 163, 90, 0.2) 100%);
-}
-.login-feature-pill-3d {
-  perspective: 800px;
-  transform-style: preserve-3d;
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
-}
-.login-feature-pill-3d:hover {
-  border-color: rgba(196, 163, 90, 0.25);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
-}
-.login-btn-gold {
-  background: linear-gradient(135deg, #d4b86a 0%, #c4a35a 45%, #a88b48 100%);
-  box-shadow: 0 8px 28px rgba(196, 163, 90, 0.35);
-}
-.login-btn-gold:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 12px 32px rgba(196, 163, 90, 0.45);
+.login-flag-drift {
+  animation: login-flag-drift 18s ease-in-out infinite;
 }
 
 /* React-toastify: always show toasts above everything */

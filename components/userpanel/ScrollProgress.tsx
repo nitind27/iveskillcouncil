@@ -23,7 +23,8 @@ export default function ScrollProgress() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[99] h-1 origin-left bg-[var(--up-orange)]"
+      aria-hidden
+      className="pointer-events-none fixed left-0 right-0 top-0 z-[101] h-[3px] origin-left bg-gradient-to-r from-ive-saffron via-[#FFB15C] to-ive-emerald"
       style={{ transform: `scaleX(${progress})` }}
     />
   );

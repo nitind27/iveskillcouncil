@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useInView, useReducedMotion } from "framer-motion";
 
 interface AnimatedCounterProps {
   value: number;
@@ -8,34 +9,37 @@ interface AnimatedCounterProps {
   className?: string;
 }
 
+const formatter = new Intl.NumberFormat("en-IN");
+
+/** Counts up from 0 once the number scrolls into view. */
 export default function AnimatedCounter({ value, duration = 1.8, className = "" }: AnimatedCounterProps) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const reduce = useReducedMotion();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!inView) return;
+    if (reduce || value <= 0) {
       setCount(value);
       return;
     }
 
-    const end = value;
-    const startTime = Date.now();
-    const endTime = startTime + duration * 1000;
-
-    const tick = () => {
-      const now = Date.now();
-      const elapsed = (now - startTime) / 1000;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic for smooth finish
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / (duration * 1000), 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.floor(end * eased);
-      setCount(current);
-      if (now < endTime) requestAnimationFrame(tick);
-      else setCount(end);
+      setCount(Math.round(value * eased));
+      if (progress < 1) frame = requestAnimationFrame(tick);
     };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [inView, reduce, value, duration]);
 
-    const id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
-  }, [value, duration]);
-
-  return <span className={className}>{count}</span>;
+  return (
+    <span ref={ref} className={className}>
+      {formatter.format(count)}
+    </span>
+  );
 }

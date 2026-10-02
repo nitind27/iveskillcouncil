@@ -10,6 +10,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /** Public portal (user panel) brand palette */
+        ive: {
+          navy: "#061B36",
+          "navy-2": "#0B2A52",
+          royal: "#124E96",
+          saffron: "#FF8500",
+          "saffron-dark": "#E67600",
+          emerald: "#159A70",
+          ink: "#0B1426",
+          slate: "#5B6B82",
+          mist: "#F4F7FB",
+          line: "#E3E9F2",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -86,8 +99,7 @@ const config: Config = {
       },
       backfaceVisibility: {
         hidden: "hidden",
-      },
-      keyframes: {
+      },      keyframes: {
         "slide-in": {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(0)" },

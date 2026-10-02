@@ -61,19 +61,22 @@ export type StatCardData = {
   icon: React.ElementType;
 };
 
+const NAVY = { accent: "border-l-[#124E96]", iconBg: "bg-[#124E96]/10", iconColor: "text-[#124E96]" };
+const SAFFRON = { accent: "border-l-[#FF8500]", iconBg: "bg-[#FF8500]/12", iconColor: "text-[#E67600]" };
+const EMERALD = { accent: "border-l-[#159A70]", iconBg: "bg-[#159A70]/10", iconColor: "text-[#159A70]" };
 const CARD_STYLES: Record<string, { accent: string; iconBg: string; iconColor: string }> = {
-  students: { accent: "border-l-emerald-500", iconBg: "bg-emerald-100 dark:bg-emerald-900/30", iconColor: "text-emerald-600" },
-  revenue: { accent: "border-l-teal-500", iconBg: "bg-teal-100 dark:bg-teal-900/30", iconColor: "text-teal-600" },
-  pending_fees: { accent: "border-l-amber-500", iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600" },
-  attendance: { accent: "border-l-blue-500", iconBg: "bg-blue-100 dark:bg-blue-900/30", iconColor: "text-blue-600" },
-  franchises: { accent: "border-l-indigo-500", iconBg: "bg-indigo-100 dark:bg-indigo-900/30", iconColor: "text-indigo-600" },
-  staff: { accent: "border-l-purple-500", iconBg: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-600" },
-  pending_certificates: { accent: "border-l-orange-500", iconBg: "bg-orange-100 dark:bg-orange-900/30", iconColor: "text-orange-600" },
-  support: { accent: "border-l-cyan-500", iconBg: "bg-cyan-100 dark:bg-cyan-900/30", iconColor: "text-cyan-600" },
-  course_enquiries: { accent: "border-l-violet-500", iconBg: "bg-violet-100 dark:bg-violet-900/30", iconColor: "text-violet-600" },
-  franchise_inquiries: { accent: "border-l-sky-500", iconBg: "bg-sky-100 dark:bg-sky-900/30", iconColor: "text-sky-600" },
-  offer_applications: { accent: "border-l-rose-500", iconBg: "bg-rose-100 dark:bg-rose-900/30", iconColor: "text-rose-600" },
-  attendance_today: { accent: "border-l-[#1E4A85]", iconBg: "bg-[#1E4A85]/10", iconColor: "text-[#1E4A85]" },
+  students: NAVY,
+  revenue: EMERALD,
+  pending_fees: SAFFRON,
+  attendance: EMERALD,
+  franchises: NAVY,
+  staff: NAVY,
+  pending_certificates: SAFFRON,
+  support: EMERALD,
+  course_enquiries: NAVY,
+  franchise_inquiries: NAVY,
+  offer_applications: SAFFRON,
+  attendance_today: EMERALD,
 };
 
 export default function DashboardStats({ stats, roleId, onCardClick }: DashboardStatsProps) {
@@ -104,7 +107,7 @@ export default function DashboardStats({ stats, roleId, onCardClick }: Dashboard
             clickable={Boolean(onCardClick)}
             onClick={() => onCardClick?.(stat)}
             className={cn(
-              "group cursor-pointer overflow-hidden rounded-xl border border-border/60 border-l-4 bg-card shadow-sm transition-all duration-200 hover:border-[#1E4A85]/30 hover:shadow-md",
+              "group cursor-pointer overflow-hidden rounded-2xl border border-[#E3E9F2] border-l-[3px] bg-white shadow-[0_8px_24px_-16px_rgba(6,27,54,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_-18px_rgba(18,78,150,0.35)]",
               style.accent
             )}
           >

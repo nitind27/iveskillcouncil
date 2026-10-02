@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     }
 
     const courses = await prisma.course.findMany({
-      where: { status: "ACTIVE", franchiseId: null },
+      where: { status: "ACTIVE" },
       orderBy: [{ category: "asc" }, { name: "asc" }],
       select: COURSE_SELECT,
     });
