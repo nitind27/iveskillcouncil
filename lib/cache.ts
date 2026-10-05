@@ -57,10 +57,12 @@ if (typeof setInterval !== 'undefined') {
 }
 
 // Cache key generators
-export const USERPANEL_CONFIG_CACHE_KEY = "userpanel-public-config-v2";
+export const USERPANEL_CONFIG_CACHE_KEY = "userpanel-public-config-v6";
+export const PUBLIC_SEO_CACHE_KEY = "public-seo-v1";
 
 export function invalidateUserPanelConfigCache() {
   cache.delete(USERPANEL_CONFIG_CACHE_KEY);
+  cache.delete(PUBLIC_SEO_CACHE_KEY);
 }
 
 export const cacheKeys = {

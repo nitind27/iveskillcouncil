@@ -1,10 +1,18 @@
-import UserDashboard from '@/components/userpanel/UsertDashboard'
-import React from 'react'
+import type { Metadata } from "next";
+import UserDashboard from "@/components/userpanel/UsertDashboard";
+import { homeMetadata } from "@/lib/seo";
+import { loadSeoConfig } from "@/lib/seo-server";
+import { getRequestSiteUrl } from "@/lib/site-url";
 
-const page = () => {
-  return (
-    <div><UserDashboard /></div>
-  )
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await loadSeoConfig();
+  return homeMetadata(getRequestSiteUrl(), seo);
 }
 
-export default page
+export default function UserPanelHomePage() {
+  return (
+    <div>
+      <UserDashboard />
+    </div>
+  );
+}

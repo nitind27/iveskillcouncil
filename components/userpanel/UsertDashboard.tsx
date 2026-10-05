@@ -5,7 +5,9 @@ import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import HeroSection from "./HeroSection";
+import SeoSpotlight from "./SeoSpotlight";
 import StatsSection from "./StatsSection";
+import NoticeBoard from "./NoticeBoard";
 import AboutSection from "./AboutSection";
 import CoursesSection from "./CoursesSection";
 
@@ -36,7 +38,9 @@ export default function UserDashboard() {
   return (
     <>
       <HeroSection config={config} userName={userName} />
+      <SeoSpotlight config={config} />
       <StatsSection config={config} />
+      <NoticeBoard notices={config.notices} />
       <AboutSection config={config} />
       <CoursesSection config={config} />
       <HighlightsSection config={config} />

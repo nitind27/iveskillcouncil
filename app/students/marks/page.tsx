@@ -10,7 +10,14 @@ import { showSuccess, showError } from "@/lib/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROLES } from "@/lib/permissions";
 
-type MarksCell = { obtainedMarks: number; maxMarks: number };
+type MarkKind = "theory" | "practical";
+
+type MarksCell = {
+  obtainedMarks: number;
+  maxMarks: number;
+  practicalObtained: number | null;
+  practicalMax: number | null;
+};
 
 type MarksStudent = {
   id: string;
@@ -28,8 +35,10 @@ type MarksPayload = {
     id: string;
     name: string;
     subjects: string[];
-    subjectMeta?: { name: string; maxMarks: number }[];
+    subjectMeta?: { name: string; maxMarks: number; practicalMax?: number }[];
     defaultMaxMarks: number;
+    hasPractical?: boolean;
+    practicalMaxMarks?: number | null;
   };
   students: MarksStudent[];
   message?: string;
@@ -52,6 +61,8 @@ export default function StudentMarksPage() {
   const showFranchiseFilter = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
 
   const [courseId, setCourseId] = useState("");
+  const [markType, setMarkType] = useState<MarkKind>("theory");
+  const [savingPractical, setSavingPractical] = useState(false);
   const [franchiseId, setFranchiseId] = useState("");
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
@@ -88,15 +99,23 @@ export default function StudentMarksPage() {
   const subjects = payload?.course.subjects ?? [];
   const students = payload?.students ?? [];
   const defaultMax = payload?.course.defaultMaxMarks ?? 100;
+  const hasPractical = Boolean(payload?.course.hasPractical);
   const subjectMaxMap = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, { theory: number; practical: number }>();
     for (const s of payload?.course.subjectMeta ?? []) {
-      map.set(s.name, s.maxMarks);
+      map.set(s.name, {
+        theory: s.maxMarks,
+        practical: s.practicalMax && s.practicalMax > 0 ? s.practicalMax : s.maxMarks,
+      });
     }
     return map;
   }, [payload]);
 
-  const maxFor = (subject: string) => subjectMaxMap.get(subject) ?? defaultMax;
+  const maxFor = (subject: string) => {
+    const meta = subjectMaxMap.get(subject);
+    if (!meta) return defaultMax;
+    return markType === "practical" ? meta.practical : meta.theory;
+  };
 
   useEffect(() => {
     if (!payload) {
@@ -109,12 +128,17 @@ export default function StudentMarksPage() {
       next[s.id] = {};
       for (const subject of payload.course.subjects) {
         const cell = s.marks[subject];
-        next[s.id][subject] = cell ? String(cell.obtainedMarks) : "";
+        if (markType === "practical") {
+          next[s.id][subject] =
+            cell?.practicalObtained == null ? "" : String(cell.practicalObtained);
+        } else {
+          next[s.id][subject] = cell ? String(cell.obtainedMarks) : "";
+        }
       }
     }
     setGrid(next);
     setDirty(false);
-  }, [payload]);
+  }, [payload, markType]);
 
   const filledCount = useMemo(() => {
     let n = 0;
@@ -195,7 +219,7 @@ export default function StudentMarksPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ courseId, entries }),
+        body: JSON.stringify({ courseId, markType, entries }),
       });
       const d = await res.json();
       if (!res.ok) {
@@ -210,6 +234,45 @@ export default function StudentMarksPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const setCoursePractical = async (next: boolean) => {
+    if (!courseId) return;
+    if (dirty) {
+      await showError("Unsaved marks", "Save the current marks before changing this setting.");
+      return;
+    }
+    setSavingPractical(true);
+    try {
+      const res = await fetch("/api/students/marks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ courseId, hasPractical: next }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        await showError("Error", d.error || "Failed to update course");
+        return;
+      }
+      if (!next) setMarkType("theory");
+      await showSuccess("Updated", d.message || "Course practical setting saved");
+      mutate();
+    } catch {
+      await showError("Error", "Failed to update course");
+    } finally {
+      setSavingPractical(false);
+    }
+  };
+
+  const switchMarkType = async (next: MarkKind) => {
+    if (next === markType) return;
+    if (next === "practical" && !hasPractical) return;
+    if (dirty) {
+      await showError("Unsaved marks", "Save the current marks before switching.");
+      return;
+    }
+    setMarkType(next);
   };
 
   return (
@@ -228,7 +291,8 @@ export default function StudentMarksPage() {
             Student Marks
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Filter by course, then enter subject-wise marks for the class.
+            Choose a course, then insert theory or practical marks. Courses without practical hide
+            that column on the Statement of Marks.
           </p>
         </div>
         <button
@@ -238,18 +302,19 @@ export default function StudentMarksPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save Marks
+          {markType === "practical" ? "Save Practical" : "Save Theory"}
         </button>
       </div>
 
       <Card>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-4">
+        <CardContent className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-slate-700">Course / Class</span>
             <select
               value={courseId}
               onChange={(e) => {
                 setCourseId(e.target.value);
+                setMarkType("theory");
                 setDirty(false);
               }}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
@@ -280,6 +345,36 @@ export default function StudentMarksPage() {
               </select>
             </label>
           )}
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Practical on this course</span>
+            <select
+              value={hasPractical ? "yes" : "no"}
+              disabled={!courseId || savingPractical || isLoading}
+              onChange={(e) => setCoursePractical(e.target.value === "yes")}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+            >
+              <option value="no">No practical</option>
+              <option value="yes">Has practical</option>
+            </select>
+          </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-slate-700">Insert marks</span>
+            <select
+              value={markType}
+              disabled={!courseId}
+              onChange={(e) =>
+                switchMarkType(e.target.value === "practical" ? "practical" : "theory")
+              }
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+            >
+              <option value="theory">Theory</option>
+              <option value="practical" disabled={!hasPractical}>
+                Practical
+              </option>
+            </select>
+          </label>
 
           <label className="block text-sm md:col-span-2">
             <span className="mb-1 block font-medium text-slate-700">Search student</span>
@@ -341,7 +436,8 @@ export default function StudentMarksPage() {
               {" · "}
               {subjects.length} subject{subjects.length === 1 ? "" : "s"}
               {" · "}
-              Max {defaultMax}
+              {markType === "practical" ? "Practical" : "Theory"}
+              {hasPractical ? " · Practical column on result" : " · Theory only on result"}
             </span>
             <span className={dirty ? "text-amber-700" : "text-slate-400"}>
               {dirty ? "Unsaved changes" : `${filledCount} cells filled`}
@@ -377,7 +473,10 @@ export default function StudentMarksPage() {
                         key={subject}
                         className="min-w-[110px] border-b border-slate-200 px-2 py-2 text-center font-semibold text-slate-700"
                       >
-                        <div className="mb-1 line-clamp-2 leading-tight">{subject}</div>
+                        <div className="mb-0.5 line-clamp-2 leading-tight">{subject}</div>
+                        <div className="mb-1 text-[10px] font-normal uppercase tracking-wide text-slate-400">
+                          {markType === "practical" ? "Practical" : "Theory"} · max {maxFor(subject)}
+                        </div>
                         <input
                           type="text"
                           inputMode="numeric"

@@ -288,6 +288,8 @@ model Course {
   isRecommended      Boolean  @default(false) @map("is_recommended") @db.TinyInt
   isMrpVisible       Boolean  @default(true) @map("is_mrp_visible") @db.TinyInt
   hideExamResult     Boolean  @default(false) @map("hide_exam_result") @db.TinyInt
+  /// Statement of Marks shows Theory + Practical when true
+  hasPractical       Boolean  @default(false) @map("has_practical") @db.TinyInt
 
   createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamp
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamp
@@ -1007,6 +1009,9 @@ model StudentSubjectMark {
   subjectName    String   @map("subject_name") @db.VarChar(150)
   maxMarks       Int      @default(100) @map("max_marks")
   obtainedMarks  Int      @default(0) @map("obtained_marks")
+  /// Practical marks. Null until practical marks are entered for this subject.
+  practicalMax       Int? @map("practical_max")
+  practicalObtained  Int? @map("practical_obtained")
   updatedById    BigInt?  @map("updated_by_id") @db.UnsignedBigInt
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp

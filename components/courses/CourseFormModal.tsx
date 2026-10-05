@@ -67,6 +67,7 @@ export type CourseFormState = {
   isRecommended: boolean;
   isMrpVisible: boolean;
   hideExamResult: boolean;
+  hasPractical: boolean;
   status: string;
   shortDescription: string;
   level: string;
@@ -103,6 +104,7 @@ export function emptyCourseForm(): CourseFormState {
     isRecommended: false,
     isMrpVisible: true,
     hideExamResult: false,
+    hasPractical: false,
     status: "ACTIVE",
     shortDescription: "",
     level: "BEGINNER",
@@ -154,6 +156,7 @@ export function courseToForm(c: Record<string, unknown>): CourseFormState {
     isRecommended: Boolean(c.isRecommended),
     isMrpVisible: c.isMrpVisible !== false,
     hideExamResult: Boolean(c.hideExamResult),
+    hasPractical: Boolean(c.hasPractical),
     status: c.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
     shortDescription: String(c.shortDescription || ""),
     level: String(c.level || "BEGINNER"),
@@ -683,6 +686,15 @@ export function CourseFormModal({
                       required
                     />
                   </div>
+                  <ToggleRow
+                    label="Has practical (show on result)"
+                    checked={form.hasPractical}
+                    onChange={(v) => setForm((f) => ({ ...f, hasPractical: v }))}
+                  />
+                  <p className={helpCls}>
+                    On: marks entry can save Theory or Practical, and Statement of Marks shows both
+                    columns. Off: only theory marks, and the Practical column stays hidden.
+                  </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className={labelCls}>Practical Marks</label>
@@ -698,6 +710,7 @@ export function CourseFormModal({
                         }
                         className={inputCls}
                       />
+                      <p className={helpCls}>Maximum practical marks per subject.</p>
                     </div>
                     <div>
                       <label className={labelCls}>Objective Marks</label>

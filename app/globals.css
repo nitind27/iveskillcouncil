@@ -441,11 +441,23 @@ html.lang-gu body {
   .userpanel .up-sheen:hover::after {
     animation: up-sheen 0.9s ease;
   }
+  @keyframes up-team-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+  .userpanel .up-team-track {
+    animation: up-team-marquee 32s linear infinite;
+  }
+  .userpanel .up-team-wrap:hover .up-team-track,
+  .userpanel .up-team-track.is-paused {
+    animation-play-state: paused;
+  }
   @media (prefers-reduced-motion: reduce) {
     .userpanel .up-float,
     .userpanel .up-spin-slow,
     .userpanel .up-flag-drift,
-    .userpanel .up-sheen:hover::after {
+    .userpanel .up-sheen:hover::after,
+    .userpanel .up-team-track {
       animation: none;
     }
   }

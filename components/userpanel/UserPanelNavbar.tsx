@@ -73,7 +73,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
       : "/dashboard"
     : franchiseDashboardPath(siteSlug);
   const loggedIn = Boolean(userName || user);
-  const dashboardOrLoginHref = loggedIn ? dashboardPath : `/login?redirect=${encodeURIComponent(dashboardPath)}`;
+  const dashboardOrLoginHref = loggedIn ? dashboardPath : `/login?as=student&redirect=${encodeURIComponent(dashboardPath)}`;
   const authLabel = userName ? t("menu.dashboard", "Dashboard") : "Student Login";
 
   const label = (raw: string) => (NAV_LABEL_KEYS[raw] ? t(NAV_LABEL_KEYS[raw], raw) : raw);
@@ -241,7 +241,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               {!loggedIn && (
                 <>
                   <span className="hidden h-3.5 w-px bg-ive-line sm:block" aria-hidden />
-                  <Link href="/login" className="hidden items-center gap-1.5 rounded-md px-2 py-1 font-semibold text-ive-navy transition-colors hover:bg-ive-mist sm:inline-flex">
+                  <Link href="/login?as=partner" className="hidden items-center gap-1.5 rounded-md px-2 py-1 font-semibold text-ive-navy transition-colors hover:bg-ive-mist sm:inline-flex">
                     <FiBriefcase className="h-3.5 w-3.5 text-ive-saffron" />
                     Partner Login
                   </Link>

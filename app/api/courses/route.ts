@@ -192,6 +192,7 @@ export async function POST(request: NextRequest) {
         isRecommended: Boolean(payload.isRecommended),
         isMrpVisible: payload.isMrpVisible !== false,
         hideExamResult: Boolean(payload.hideExamResult),
+        hasPractical: Boolean(payload.hasPractical),
       },
     });
 

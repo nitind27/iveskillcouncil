@@ -3,9 +3,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { defaultConfig } from "@/config/userpanel.config";
 import type { CourseItem, UserPanelConfig } from "@/config/userpanel.config";
+import { normalizeSeo } from "@/lib/seo";
 import { useFranchiseSiteSlug } from "@/hooks/useUserPanelBasePath";
 
-const SESSION_CACHE_KEY = "up_config_v5";
+const SESSION_CACHE_KEY = "up_config_v9";
 
 function mergeConfig(data: unknown): UserPanelConfig {
   if (!data || typeof data !== "object") return defaultConfig;
@@ -32,6 +33,8 @@ function mergeConfig(data: unknown): UserPanelConfig {
     gallery: (c.gallery as UserPanelConfig["gallery"]) ?? defaultConfig.gallery,
     testimonials: (c.testimonials as UserPanelConfig["testimonials"]) ?? defaultConfig.testimonials,
     footer: (c.footer as UserPanelConfig["footer"]) ?? defaultConfig.footer,
+    notices: Array.isArray(c.notices) ? (c.notices as UserPanelConfig["notices"]) : [],
+    seo: normalizeSeo(c.seo),
   };
 }
 

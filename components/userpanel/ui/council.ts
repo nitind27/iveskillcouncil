@@ -10,8 +10,9 @@ export const COUNCIL = {
   email: "iveskillcouncil@gmail.com",
 } as const;
 
-export const COUNCIL_TEAM = [
-  { name: "Yashvantbhai Prajapati", role: "Managing Director", phone: "9824817111" },
-  { name: "Sonali Prajapati", role: "Chief Executive Officer", phone: "9689271627" },
-  { name: "Rajendra Sandanshiv", role: "Executive Director", phone: "9638019997" },
-] as const;
+export const COUNCIL_TEAM: { name: string; role: string; phone?: string; photo: string }[] = [
+  { name: "Yashvantbhai Prajapati", role: "Managing Director", phone: "9824817111", photo: "/Leader/YASHVANT%20SIR.png" },
+  { name: "Sonali Prajapati", role: "Chief Executive Officer", phone: "9689271627", photo: "/Leader/SONALI%20MEM%2C.png" },
+  { name: "Rajendra Sandanshiv", role: "Executive Director", phone: "9638019997", photo: "/Leader/RAJENDRA%20SIR.png" },
+  { name: "Nileshbhai K. Vasava", role: "Chief Technology Officer (CTO) and Examination Officer", photo: "/Leader/Nileshbhai.jpeg" },
+];

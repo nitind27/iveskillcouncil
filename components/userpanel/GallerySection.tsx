@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { FiImage, FiX, FiChevronLeft, FiChevronRight, FiMaximize2, FiGrid } from "react-icons/fi";
+import { FiImage, FiX, FiChevronLeft, FiChevronRight, FiMaximize2 } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import type { UserPanelConfig, GalleryImage } from "@/config/userpanel.config";
 import { cn } from "@/lib/utils";
 import Reveal from "./ui/Reveal";
-import { upButton } from "./ui/button";
 import { EASE_OUT } from "./ui/motion";
 
 interface GallerySectionProps {
@@ -15,21 +14,24 @@ interface GallerySectionProps {
 }
 
 const ALL = "All";
-const INITIAL_VISIBLE = 8;
 
-/** Repeating editorial rhythm: feature, square, tall, square, wide, square, square, wide. */
-const SPANS = [
-  "col-span-2 row-span-2",
-  "",
-  "row-span-2",
-  "",
-  "col-span-2",
-  "",
-  "",
-  "col-span-2",
-];
+function useCardsPerView() {
+  const [count, setCount] = useState(3);
 
-function GalleryTile({
+  useEffect(() => {
+    const apply = () => {
+      const width = window.innerWidth;
+      setCount(width < 640 ? 1 : width < 1024 ? 2 : 3);
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, []);
+
+  return count;
+}
+
+function GalleryCard({
   item,
   index,
   onOpen,
@@ -40,64 +42,54 @@ function GalleryTile({
   onOpen: () => void;
   onError: () => void;
 }) {
-  const reduce = useReducedMotion();
   const [loaded, setLoaded] = useState(false);
   const [useThumb, setUseThumb] = useState(Boolean(item.thumb && item.thumb !== item.src));
-  const span = SPANS[index % SPANS.length];
-  const large = span.includes("row-span-2") && span.includes("col-span-2");
 
   return (
-    <motion.button
+    <button
       type="button"
-      layout={!reduce}
-      initial={{ opacity: 0, y: reduce ? 0 : 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-30px" }}
-      transition={{ duration: 0.5, delay: reduce ? 0 : (index % 8) * 0.05, ease: EASE_OUT }}
       onClick={onOpen}
-      className={cn(
-        "group relative block h-full w-full overflow-hidden rounded-2xl bg-ive-line text-left shadow-[0_12px_30px_-18px_rgba(6,27,54,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ive-saffron focus-visible:ring-offset-2",
-        span
-      )}
+      className="group flex h-full w-full flex-col overflow-hidden rounded-[1.35rem] border border-ive-line bg-white text-left shadow-[0_18px_40px_-28px_rgba(6,27,54,0.55)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(6,27,54,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ive-saffron focus-visible:ring-offset-2"
       aria-label={`Open ${item.alt || "image"}`}
     >
-      {!loaded && <span className="absolute inset-0 animate-pulse bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]" aria-hidden />}
-      <img
-        src={useThumb && !large ? item.thumb : item.src}
-        alt={item.alt || "Gallery image"}
-        loading={index < 4 ? "eager" : "lazy"}
-        decoding="async"
-        onLoad={() => setLoaded(true)}
-        onError={() => (useThumb ? setUseThumb(false) : onError())}
-        className={cn(
-          "absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-700 ease-out group-hover:scale-[1.06]",
-          loaded ? "opacity-100" : "opacity-0"
+      <span className="relative flex h-64 items-center justify-center bg-[#F4F7FB] sm:h-72">
+        {!loaded && <span className="absolute inset-0 animate-pulse bg-gradient-to-br from-[#E2E8F0] to-[#F1F5F9]" aria-hidden />}
+        <img
+          src={useThumb ? item.thumb : item.src}
+          alt={item.alt || "Gallery image"}
+          loading={index < 3 ? "eager" : "lazy"}
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => (useThumb ? setUseThumb(false) : onError())}
+          className={cn("max-h-full max-w-full object-contain transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0")}
+        />
+        {item.category && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-ive-navy shadow-sm">
+            {item.category}
+          </span>
         )}
-      />
-      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ive-navy/85 via-ive-navy/10 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
-      {item.category && (
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-ive-navy shadow-sm">
-          {item.category}
-        </span>
-      )}
-      <span className="absolute inset-x-0 bottom-0 flex translate-y-2 items-end justify-between gap-3 p-4 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
-        <span className={cn("line-clamp-2 font-semibold leading-snug text-white", large ? "text-base" : "text-[13px]")}>{item.alt}</span>
-        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-ive-saffron text-white shadow-lg">
+        <span className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ive-navy/90 text-white opacity-0 shadow-lg transition duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
           <FiMaximize2 className="h-4 w-4" />
         </span>
       </span>
-    </motion.button>
+      <span className="flex items-start justify-between gap-3 px-4 py-3.5">
+        <span className="line-clamp-2 text-sm font-bold leading-snug text-ive-navy">{item.alt || "Gallery image"}</span>
+      </span>
+    </button>
   );
 }
 
 export default function GallerySection({ config }: GallerySectionProps) {
   const { gallery } = config;
+  const reduce = useReducedMotion();
+  const perView = useCardsPerView();
   const [failed, setFailed] = useState<Set<string>>(() => new Set());
   const [filter, setFilter] = useState(ALL);
-  const [showAll, setShowAll] = useState(false);
+  const [page, setPage] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const touchX = useRef<number | null>(null);
+  const slideX = useRef<number | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -118,7 +110,15 @@ export default function GallerySection({ config }: GallerySectionProps) {
     () => (filter === ALL ? images : images.filter((img) => img.category === filter)),
     [images, filter]
   );
-  const visible = showAll ? filtered : filtered.slice(0, INITIAL_VISIBLE);
+  const maxPage = Math.max(0, filtered.length - perView);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filter]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, maxPage));
+  }, [maxPage]);
 
   const markFailed = useCallback((src: string) => {
     setFailed((prev) => (prev.has(src) ? prev : new Set(prev).add(src)));
@@ -252,7 +252,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
                     )}
                     aria-label={`Show ${img.alt || `image ${i + 1}`}`}
                   >
-                    <img src={img.thumb || img.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <img src={img.thumb || img.src} alt="" loading="lazy" className="h-full w-full object-cover object-center" />
                   </button>
                 ))}
               </div>
@@ -266,26 +266,15 @@ export default function GallerySection({ config }: GallerySectionProps) {
   return (
     <section id="gallery" className="relative overflow-hidden bg-ive-mist px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
       <div className="relative mx-auto max-w-7xl">
-        <Reveal className="mb-8 grid items-end gap-6 lg:grid-cols-[1fr_auto_1fr]">
-          <span className="hidden lg:block" />
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-royal shadow-sm">
-              <FiImage className="h-3.5 w-3.5 text-ive-saffron" />
-              Moments &amp; Achievements
-            </span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">{gallery.sectionTitle}</h2>
-            <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
-              Awards, events and proud moments — a glimpse of our institute&apos;s journey.
-            </p>
-          </div>
-          {filtered.length > INITIAL_VISIBLE && (
-            <div className="flex justify-center lg:justify-end">
-              <button type="button" onClick={() => setShowAll((v) => !v)} className={upButton("outline", "md")}>
-                <FiGrid className="h-4 w-4" />
-                {showAll ? "Show less" : `View All Photos (${filtered.length})`}
-              </button>
-            </div>
-          )}
+        <Reveal className="mb-8 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ive-royal shadow-sm">
+            <FiImage className="h-3.5 w-3.5 text-ive-saffron" />
+            Moments &amp; Achievements
+          </span>
+          <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">{gallery.sectionTitle}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
+            Awards, events and proud moments — a glimpse of our institute&apos;s journey.
+          </p>
         </Reveal>
 
         {categories.length > 1 && (
@@ -298,10 +287,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  onClick={() => {
-                    setFilter(name);
-                    setShowAll(false);
-                  }}
+                  onClick={() => setFilter(name)}
                   className={cn(
                     "relative inline-flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-300",
                     active ? "text-white" : "bg-white text-ive-ink hover:text-ive-navy"
@@ -320,10 +306,65 @@ export default function GallerySection({ config }: GallerySectionProps) {
           </div>
         )}
 
-        <div className="grid auto-rows-[140px] grid-cols-2 gap-3 [grid-auto-flow:dense] sm:auto-rows-[180px] sm:gap-4 md:grid-cols-4 lg:auto-rows-[200px]">
-          {visible.map((item, i) => (
-            <GalleryTile key={filter + item.src + i} item={item} index={i} onOpen={() => setLightboxIndex(i)} onError={() => markFailed(item.src)} />
-          ))}
+        <div className="relative">
+          {filtered.length > perView && (
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-ive-slate">
+                {page + 1}–{Math.min(page + perView, filtered.length)} of {filtered.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(0, current - 1))}
+                  disabled={page === 0}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-ive-line bg-white text-ive-navy shadow-sm transition hover:border-ive-saffron hover:text-ive-saffron disabled:opacity-40"
+                  aria-label="Previous photos"
+                >
+                  <FiChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(maxPage, current + 1))}
+                  disabled={page >= maxPage}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-ive-line bg-white text-ive-navy shadow-sm transition hover:border-ive-saffron hover:text-ive-saffron disabled:opacity-40"
+                  aria-label="Next photos"
+                >
+                  <FiChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div
+            className="overflow-hidden"
+            onTouchStart={(e) => {
+              slideX.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const start = slideX.current;
+              const end = e.changedTouches[0]?.clientX;
+              slideX.current = null;
+              if (start === null || end === undefined || Math.abs(end - start) < 48) return;
+              setPage((current) => (end < start ? Math.min(maxPage, current + 1) : Math.max(0, current - 1)));
+            }}
+          >
+            {filtered.length === 0 ? (
+              <p className="rounded-2xl bg-white px-6 py-10 text-center text-sm text-ive-slate">No photos in this category.</p>
+            ) : (
+              <motion.ul
+                className="flex"
+                style={{ width: `${(filtered.length / perView) * 100}%` }}
+                animate={{ x: `${(-page * 100) / filtered.length}%` }}
+                transition={{ duration: reduce ? 0 : 0.45, ease: EASE_OUT }}
+              >
+                {filtered.map((item, i) => (
+                  <li key={filter + item.src + i} className="px-2" style={{ width: `${100 / filtered.length}%` }}>
+                    <GalleryCard item={item} index={i} onOpen={() => setLightboxIndex(i)} onError={() => markFailed(item.src)} />
+                  </li>
+                ))}
+              </motion.ul>
+            )}
+          </div>
         </div>
       </div>
 

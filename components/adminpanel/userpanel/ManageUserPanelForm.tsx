@@ -23,9 +23,13 @@ import {
   Sparkles,
   MessageSquare,
   Pencil,
+  Megaphone,
+  FileText,
+  Search,
 } from "lucide-react";
-import type { UserPanelConfig } from "@/config/userpanel.config";
+import type { PublicNotice, UserPanelConfig } from "@/config/userpanel.config";
 import { defaultConfig, resolveGalleryImages } from "@/config/userpanel.config";
+import { normalizeSeo } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import WelcomePopupModal from "@/components/userpanel/WelcomePopupModal";
 import { ImageEditorModal } from "@/components/common/ImageEditorModal";
@@ -61,6 +65,7 @@ const COLOR_OPTIONS = [
 const TABS = [
   { id: "welcomePopup", label: "Welcome Popup", icon: Sparkles },
   { id: "site", label: "Site", icon: Layout },
+  { id: "seo", label: "SEO", icon: Search },
   { id: "hero", label: "Hero & Banner", icon: ImageIcon },
   { id: "nav", label: "Nav Links", icon: Menu },
   { id: "stats", label: "Stats", icon: BarChart3 },
@@ -70,6 +75,7 @@ const TABS = [
   { id: "offers", label: "Offers", icon: Tag },
   { id: "testimonials", label: "Testimonials", icon: MessageSquare },
   { id: "gallery", label: "Gallery", icon: Images },
+  { id: "notices", label: "Notices", icon: Megaphone },
   { id: "footer", label: "Footer", icon: Footprints },
 ] as const;
 
@@ -95,6 +101,8 @@ function ensureConfig(c: Partial<UserPanelConfig> | null): UserPanelConfig {
     },
     testimonials: c.testimonials ?? defaultConfig.testimonials,
     footer: c.footer ?? defaultConfig.footer,
+    notices: Array.isArray(c.notices) ? c.notices : [],
+    seo: normalizeSeo(c.seo),
   };
 }
 
@@ -138,15 +146,28 @@ export default function ManageUserPanelForm() {
   const [imageEditorType, setImageEditorType] = useState<"welcome" | "logo" | "hero" | "about" | null>(null);
   const [imageEditorHeroIndex, setImageEditorHeroIndex] = useState<number | null>(null);
   const [heroFilesQueue, setHeroFilesQueue] = useState<File[]>([]);
+  const [noticeDraft, setNoticeDraft] = useState({ title: "", message: "", pdfUrl: "" });
+  const [noticeUploading, setNoticeUploading] = useState(false);
+  const [noticeUploadError, setNoticeUploadError] = useState<string | null>(null);
+  const [keywordText, setKeywordText] = useState(defaultConfig.seo.keywords.join("\n"));
+  const [previewHost, setPreviewHost] = useState("ivesdc.org");
 
   useEffect(() => {
     fetch("/api/admin/userpanel-config")
       .then((r) => r.json())
       .then((res) => {
-        if (res?.data) setConfig(ensureConfig(res.data));
+        if (res?.data) {
+          const next = ensureConfig(res.data);
+          setConfig(next);
+          setKeywordText(next.seo.keywords.join("\n"));
+        }
       })
       .catch(() => setConfig(defaultConfig))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setPreviewHost(window.location.host);
   }, []);
 
   const uploadWelcomeImage = async (file: File) => {
@@ -367,6 +388,46 @@ export default function ManageUserPanelForm() {
     } finally {
       setHeroUploading(false);
     }
+  };
+
+  const uploadNoticePdf = async (file: File) => {
+    setNoticeUploadError(null);
+    setNoticeUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await authedFetch("/api/admin/notice-pdf", { method: "POST", body: fd });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success || !data?.data?.url) {
+        setNoticeUploadError(data?.error || "PDF upload failed");
+        return;
+      }
+      setNoticeDraft((draft) => ({ ...draft, pdfUrl: data.data.url as string }));
+    } catch {
+      setNoticeUploadError("Network error. Please try again.");
+    } finally {
+      setNoticeUploading(false);
+    }
+  };
+
+  const addNotice = () => {
+    const title = noticeDraft.title.trim();
+    const message = noticeDraft.message.trim();
+    if (!title || !message) {
+      setNoticeUploadError("Title and message are required");
+      return;
+    }
+    const notice: PublicNotice = {
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `notice-${Date.now()}`,
+      title,
+      message,
+      pdfUrl: noticeDraft.pdfUrl || null,
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+    setConfig((c) => ({ ...c, notices: [notice, ...(c.notices || [])] }));
+    setNoticeDraft({ title: "", message: "", pdfUrl: "" });
+    setNoticeUploadError(null);
   };
 
   const handleSave = async () => {
@@ -1208,6 +1269,192 @@ export default function ManageUserPanelForm() {
                   }
                 />
                 <p className="mt-1 text-xs text-muted-foreground">Shown in the user panel navbar as a scrolling marquee.</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "seo" && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Search className="w-5 h-5 text-[#1E4A85]" />
+                    Google SEO
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
+                    This title and description are what Google can show. The headline and intro also appear on the public homepage. Save, then submit <span className="font-medium text-foreground">/sitemap.xml</span> in Google Search Console. Ranking usually takes days, not minutes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-accent"
+                  onClick={() => {
+                    setConfig((c) => ({ ...c, seo: { ...defaultConfig.seo } }));
+                    setKeywordText(defaultConfig.seo.keywords.join("\n"));
+                  }}
+                >
+                  Reset to recommended
+                </button>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={config.seo.enabled}
+                  onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, enabled: e.target.checked } }))}
+                />
+                Allow Google to index the public website
+              </label>
+
+              <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Google preview</p>
+                <p className="mt-2 text-xs text-[#4d5156]">{previewHost}/userpanel</p>
+                <p className="mt-0.5 text-lg leading-snug text-[#1a0dab]">{config.seo.title || "Page title"}</p>
+                <p className="mt-1 text-sm leading-relaxed text-[#4d5156]">{config.seo.description || "Description"}</p>
+              </div>
+
+              <div>
+                <label className={labelClass}>Google title</label>
+                <input
+                  className={inputClass}
+                  maxLength={70}
+                  value={config.seo.title}
+                  onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, title: e.target.value } }))}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{config.seo.title.length}/60 recommended. Put the main search phrase first.</p>
+              </div>
+              <div>
+                <label className={labelClass}>Google description</label>
+                <textarea
+                  className={cn(inputClass, "min-h-[88px]")}
+                  maxLength={320}
+                  value={config.seo.description}
+                  onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, description: e.target.value } }))}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">{config.seo.description.length}/160 recommended.</p>
+              </div>
+              <div>
+                <label className={labelClass}>Keywords — one per line</label>
+                <textarea
+                  className={cn(inputClass, "min-h-[160px] font-mono text-[13px]")}
+                  value={keywordText}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    setKeywordText(text);
+                    const keywords = text
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .slice(0, 30);
+                    setConfig((c) => ({ ...c, seo: { ...c.seo, keywords } }));
+                  }}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  These words are saved as search keywords and shown as topics on the homepage. Write real phrases people search, such as “best computer course in Tapi”.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Homepage heading (shown on the site)</label>
+                  <input
+                    className={inputClass}
+                    value={config.seo.headline}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, headline: e.target.value } }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Homepage intro (shown on the site)</label>
+                  <textarea
+                    className={cn(inputClass, "min-h-[110px]")}
+                    value={config.seo.intro}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, intro: e.target.value } }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Gujarati line (shown on the site)</label>
+                  <textarea
+                    className={cn(inputClass, "min-h-[72px]")}
+                    value={config.seo.localLine}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, localLine: e.target.value } }))}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Courses page title</label>
+                  <input
+                    className={inputClass}
+                    maxLength={70}
+                    value={config.seo.coursesTitle}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, coursesTitle: e.target.value } }))}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Courses page heading</label>
+                  <input
+                    className={inputClass}
+                    value={config.seo.coursesHeadline}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, coursesHeadline: e.target.value } }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Courses page description</label>
+                  <textarea
+                    className={cn(inputClass, "min-h-[72px]")}
+                    value={config.seo.coursesDescription}
+                    onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, coursesDescription: e.target.value } }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelClass}>Brand name</label>
+                  <input className={inputClass} value={config.seo.siteName} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, siteName: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Institute name</label>
+                  <input className={inputClass} value={config.seo.instituteName} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, instituteName: e.target.value } }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Full council name</label>
+                  <input className={inputClass} value={config.seo.organizationName} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, organizationName: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Owner name</label>
+                  <input className={inputClass} value={config.seo.founderName} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, founderName: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Owner role</label>
+                  <input className={inputClass} value={config.seo.founderRole} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, founderRole: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>City</label>
+                  <input className={inputClass} value={config.seo.city} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, city: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>District</label>
+                  <input className={inputClass} value={config.seo.district} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, district: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>State</label>
+                  <input className={inputClass} value={config.seo.state} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, state: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>PIN code</label>
+                  <input className={inputClass} value={config.seo.postalCode} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, postalCode: e.target.value } }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Address</label>
+                  <input className={inputClass} value={config.seo.streetAddress} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, streetAddress: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input className={inputClass} value={config.seo.phone} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, phone: e.target.value } }))} />
+                </div>
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input className={inputClass} value={config.seo.email} onChange={(e) => setConfig((c) => ({ ...c, seo: { ...c.seo, email: e.target.value } }))} />
+                </div>
               </div>
             </div>
           )}
@@ -2300,6 +2547,106 @@ export default function ManageUserPanelForm() {
                 >
                   <Plus className="w-4 h-4" /> Add image
                 </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "notices" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Megaphone className="h-5 w-5 text-[#1E4A85]" />
+                  Public notices
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Admission dates, new batches, or any update. After you save, it appears on the home page after the statistics. PDF is optional. When there are several, visitors pick one from the list.
+                </p>
+              </div>
+              <div className="space-y-4 rounded-xl border border-border/70 p-4">
+                <div>
+                  <label className={labelClass}>Title</label>
+                  <input
+                    className={inputClass}
+                    value={noticeDraft.title}
+                    placeholder="New admission"
+                    onChange={(e) => setNoticeDraft((d) => ({ ...d, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Message</label>
+                  <textarea
+                    className={inputClass}
+                    rows={4}
+                    value={noticeDraft.message}
+                    placeholder="Write the full notice here"
+                    onChange={(e) => setNoticeDraft((d) => ({ ...d, message: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>PDF</label>
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="mt-1.5 block w-full text-sm"
+                    disabled={noticeUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) void uploadNoticePdf(file);
+                    }}
+                  />
+                  {noticeUploading && <p className="mt-1 text-xs text-muted-foreground">Uploading PDF…</p>}
+                  {noticeDraft.pdfUrl && (
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">
+                      <FileText className="h-3.5 w-3.5" /> PDF attached
+                    </p>
+                  )}
+                  {noticeUploadError && <p className="mt-1 text-xs text-rose-700">{noticeUploadError}</p>}
+                </div>
+                <button type="button" onClick={addNotice} className={btnAdd} disabled={noticeUploading}>
+                  <Plus className="h-4 w-4" /> Add notice
+                </button>
+              </div>
+              <div className="space-y-3">
+                {(config.notices || []).length === 0 && (
+                  <p className="text-sm text-muted-foreground">No notices yet. The notice board stays hidden until one is saved.</p>
+                )}
+                {(config.notices || []).map((notice) => (
+                  <div key={notice.id} className="rounded-xl border border-border/70 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">{notice.title}</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{notice.message}</p>
+                        {notice.pdfUrl && (
+                          <a href={notice.pdfUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#1E4A85]">
+                            <FileText className="h-3.5 w-3.5" /> Open PDF
+                          </a>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className={btnRemove}
+                        aria-label="Remove notice"
+                        onClick={() => setConfig((c) => ({ ...c, notices: c.notices.filter((item) => item.id !== notice.id) }))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <label className="mt-3 inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={notice.active}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            notices: c.notices.map((item) => (item.id === notice.id ? { ...item, active: e.target.checked } : item)),
+                          }))
+                        }
+                      />
+                      Show on website
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
           )}

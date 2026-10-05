@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { StudentStatus, FranchiseStatus } from "@prisma/client";
 import { defaultConfig, resolveGalleryImages } from "@/config/userpanel.config";
+import { normalizeSeo } from "@/lib/seo";
 import { cache, USERPANEL_CONFIG_CACHE_KEY } from "@/lib/cache";
-import type { UserPanelConfig, StatItem } from "@/config/userpanel.config";
+import type { UserPanelConfig, StatItem, PublicNotice } from "@/config/userpanel.config";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,25 @@ async function getDynamicStats(): Promise<Record<string, number>> {
     events: 0,
     offers: 0,
   };
+}
+
+function publicNotices(raw: unknown): PublicNotice[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item): item is PublicNotice => {
+      if (!item || typeof item !== "object") return false;
+      const notice = item as PublicNotice;
+      return notice.active !== false && typeof notice.title === "string" && notice.title.trim().length > 0 && typeof notice.message === "string";
+    })
+    .map((notice) => ({
+      id: String(notice.id || notice.createdAt || notice.title),
+      title: notice.title.trim(),
+      message: notice.message.trim(),
+      pdfUrl: typeof notice.pdfUrl === "string" && notice.pdfUrl.startsWith("/uploads/userpanel/notices/") ? notice.pdfUrl : null,
+      active: true,
+      createdAt: typeof notice.createdAt === "string" ? notice.createdAt : new Date().toISOString(),
+    }))
+    .slice(0, 20);
 }
 
 function jsonConfig(config: UserPanelConfig, message: string) {
@@ -107,6 +127,8 @@ export async function GET(_request: NextRequest) {
         images: resolveGalleryImages(rawConfig.gallery?.images),
       },
       testimonials: rawConfig.testimonials ?? defaultConfig.testimonials,
+      notices: publicNotices(rawConfig.notices),
+      seo: normalizeSeo(rawConfig.seo),
     };
 
     cache.set(USERPANEL_CONFIG_CACHE_KEY, config, CACHE_TTL_MS);

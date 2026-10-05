@@ -283,6 +283,7 @@ export default function SuperAdminCoursesPage() {
           isRecommended: courseForm.isRecommended,
           isMrpVisible: courseForm.isMrpVisible,
           hideExamResult: courseForm.hideExamResult,
+          hasPractical: courseForm.hasPractical,
           status: courseForm.status,
         }),
       });

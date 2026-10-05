@@ -397,7 +397,13 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     });
   }
 
-  const hasMarks = subjects.some((s) => s.name && (s.totalObtained > 0 || s.marksTheory > 0));
+  const hasMarks = subjects.some(
+    (s) => s.name && (s.totalObtained > 0 || s.marksTheory > 0 || (s.marksPractical || 0) > 0)
+  );
+  /** Practical column only when this course actually has practical marks. */
+  const showPractical = subjects.some(
+    (s) => Boolean(s.name?.trim()) && ((s.maxPractical || 0) > 0 || (s.marksPractical || 0) > 0)
+  );
   const totalMax = subjects.reduce((a, s) => a + (s.totalMax || s.maxTheory || 0), 0);
   const totalObt = subjects.reduce(
     (a, s) => a + (s.totalObtained || s.marksTheory || 0),
@@ -866,7 +872,10 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             style={{ tableLayout: "fixed", background: "transparent" }}
           >
             <colgroup>
-              {[38, 64, undefined, 58, 58, 62, 70, 62, 100].map((w, i) => (
+              {(showPractical
+                ? [38, 64, undefined, 58, 58, 62, 70, 62, 100]
+                : [38, 64, undefined, 58, 58, 96, 110]
+              ).map((w, i) => (
                 <col key={i} style={{ width: w }} />
               ))}
             </colgroup>
@@ -893,22 +902,27 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     {label}
                   </th>
                 );
+                const headSpan = showPractical ? 2 : undefined;
                 return (
                   <>
                     <tr>
-                      {th("Sr.", { rowSpan: 2 })}
-                      {th("Code", { rowSpan: 2 })}
-                      {th("Subject / Paper", { rowSpan: 2, align: "left" })}
-                      {th(<>Max.<br />Marks</>, { rowSpan: 2 })}
-                      {th(<>Min.<br />Marks</>, { rowSpan: 2 })}
-                      {th("Marks Obtained", { colSpan: 3, bottom: false })}
-                      {th("Remark", { rowSpan: 2 })}
+                      {th("Sr.", { rowSpan: headSpan })}
+                      {th("Code", { rowSpan: headSpan })}
+                      {th("Subject / Paper", { rowSpan: headSpan, align: "left" })}
+                      {th(<>Max.<br />Marks</>, { rowSpan: headSpan })}
+                      {th(<>Min.<br />Marks</>, { rowSpan: headSpan })}
+                      {showPractical
+                        ? th("Marks Obtained", { colSpan: 3, bottom: false })
+                        : th("Marks Obtained")}
+                      {th("Remark", { rowSpan: headSpan })}
                     </tr>
-                    <tr>
-                      {th("Theory")}
-                      {th("Practical")}
-                      {th("Total")}
-                    </tr>
+                    {showPractical && (
+                      <tr>
+                        {th("Theory")}
+                        {th("Practical")}
+                        {th("Total")}
+                      </tr>
+                    )}
                   </>
                 );
               })()}
@@ -961,8 +975,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     {[
                       max || null,
                       minMarksFor(max),
-                      split.theory,
-                      split.practical,
+                      ...(showPractical ? [split.theory, split.practical] : []),
                     ].map((v, ci) => (
                       <td
                         key={ci}
@@ -985,7 +998,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                         background: idx % 2 === 0 ? C.navyWash : C.navyWashStrong,
                       }}
                     >
-                      {empty || !hasMarks ? "" : obt || ""}
+                      {empty || !hasMarks ? "" : showPractical ? obt || "" : obt || split.theory || ""}
                     </td>
                     <td
                       className={`${fontBody.className} px-1.5 text-center font-bold align-middle`}
@@ -1029,7 +1042,10 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 >
                   {hasMarks ? totalMax : ""}
                 </td>
-                {[aggregateSplit.min, aggregateSplit.theory, aggregateSplit.practical].map((v, i) => (
+                {(showPractical
+                  ? [aggregateSplit.min, aggregateSplit.theory, aggregateSplit.practical]
+                  : [aggregateSplit.min]
+                ).map((v, i) => (
                   <td
                     key={i}
                     className={`${fontDisplay.className} px-1 text-center font-bold align-middle tabular-nums`}

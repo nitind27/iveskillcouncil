@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, Suspense, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Mail,
@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Headset,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { showSuccess, showError } from "@/lib/toast";
@@ -44,11 +45,13 @@ import {
 } from "@/lib/post-login-redirect";
 
 type LoginMethod = "password" | "otp";
+type LoginPortal = "student" | "partner";
 type OverlayFlow = "forgot" | "firstTime" | null;
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const reduceMotion = useReducedMotion();
   const { logoUrl, siteName, tagline } = useLogoConfig();
@@ -56,6 +59,7 @@ function LoginForm() {
   const userRef = useRef(user);
   userRef.current = user;
   
+  const portal: LoginPortal = searchParams?.get("as") === "partner" ? "partner" : "student";
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [overlayFlow, setOverlayFlow] = useState<OverlayFlow>(null);
   const [email, setEmail] = useState("");
@@ -475,6 +479,13 @@ function LoginForm() {
     setOtpError("");
   };
 
+  const setPortal = (next: LoginPortal) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("as", next);
+    router.replace(`/login?${params.toString()}`, { scroll: false });
+    if (next === "partner") switchMethod("password");
+  };
+
   const openForgot = () => {
     setOverlayFlow("forgot");
     setForgotStep("email");
@@ -518,7 +529,16 @@ function LoginForm() {
   );
 
   const headers: Record<typeof screen, { eyebrow?: string; title: string; description: React.ReactNode }> = {
-    main: { title: "Welcome Back", description: <>Sign in to continue to {COUNCIL.shortName}</> },
+    main: {
+      eyebrow: portal === "student" ? "Student" : "Partner",
+      title: "Welcome Back",
+      description:
+        portal === "student" ? (
+          <>Sign in with password or OTP to continue to {COUNCIL.shortName}</>
+        ) : (
+          <>Sign in with your password to continue to {COUNCIL.shortName}</>
+        ),
+    },
     admin: {
       eyebrow: "Admin (Institute)",
       title: "Enter OTP",
@@ -637,16 +657,31 @@ function LoginForm() {
                   {screen === "main" && (
                     <motion.div key="main" {...rise}>
                       <SegmentedSwitch
-                        value={loginMethod}
-                        onChange={switchMethod}
+                        layoutId="login-portal-pill"
+                        ariaLabel="Who is signing in"
+                        value={portal}
+                        onChange={setPortal}
                         options={[
-                          { value: "password", label: "Password", icon: Lock },
-                          { value: "otp", label: "OTP", icon: Smartphone },
+                          { value: "student", label: "Student", icon: GraduationCap },
+                          { value: "partner", label: "Partner", icon: Briefcase },
                         ]}
                       />
 
+                      {portal === "student" && (
+                        <div className="mt-3">
+                          <SegmentedSwitch
+                            value={loginMethod}
+                            onChange={switchMethod}
+                            options={[
+                              { value: "password", label: "Password", icon: Lock },
+                              { value: "otp", label: "OTP", icon: Smartphone },
+                            ]}
+                          />
+                        </div>
+                      )}
+
                       <AnimatePresence mode="wait" initial={false}>
-                        {loginMethod === "password" ? (
+                        {portal === "partner" || loginMethod === "password" ? (
                           <motion.form key="password" {...slide} onSubmit={handlePasswordLogin} className="mt-[clamp(0.85rem,1.8vh,1.35rem)] space-y-[clamp(0.7rem,1.5vh,1.05rem)]">
                             <LoginField
                               label="Email"
@@ -712,7 +747,7 @@ function LoginForm() {
                                     placeholder="your@email.com"
                                   />
                                   <p className="text-xs leading-relaxed text-ive-slate">
-                                    We&apos;ll email you a 6-digit one-time code, valid for 10 minutes.
+                                    Student accounts can sign in with a 6-digit code emailed to them. It stays valid for 10 minutes.
                                   </p>
                                   {otpError && <LoginError>{otpError}</LoginError>}
                                   <PrimaryButton type="submit" loading={formLoading} loadingText="Sending OTP...">

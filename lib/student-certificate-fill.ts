@@ -82,54 +82,96 @@ function scaleSubjectsByPercent(
   });
 }
 
+type SubjectMarkRow = {
+  subjectName: string;
+  maxMarks: number;
+  obtainedMarks: number;
+  practicalMax?: number | null;
+  practicalObtained?: number | null;
+};
+
+function marksheetRow(
+  index: number,
+  name: string,
+  subjectMax: number,
+  hit: SubjectMarkRow | undefined,
+  hasPractical: boolean,
+  practicalDefaultMax: number | null
+): MarksheetSubject {
+  const theoryMax = hit?.maxMarks && hit.maxMarks > 0 ? hit.maxMarks : subjectMax || 100;
+  const theoryGot = hit?.obtainedMarks ?? 0;
+
+  if (!hasPractical) {
+    const pct = theoryMax > 0 ? Math.round((theoryGot / theoryMax) * 100) : 0;
+    return {
+      code: `SUB-${String(index + 1).padStart(2, "0")}`,
+      name,
+      maxTheory: theoryMax,
+      marksTheory: theoryGot,
+      maxPractical: 0,
+      marksPractical: 0,
+      totalMax: theoryMax,
+      totalObtained: theoryGot,
+      grade: theoryGot > 0 || hit ? `${pct}%` : "",
+    };
+  }
+
+  const pracMax =
+    (hit?.practicalMax && hit.practicalMax > 0 ? hit.practicalMax : null) ??
+    (practicalDefaultMax && practicalDefaultMax > 0 ? practicalDefaultMax : null) ??
+    (subjectMax > 0 ? subjectMax : 100);
+  const pracGot = hit?.practicalObtained ?? 0;
+  const totalMax = theoryMax + pracMax;
+  const totalObtained = theoryGot + pracGot;
+  const pct = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
+  const entered = Boolean(hit) || theoryGot > 0 || hit?.practicalObtained != null;
+
+  return {
+    code: `SUB-${String(index + 1).padStart(2, "0")}`,
+    name,
+    maxTheory: theoryMax,
+    marksTheory: theoryGot,
+    maxPractical: pracMax,
+    marksPractical: pracGot,
+    totalMax,
+    totalObtained,
+    grade: entered ? `${pct}%` : "",
+  };
+}
+
 /** Build marksheet rows from CourseSubject + StudentSubjectMark (fully dynamic). */
 export function buildMarksheetSubjects(input: {
   courseSubjects: { name: string; maxMarks: number; sortOrder?: number }[];
-  marks: { subjectName: string; maxMarks: number; obtainedMarks: number }[];
+  marks: SubjectMarkRow[];
+  /** Course includes a practical paper. Hides the Practical column when false. */
+  hasPractical?: boolean;
+  /** Course-level practical maximum, used when a subject has no saved practical max. */
+  practicalDefaultMax?: number | null;
 }): MarksheetSubject[] {
+  const hasPractical = Boolean(input.hasPractical);
+  const practicalDefaultMax = input.practicalDefaultMax ?? null;
   const marksMap = new Map(
     input.marks.map((m) => [m.subjectName.trim().toLowerCase(), m])
   );
 
   const fromCourse = [...input.courseSubjects]
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
-    .map((s, i) => {
-      const hit = marksMap.get(s.name.trim().toLowerCase());
-      const totalMax = hit?.maxMarks ?? s.maxMarks ?? 100;
-      const totalObtained = hit?.obtainedMarks ?? 0;
-      const pct = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
-      return {
-        code: `SUB-${String(i + 1).padStart(2, "0")}`,
-        name: s.name,
-        maxTheory: totalMax,
-        marksTheory: totalObtained,
-        maxPractical: 0,
-        marksPractical: 0,
-        totalMax,
-        totalObtained,
-        grade: totalObtained > 0 || hit ? `${pct}%` : "",
-      } satisfies MarksheetSubject;
-    });
+    .map((s, i) =>
+      marksheetRow(
+        i,
+        s.name,
+        s.maxMarks ?? 100,
+        marksMap.get(s.name.trim().toLowerCase()),
+        hasPractical,
+        practicalDefaultMax
+      )
+    );
 
   if (fromCourse.length > 0) return fromCourse;
 
-  // Fallback: marks rows without course subject catalog
-  return input.marks.map((m, i) => {
-    const totalMax = m.maxMarks || 100;
-    const totalObtained = m.obtainedMarks || 0;
-    const pct = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
-    return {
-      code: `SUB-${String(i + 1).padStart(2, "0")}`,
-      name: m.subjectName,
-      maxTheory: totalMax,
-      marksTheory: totalObtained,
-      maxPractical: 0,
-      marksPractical: 0,
-      totalMax,
-      totalObtained,
-      grade: totalObtained > 0 ? `${pct}%` : "",
-    } satisfies MarksheetSubject;
-  });
+  return input.marks.map((m, i) =>
+    marksheetRow(i, m.subjectName, m.maxMarks || 100, m, hasPractical, practicalDefaultMax)
+  );
 }
 
 export function percentFromSubjects(subjects: MarksheetSubject[] | null | undefined): number | null {

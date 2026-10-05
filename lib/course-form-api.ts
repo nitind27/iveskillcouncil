@@ -72,6 +72,7 @@ export function courseFormToApiBody(form: CourseFormState) {
     isRecommended: form.isRecommended,
     isMrpVisible: form.isMrpVisible,
     hideExamResult: form.hideExamResult,
+    hasPractical: form.hasPractical,
     status: form.status,
   };
 }

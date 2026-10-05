@@ -3,6 +3,9 @@
  * Admin can change these via API later; for now edit this file or replace with API fetch.
  */
 
+import type { SeoConfig } from "@/lib/seo";
+import { defaultSeo } from "@/lib/seo";
+
 export interface NavLink {
   label: string;
   href: string;
@@ -145,6 +148,17 @@ export interface WelcomePopupConfig {
   backdropOpacity?: number;
 }
 
+export interface PublicNotice {
+  id: string;
+  title: string;
+  message: string;
+  /** Optional PDF visitors can open. */
+  pdfUrl?: string | null;
+  /** When false, the notice stays in admin but is hidden on the website. */
+  active: boolean;
+  createdAt: string;
+}
+
 export interface UserPanelConfig {
   /** Welcome popup: show once when user opens user panel (if superadmin enables and sets image). */
   welcomePopup: WelcomePopupConfig;
@@ -208,6 +222,10 @@ export interface UserPanelConfig {
     social: SocialLink[];
     copyrightText: string;
   };
+  /** Public notices shown in the user-panel side drawer. */
+  notices: PublicNotice[];
+  /** Google title, description, keywords, and the homepage intro. */
+  seo: SeoConfig;
 }
 
 const defaultConfig: UserPanelConfig = {
@@ -289,12 +307,12 @@ const defaultConfig: UserPanelConfig = {
   franchise: {
     sectionTitle: "Featured Branch",
     highlight: {
-      name: "Downtown Learning Center",
+      name: "Eklavya Education Hub",
       image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop",
-      location: "123 Education Ave, Downtown",
-      head: "Dr. Sarah Williams",
-      contact: "+1 234 567 890",
-      email: "downtown@institute.com",
+      location: "3rd Floor, Matrushree Complex, Junagam Main Road, Fort-Songadh, Dist-Tapi, Songadh, Gujarat - 394670",
+      head: "Yashvantbhai Prajapati",
+      contact: "+91 9824817111",
+      email: "yashvantprajapati2530@gmail.com",
       detailsUrl: "/userpanel/franchises",
     },
   },
@@ -351,6 +369,8 @@ const defaultConfig: UserPanelConfig = {
     ],
     copyrightText: "All rights reserved.",
   },
+  notices: [],
+  seo: defaultSeo,
 };
 
 export { defaultConfig };

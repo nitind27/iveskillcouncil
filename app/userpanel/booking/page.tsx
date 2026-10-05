@@ -22,11 +22,15 @@ import { useCourseCart } from "@/contexts/CourseCartContext";
 import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import { validateName, validateEmail, validatePhone } from "@/lib/validation";
 import type { CourseItem } from "@/config/userpanel.config";
-import { SectionLoader } from "@/components/common/PageLoader";
+import { upButton } from "@/components/userpanel/ui/button";
 
 function getSlug(c: CourseItem): string {
   return c.slug || c.id;
 }
+
+const fieldClass =
+  "w-full rounded-xl border border-ive-line bg-[#F7FAFE] py-3 text-sm text-ive-navy outline-none transition placeholder:text-ive-slate/70 focus:border-ive-royal/35 focus:bg-white focus:ring-4 focus:ring-ive-royal/10";
+const labelClass = "mb-1.5 block text-sm font-semibold text-ive-navy";
 
 function BookingContent() {
   const searchParams = useSearchParams();
@@ -115,21 +119,24 @@ function BookingContent() {
 
   if (!hasCourses && status !== "success") {
     return (
-      <div className="min-h-screen py-24 px-4 text-center">
+      <div className="flex min-h-[70vh] items-center justify-center bg-[#F4F7FB] px-4 py-24 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md mx-auto"
+          className="mx-auto max-w-md rounded-[1.5rem] border border-ive-line bg-white px-8 py-10 shadow-[0_22px_50px_-32px_rgba(6,27,54,0.4)]"
         >
-          <h1 className="text-2xl font-bold text-[var(--up-text)] mb-4">Your cart is empty</h1>
-          <p className="text-[var(--up-text-muted)] mb-6">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-ive-saffron/10 text-ive-saffron">
+            <FiBook className="h-6 w-6" />
+          </span>
+          <h1 className="mt-5 text-2xl font-extrabold text-ive-navy">Your cart is empty</h1>
+          <p className="mb-6 mt-2 text-ive-slate">
             Add courses from the courses page to book or enquire.
           </p>
           <Link
             href={directEnrolment ? "/userpanel/franchises" : "/userpanel/courses"}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--up-accent)] text-white font-semibold"
+            className={upButton("primary", "md")}
           >
-            {directEnrolment ? "Browse franchises" : "Browse courses"} <FiArrowLeft className="w-4 h-4 rotate-180" />
+            {directEnrolment ? "Browse franchises" : "Browse courses"} <FiArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
       </div>
@@ -138,24 +145,24 @@ function BookingContent() {
 
   if (status === "success") {
     return (
-      <div className="min-h-screen py-24 px-4 flex items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center bg-[#F4F7FB] px-4 py-24">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center rounded-3xl bg-[var(--up-bg-card)] border border-[var(--up-border)] p-8 shadow-lg"
+          className="w-full max-w-md rounded-[1.5rem] border border-ive-line bg-white p-8 text-center shadow-[0_22px_50px_-32px_rgba(6,27,54,0.4)]"
         >
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl text-emerald-600">✓</span>
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-ive-emerald/15">
+            <span className="text-3xl text-ive-emerald">✓</span>
           </div>
-          <h2 className="text-xl font-bold text-[var(--up-text)] mb-2">Request submitted</h2>
-          <p className="text-[var(--up-text-muted)] mb-8">
+          <h2 className="mb-2 text-xl font-extrabold text-ive-navy">Request submitted</h2>
+          <p className="mb-8 text-ive-slate">
             We have received your enquiry. Our team will contact you shortly.
           </p>
           <Link
             href={directEnrolment ? "/userpanel/franchises" : "/userpanel/courses"}
-            className="inline-flex items-center gap-2 text-[var(--up-accent)] font-semibold"
+            className="inline-flex items-center gap-2 font-bold text-ive-royal hover:text-ive-navy"
           >
-            Back to {directEnrolment ? "franchises" : "courses"} <FiArrowLeft className="w-4 h-4 rotate-180" />
+            Back to {directEnrolment ? "franchises" : "courses"} <FiArrowRight className="h-4 w-4" />
           </Link>
         </motion.div>
       </div>
@@ -163,38 +170,43 @@ function BookingContent() {
   }
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
-        >
+    <div className="relative min-h-screen bg-[#F4F7FB]">
+      <section className="relative isolate overflow-hidden bg-gradient-to-br from-ive-navy via-[#0A2748] to-[#124E96]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_0%,rgba(255,133,0,0.22),transparent_34%),radial-gradient(circle_at_10%_100%,rgba(21,154,112,0.16),transparent_32%)]" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10 lg:px-8">
           <Link
             href={directEnrolment ? `/userpanel/franchise/${directFranchiseId}/courses` : "/userpanel/courses"}
-            className="inline-flex items-center gap-2 text-[var(--up-text-muted)] hover:text-[var(--up-accent)] transition-colors text-sm font-medium"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white/75 transition hover:text-white"
           >
-            <FiArrowLeft className="w-4 h-4" /> Back to {directEnrolment ? "courses" : "courses"}
+            <FiArrowLeft className="h-4 w-4" /> Back to courses
           </Link>
-        </motion.div>
+          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            Course <span className="text-ive-saffron">enquiry</span>
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
+            Share your details for the selected course. The institute team will contact you.
+          </p>
+        </div>
+      </section>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
           {/* Cart */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="lg:col-span-1 order-2 lg:order-1"
+            className="order-2 rounded-[1.4rem] border border-ive-line bg-white p-5 shadow-[0_18px_40px_-28px_rgba(6,27,54,0.4)] lg:order-1 lg:col-span-1"
           >
-            <h2 className="text-lg font-bold text-[var(--up-text)] mb-4">Selected courses</h2>
+            <h2 className="mb-4 text-lg font-extrabold text-ive-navy">Selected courses</h2>
             <div className="space-y-3">
               {directEnrolment ? (
-                <div className="flex gap-3 p-4 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)]">
-                  <div className="w-16 h-16 rounded-lg bg-[var(--up-bg-muted)] flex items-center justify-center flex-shrink-0">
-                    <FiBook className="w-8 h-8 text-[var(--up-accent)]" />
+                <div className="flex gap-3 rounded-xl border border-ive-line bg-[#F7FAFE] p-4">
+                  <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-ive-saffron/10">
+                    <FiBook className="h-8 w-8 text-ive-saffron" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[var(--up-text)] text-sm line-clamp-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-ive-navy">
                       {decodeURIComponent(directCourseName)}
                     </p>
                   </div>
@@ -203,26 +215,26 @@ function BookingContent() {
                 items.map(({ course }) => (
                   <div
                     key={course.id}
-                    className="flex gap-3 p-4 rounded-xl bg-[var(--up-bg-card)] border border-[var(--up-border)]"
+                    className="flex gap-3 rounded-xl border border-ive-line bg-[#F7FAFE] p-3"
                   >
                     <img
                       src={course.image}
                       alt=""
-                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[var(--up-text)] text-sm line-clamp-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm font-semibold text-ive-navy">
                         {course.title}
                       </p>
-                      <p className="text-xs text-[var(--up-text-muted)]">{course.duration}</p>
+                      <p className="text-xs text-ive-slate">{course.duration}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => remove(course.id)}
-                      className="p-2 rounded-lg text-[var(--up-text-muted)] hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                      className="rounded-lg p-2 text-ive-slate transition-colors hover:bg-rose-500/10 hover:text-rose-600"
                       aria-label="Remove"
                     >
-                      <FiTrash2 className="w-4 h-4" />
+                      <FiTrash2 className="h-4 w-4" />
                     </button>
                   </div>
                 ))
@@ -232,7 +244,7 @@ function BookingContent() {
               <button
                 type="button"
                 onClick={() => clear()}
-                className="mt-3 text-sm text-[var(--up-text-muted)] hover:text-[var(--up-accent)]"
+                className="mt-3 text-sm font-semibold text-ive-slate hover:text-ive-saffron"
               >
                 Clear all
               </button>
@@ -244,84 +256,86 @@ function BookingContent() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.15 }}
-            className="lg:col-span-2 order-1 lg:order-2"
+            className="order-1 lg:order-2 lg:col-span-2"
           >
-            <div className="rounded-3xl bg-[var(--up-bg-card)] border border-[var(--up-border)] p-6 md:p-8 shadow-sm">
-              <h2 className="text-xl font-bold text-[var(--up-text)] mb-2">Enquire Now</h2>
-              <p className="text-[var(--up-text-muted)] text-sm mb-6">
+            <div className="overflow-hidden rounded-[1.4rem] border border-ive-line bg-white shadow-[0_18px_40px_-28px_rgba(6,27,54,0.4)]">
+              <div className="h-1 bg-gradient-to-r from-ive-saffron via-ive-royal to-ive-emerald" aria-hidden />
+              <div className="p-6 md:p-8">
+              <h2 className="mb-2 text-xl font-extrabold text-ive-navy">Enquire now</h2>
+              <p className="mb-6 text-sm text-ive-slate">
                 Share your details and address. We’ll get back to you for the selected course(s).
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                  <label className={labelClass}>
                     Full name *
                   </label>
                   <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--up-text-subtle)]" />
+                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ive-slate" />
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Your full name"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                      className={`${fieldClass} pl-10 pr-4`}
                     />
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                    <label className={labelClass}>
                       Email *
                     </label>
                     <div className="relative">
-                      <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--up-text-subtle)]" />
+                      <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ive-slate" />
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                        className={`${fieldClass} pl-10 pr-4`}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                    <label className={labelClass}>
                       Phone *
                     </label>
                     <div className="relative">
-                      <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--up-text-subtle)]" />
+                      <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ive-slate" />
                       <input
                         type="tel"
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="10-digit mobile number"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                        className={`${fieldClass} pl-10 pr-4`}
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                  <label className={labelClass}>
                     Address
                   </label>
                   <div className="relative">
-                    <FiMapPin className="absolute left-3 top-3.5 w-4 h-4 text-[var(--up-text-subtle)]" />
+                    <FiMapPin className="absolute left-3 top-3.5 w-4 h-4 text-ive-slate" />
                     <textarea
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="Street, building, landmark"
                       rows={2}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20 resize-none"
+                      className={`${fieldClass} resize-none pl-10 pr-4`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                  <label className={labelClass}>
                     Pincode (6 digits)
                   </label>
                   <div className="flex gap-2 flex-wrap">
@@ -338,14 +352,14 @@ function BookingContent() {
                         }}
                         onBlur={fetchPincode}
                         placeholder="e.g. 110001"
-                        className="w-full px-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                        className={`${fieldClass} px-4`}
                       />
                     </div>
                     <button
                       type="button"
                       onClick={fetchPincode}
                       disabled={pincodeLoading || pincode.length !== 6}
-                      className="px-4 py-3 rounded-xl bg-[var(--up-accent)]/10 text-[var(--up-accent)] font-medium text-sm hover:bg-[var(--up-accent)]/20 disabled:opacity-50 disabled:pointer-events-none"
+                      className="rounded-xl bg-ive-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-ive-royal disabled:pointer-events-none disabled:opacity-50"
                     >
                       {pincodeLoading ? "..." : "Get area"}
                     </button>
@@ -357,22 +371,22 @@ function BookingContent() {
 
                 <div className="grid sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                    <label className={labelClass}>
                       Area / Locality
                     </label>
                     <div className="relative">
-                      <FiMap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--up-text-subtle)]" />
+                      <FiMap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ive-slate" />
                       <input
                         type="text"
                         value={area}
                         onChange={(e) => setArea(e.target.value)}
                         placeholder="Auto from pincode"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                        className={`${fieldClass} pl-10 pr-4`}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                    <label className={labelClass}>
                       City / District
                     </label>
                     <input
@@ -380,11 +394,11 @@ function BookingContent() {
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="Auto from pincode"
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                      className={`${fieldClass} px-4`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                    <label className={labelClass}>
                       State
                     </label>
                     <input
@@ -392,23 +406,23 @@ function BookingContent() {
                       value={state}
                       onChange={(e) => setState(e.target.value)}
                       placeholder="Auto from pincode"
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20"
+                      className={`${fieldClass} px-4`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[var(--up-text)] mb-1.5">
+                  <label className={labelClass}>
                     Message (optional)
                   </label>
                   <div className="relative">
-                    <FiMessageSquare className="absolute left-3 top-3.5 w-4 h-4 text-[var(--up-text-subtle)]" />
+                    <FiMessageSquare className="absolute left-3 top-3.5 w-4 h-4 text-ive-slate" />
                     <textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Preferred batch, questions..."
                       rows={3}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-[var(--up-bg)] border border-[var(--up-border)] text-[var(--up-text)] placeholder-[var(--up-text-subtle)] focus:outline-none focus:border-[var(--up-accent)] focus:ring-2 focus:ring-[var(--up-accent)]/20 resize-none"
+                      className={`${fieldClass} resize-none pl-10 pr-4`}
                     />
                   </div>
                 </div>
@@ -420,12 +434,13 @@ function BookingContent() {
                   disabled={status === "submitting"}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-4 rounded-xl bg-[var(--up-accent)] text-white font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+                  className={upButton("primary", "lg", "w-full")}
                 >
                   <FiSend className="w-5 h-5" />
                   {status === "submitting" ? "Submitting..." : "Submit enquiry"}
                 </motion.button>
               </form>
+              </div>
             </div>
 
             {/* More courses you might like - only when using cart, not direct enrolment */}
@@ -434,13 +449,13 @@ function BookingContent() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="mt-10 pt-10 border-t border-[var(--up-border)]"
+                className="mt-8"
               >
-                <h3 className="text-lg font-bold text-[var(--up-text)] mb-2 flex items-center gap-2">
-                  <FiBook className="w-5 h-5 text-[var(--up-accent)]" />
+                <h3 className="mb-2 flex items-center gap-2 text-lg font-extrabold text-ive-navy">
+                  <FiBook className="h-5 w-5 text-ive-saffron" />
                   More courses you might like
                 </h3>
-                <p className="text-sm text-[var(--up-text-muted)] mb-6">
+                <p className="mb-6 text-sm text-ive-slate">
                   Explore these programs and add to your enquiry.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -453,7 +468,7 @@ function BookingContent() {
                     >
                       <Link
                         href={`/userpanel/courses/${getSlug(course)}`}
-                        className="flex gap-4 p-4 rounded-2xl bg-[var(--up-bg-card)] border border-[var(--up-border)] hover:border-[var(--up-accent)]/40 hover:shadow-lg transition-all duration-300 group"
+                        className="group flex gap-4 rounded-2xl border border-ive-line bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-ive-royal/30 hover:shadow-[0_18px_40px_-28px_rgba(6,27,54,0.45)]"
                       >
                         <img
                           src={course.image}
@@ -461,11 +476,11 @@ function BookingContent() {
                           className="w-24 h-24 rounded-xl object-cover flex-shrink-0 group-hover:scale-105 transition-transform"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-[var(--up-text)] line-clamp-2 group-hover:text-[var(--up-accent)] transition-colors">
+                          <p className="line-clamp-2 font-bold text-ive-navy transition-colors group-hover:text-ive-royal">
                             {course.title}
                           </p>
-                          <p className="text-xs text-[var(--up-text-muted)] mt-0.5">{course.duration}</p>
-                          <span className="inline-flex items-center gap-1 text-[var(--up-accent)] font-semibold text-sm mt-2">
+                          <p className="mt-0.5 text-xs text-ive-slate">{course.duration}</p>
+                          <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-ive-saffron">
                             View & Enquire <FiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </span>
                         </div>
@@ -487,7 +502,7 @@ export default function BookingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <div className="w-10 h-10 rounded-xl bg-[var(--up-accent)]/20 animate-pulse" />
+          <div className="h-10 w-10 animate-pulse rounded-xl bg-ive-saffron/20" />
         </div>
       }
     >

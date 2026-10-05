@@ -30,10 +30,9 @@ export async function POST(request: NextRequest) {
     if (user.mustChangePassword) {
       return errorResponse("First-time setup required. Use 'First time? Set up your account' below.", 400);
     }
-    // Admin (Institute) must use password → OTP (not OTP-only)
-    if (user.roleId === ROLES.ADMIN) {
+    if (user.roleId !== ROLES.STUDENT) {
       return errorResponse(
-        "Admin (Institute) must sign in with email & password. An OTP will be emailed after password verification.",
+        "OTP sign-in is only for students. Use email and password.",
         400
       );
     }

@@ -36,7 +36,7 @@ const features = [
   { icon: FiAward, label: "Award Winning", desc: "National & global recognitions", color: "bg-ive-saffron/10 text-ive-saffron" },
 ];
 
-function OwnerSlideshow() {
+function OwnerSlideshow({ founderName, founderRole }: { founderName: string; founderRole: string }) {
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -54,7 +54,7 @@ function OwnerSlideshow() {
         <motion.img
           key={slide.src}
           src={slide.src}
-          alt={slide.caption}
+          alt={`${founderName}, ${founderRole} — ${slide.caption}`}
           loading="lazy"
           decoding="async"
           initial={{ opacity: 0, scale: reduce ? 1 : 1.06 }}
@@ -87,7 +87,7 @@ function OwnerSlideshow() {
   );
 }
 
-function Collage({ enrollments }: { enrollments: number }) {
+function Collage({ enrollments, founderName, founderRole }: { enrollments: number; founderName: string; founderRole: string }) {
   const reduce = useReducedMotion();
   const frame = "overflow-hidden rounded-[1.75rem] border-[6px] border-white bg-ive-mist shadow-[0_30px_60px_-30px_rgba(6,27,54,0.45)]";
 
@@ -105,7 +105,7 @@ function Collage({ enrollments }: { enrollments: number }) {
         </motion.div>
 
         <div className={cn(frame, "relative z-20 col-span-5 col-start-8 row-span-6 row-start-1 ml-3")}>
-          <OwnerSlideshow />
+          <OwnerSlideshow founderName={founderName} founderRole={founderRole} />
         </div>
 
         <motion.div
@@ -185,7 +185,7 @@ export default function AboutSection({ config }: AboutSectionProps) {
       <FlagWave rotate={9} opacity={0.09} className="-right-48 bottom-6 w-[560px] sm:w-[720px] lg:-right-64 lg:w-[880px]" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-2 lg:gap-14 xl:gap-20">
         <Reveal x={-30}>
-          <Collage enrollments={enrollments} />
+          <Collage enrollments={enrollments} founderName={config.seo.founderName} founderRole={config.seo.founderRole} />
         </Reveal>
 
         <div>

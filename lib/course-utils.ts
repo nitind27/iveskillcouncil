@@ -107,6 +107,7 @@ export function serializeCourse(c: {
   isRecommended?: boolean | null;
   isMrpVisible?: boolean | null;
   hideExamResult?: boolean | null;
+  hasPractical?: boolean | null;
 }) {
   return {
     id: c.id.toString(),
@@ -146,6 +147,7 @@ export function serializeCourse(c: {
     isRecommended: Boolean(c.isRecommended),
     isMrpVisible: c.isMrpVisible !== false,
     hideExamResult: Boolean(c.hideExamResult),
+    hasPractical: Boolean(c.hasPractical),
   };
 }
 
@@ -298,5 +300,7 @@ export function coursePayloadFromBody(body: Record<string, unknown>) {
       body.isMrpVisible !== undefined ? Boolean(body.isMrpVisible) : undefined,
     hideExamResult:
       body.hideExamResult !== undefined ? Boolean(body.hideExamResult) : undefined,
+    hasPractical:
+      body.hasPractical !== undefined ? Boolean(body.hasPractical) : undefined,
   };
 }

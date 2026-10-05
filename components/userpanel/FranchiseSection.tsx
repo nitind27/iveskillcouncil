@@ -194,7 +194,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                   {mapQuery ? (
                     <iframe
                       title={`Map showing ${highlight.name}`}
-                      src={`https://maps.google.com/maps?q=${mapQuery}&z=14&output=embed`}
+                      src={`https://maps.google.com/maps?q=${mapQuery}&hl=en&z=16&output=embed`}
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       className="absolute inset-0 h-full w-full border-0 grayscale-[30%]"

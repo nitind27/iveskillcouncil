@@ -55,12 +55,8 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid request", 400);
     }
 
-    // Admin (Institute) must complete password + ADMIN_LOGIN OTP flow
-    if (user.roleId === ROLES.ADMIN) {
-      return errorResponse(
-        "Admin (Institute) must sign in with email & password, then enter the OTP sent to your email.",
-        403
-      );
+    if (user.roleId !== ROLES.STUDENT) {
+      return errorResponse("OTP sign-in is only for students. Use email and password.", 403);
     }
 
     await prisma.otpVerification.update({

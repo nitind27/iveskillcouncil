@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import { SectionLoader } from "@/components/common/PageLoader";
 import { useFranchiseSiteSlug, useUserPanelHref } from "@/hooks/useUserPanelBasePath";
+import { useUserPanelConfig } from "@/contexts/UserPanelConfigContext";
 import FlagWave from "@/components/userpanel/ui/FlagWave";
 import { upButton } from "@/components/userpanel/ui/button";
 import { EASE_OUT } from "@/components/userpanel/ui/motion";
@@ -216,6 +217,7 @@ export default function UserPanelCoursesPage() {
   const [activeSlug, setActive] = useState("ALL");
   const franchiseSlug = useFranchiseSiteSlug();
   const up = useUserPanelHref();
+  const seo = useUserPanelConfig().seo;
 
   useEffect(() => {
     const url = franchiseSlug
@@ -285,8 +287,6 @@ export default function UserPanelCoursesPage() {
     return groups;
   }, [filtered, categories]);
 
-  if (loading) return <SectionLoader text="Loading courses..." />;
-
   const chip =
     "inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition-all duration-300";
 
@@ -302,11 +302,9 @@ export default function UserPanelCoursesPage() {
               All Programs
             </span>
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-              Explore our <span className="text-ive-saffron">courses</span>
+              {seo.coursesHeadline}
             </h1>
-            <p className="mt-3 max-w-xl text-base leading-relaxed text-white/75">
-              Browse vocational programmes by category. Every listing comes live from the course catalogue.
-            </p>
+            <p className="mt-3 max-w-xl text-base leading-relaxed text-white/75">{seo.coursesDescription}</p>
           </motion.div>
 
           <motion.div
@@ -364,7 +362,7 @@ export default function UserPanelCoursesPage() {
             >
               <FiGrid className="h-4 w-4" />
               All
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeSlug === "ALL" ? "bg-white/20" : "bg-ive-mist"}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeSlug === "ALL" ? "bg-ive-saffron text-white" : "bg-ive-mist"}`}>
                 {courses.length}
               </span>
             </button>
@@ -379,13 +377,13 @@ export default function UserPanelCoursesPage() {
                   onClick={() => setActive(cat.slug)}
                   className={`${chip} ${
                     isActive
-                      ? "border-ive-saffron bg-ive-saffron text-white shadow-sm"
+                      ? "border-ive-navy bg-ive-navy text-white shadow-sm"
                       : "border-ive-line bg-white text-ive-slate hover:border-ive-royal/30 hover:text-ive-navy"
                   }`}
                 >
                   {icon}
                   <span className="max-w-[10rem] truncate">{cat.name}</span>
-                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? "bg-white/25" : "bg-ive-mist"}`}>
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? "bg-ive-saffron text-white" : "bg-ive-mist"}`}>
                     {count}
                   </span>
                 </button>
@@ -396,6 +394,10 @@ export default function UserPanelCoursesPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+        {loading ? (
+          <SectionLoader text="Loading courses..." />
+        ) : (
+        <>
         {courses.length === 0 && (
           <div className="rounded-[1.4rem] border border-ive-line bg-white px-6 py-20 text-center shadow-sm">
             <FiBookOpen className="mx-auto mb-4 h-12 w-12 text-ive-line" />
@@ -486,6 +488,8 @@ export default function UserPanelCoursesPage() {
               <FiArrowRight className="h-4 w-4" />
             </Link>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

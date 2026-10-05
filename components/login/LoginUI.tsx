@@ -146,14 +146,18 @@ export function SegmentedSwitch<T extends string>({
   options,
   value,
   onChange,
+  layoutId = "login-method-pill",
+  ariaLabel = "Sign-in method",
 }: {
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  layoutId?: string;
+  ariaLabel?: string;
 }) {
   const reduce = useReducedMotion();
   return (
-    <div role="tablist" aria-label="Sign-in method" className="relative flex rounded-xl border border-[#DCE6F3] bg-[#F1F5FB] p-1">
+    <div role="tablist" aria-label={ariaLabel} className="relative flex rounded-xl border border-[#DCE6F3] bg-[#F1F5FB] p-1">
       {options.map(({ value: v, label, icon: Icon }) => {
         const active = v === value;
         return (
@@ -170,7 +174,7 @@ export function SegmentedSwitch<T extends string>({
           >
             {active && (
               <motion.span
-                layoutId="login-method-pill"
+                layoutId={layoutId}
                 className="absolute inset-0 rounded-lg bg-gradient-to-r from-ive-royal to-[#1E6AD0] shadow-[0_8px_18px_-8px_rgba(18,78,150,0.8)]"
                 transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
               />

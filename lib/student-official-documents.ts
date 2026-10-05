@@ -60,6 +60,8 @@ const studentInclude = Prisma.validator<Prisma.StudentInclude>()({
       durationValue: true,
       durationUnit: true,
       certificateSubject: true,
+      hasPractical: true,
+      practicalMarks: true,
     },
   },
   certificates: {
@@ -106,11 +108,22 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
       }),
       prisma.studentSubjectMark.findMany({
         where: { studentId: student.id, courseId: student.courseId },
-        select: { subjectName: true, maxMarks: true, obtainedMarks: true },
+        select: {
+          subjectName: true,
+          maxMarks: true,
+          obtainedMarks: true,
+          practicalMax: true,
+          practicalObtained: true,
+        },
       }),
     ]);
 
-    subjects = buildMarksheetSubjects({ courseSubjects, marks: subjectMarks });
+    subjects = buildMarksheetSubjects({
+      courseSubjects,
+      marks: subjectMarks,
+      hasPractical: Boolean(student.course?.hasPractical),
+      practicalDefaultMax: student.course?.practicalMarks ?? null,
+    });
     if (subjects.length === 0) {
       subjects = null;
     } else {

@@ -19,6 +19,7 @@ export const runtime = "nodejs";
 
 const WELCOME_PUBLIC_PREFIX = "/uploads/userpanel/welcome/";
 const HERO_PUBLIC_PREFIX = "/uploads/userpanel/hero/";
+const NOTICE_PUBLIC_PREFIX = "/uploads/userpanel/notices/";
 
 function isLocalWelcomeUrl(url: unknown): url is string {
   return typeof url === "string" && url.startsWith(WELCOME_PUBLIC_PREFIX);
@@ -26,6 +27,13 @@ function isLocalWelcomeUrl(url: unknown): url is string {
 
 function isLocalHeroUrl(url: unknown): url is string {
   return typeof url === "string" && url.startsWith(HERO_PUBLIC_PREFIX);
+}
+
+function noticePdfUrls(config: { notices?: { pdfUrl?: string | null }[] } | null): string[] {
+  const list = Array.isArray(config?.notices) ? config.notices : [];
+  return list
+    .map((notice) => notice?.pdfUrl)
+    .filter((url): url is string => typeof url === "string" && url.startsWith(NOTICE_PUBLIC_PREFIX));
 }
 
 async function safeUnlink(filePath: string) {
@@ -105,6 +113,12 @@ export async function PUT(request: NextRequest) {
       if (nextHeroUrlsSet.has(oldUrl) || defaultHeroUrls.has(oldUrl)) continue;
       const oldAbs = path.join(process.cwd(), "public", oldUrl.replace(/^\//, ""));
       await safeUnlink(oldAbs);
+    }
+
+    const nextNoticeUrls = new Set(noticePdfUrls(config));
+    for (const oldUrl of noticePdfUrls(prevConfig)) {
+      if (nextNoticeUrls.has(oldUrl)) continue;
+      await safeUnlink(path.join(process.cwd(), "public", oldUrl.replace(/^\//, "")));
     }
 
     await prisma.userPanelSetting.upsert({

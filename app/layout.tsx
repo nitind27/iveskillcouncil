@@ -9,6 +9,7 @@ import ToastProvider from "@/components/common/ToastProvider";
 import { ConfirmDialogHost } from "@/components/common/ConfirmDialog";
 import SWRProvider from "@/components/SWRProvider";
 import GlobalLoader from "@/components/common/GlobalLoader";
+import { getSiteUrl } from "@/lib/site-url";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 const jakarta = Plus_Jakarta_Sans({
@@ -32,8 +33,11 @@ const notoGujarati = Noto_Sans_Gujarati({
 });
 
 export const metadata: Metadata = {
-  title: "IVESDC",
-  description: "Comprehensive franchise management system with multi-role support, subscription plans, and advanced features",
+  metadataBase: new URL(getSiteUrl()),
+  title: "IVESDC | Eklavya Institute, Songadh",
+  description:
+    "IVESDC (Eklavya Institute), Songadh, Tapi — computer courses and vocational skill development led by Yashvant Prajapati.",
+  applicationName: "IVESDC",
 };
 
 export default function RootLayout({

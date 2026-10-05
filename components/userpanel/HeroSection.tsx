@@ -215,7 +215,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
           className="relative lg:hidden"
         >
           <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border-4 border-white shadow-[0_30px_70px_-30px_rgba(6,27,54,0.5)]">
-            <img src={HERO_IMAGE} alt="" loading="eager" decoding="async" className="h-full w-full object-cover object-[70%_center]" />
+            <img src={HERO_IMAGE} alt={`${config.seo.instituteName} skill training in ${config.seo.city}, ${config.seo.district}`} loading="eager" decoding="async" className="h-full w-full object-cover object-[70%_center]" />
           </div>
           <div className="absolute -bottom-6 left-4 right-4 flex justify-center sm:justify-start">{journeyCard}</div>
         </motion.div>

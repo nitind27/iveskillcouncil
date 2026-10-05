@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
         name: true,
         practicalMarks: true,
         objectiveMarks: true,
+        hasPractical: true,
         status: true,
       },
     });
@@ -84,6 +85,8 @@ export async function GET(request: NextRequest) {
           subjects: [],
           subjectMeta: [],
           defaultMaxMarks: defaultMax,
+          hasPractical: Boolean(course.hasPractical),
+          practicalMaxMarks: course.practicalMarks ?? null,
         },
         students: [],
         message:
@@ -148,14 +151,26 @@ export async function GET(request: NextRequest) {
               subjectName: true,
               maxMarks: true,
               obtainedMarks: true,
+              practicalMax: true,
+              practicalObtained: true,
             },
           });
 
-    const marksMap = new Map<string, { obtainedMarks: number; maxMarks: number }>();
+    const marksMap = new Map<
+      string,
+      {
+        obtainedMarks: number;
+        maxMarks: number;
+        practicalObtained: number | null;
+        practicalMax: number | null;
+      }
+    >();
     for (const m of existingMarks) {
       marksMap.set(`${m.studentId}|${m.subjectName}`, {
         obtainedMarks: m.obtainedMarks,
         maxMarks: m.maxMarks,
+        practicalObtained: m.practicalObtained,
+        practicalMax: m.practicalMax,
       });
     }
 
@@ -167,15 +182,38 @@ export async function GET(request: NextRequest) {
         subjectMeta: subjectRows.map((s) => ({
           name: s.name,
           maxMarks: s.maxMarks,
+          practicalMax:
+            course.practicalMarks && course.practicalMarks > 0
+              ? course.practicalMarks
+              : s.maxMarks,
         })),
         defaultMaxMarks: defaultMax,
+        hasPractical: Boolean(course.hasPractical),
+        practicalMaxMarks: course.practicalMarks ?? null,
       },
       students: students.map((s) => {
-        const marks: Record<string, { obtainedMarks: number; maxMarks: number }> = {};
+        const marks: Record<
+          string,
+          {
+            obtainedMarks: number;
+            maxMarks: number;
+            practicalObtained: number | null;
+            practicalMax: number | null;
+          }
+        > = {};
         for (const subject of subjects) {
           const subMax = subjectMaxMap.get(subject) ?? defaultMax;
+          const pracMax =
+            course.practicalMarks && course.practicalMarks > 0
+              ? course.practicalMarks
+              : subMax;
           const hit = marksMap.get(`${s.id}|${subject}`);
-          marks[subject] = hit ?? { obtainedMarks: 0, maxMarks: subMax };
+          marks[subject] = hit ?? {
+            obtainedMarks: 0,
+            maxMarks: subMax,
+            practicalObtained: null,
+            practicalMax: pracMax,
+          };
         }
         return {
           id: String(s.id),
@@ -224,9 +262,14 @@ export async function PUT(request: NextRequest) {
     const courseId = BigInt(String(courseIdParam));
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, objectiveMarks: true, practicalMarks: true },
+      select: { id: true, objectiveMarks: true, practicalMarks: true, hasPractical: true },
     });
     if (!course) return errorResponse("Course not found", 404);
+
+    const markType = body?.markType === "practical" ? "practical" : "theory";
+    if (markType === "practical" && !course.hasPractical) {
+      return errorResponse("This course does not include practical marks", 400);
+    }
 
     const subjectRows = await loadCourseSubjects(courseId);
     const allowedSubjects = new Set(subjectRows.map((s) => s.name));
@@ -236,6 +279,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const defaultMax = course.objectiveMarks ?? course.practicalMarks ?? 100;
+    const practicalDefault =
+      course.practicalMarks && course.practicalMarks > 0 ? course.practicalMarks : null;
     const scopedFranchiseId = getFranchiseScope(user);
     const updatedById = user.id ? BigInt(String(user.id)) : null;
 
@@ -244,6 +289,8 @@ export async function PUT(request: NextRequest) {
       subjectName: string;
       obtainedMarks: number;
       maxMarks: number;
+      practicalObtained: number | null;
+      practicalMax: number | null;
     };
     const rows: Row[] = [];
     const studentIdSet = new Set<string>();
@@ -257,10 +304,14 @@ export async function PUT(request: NextRequest) {
       }
 
       const obtained = Number(raw?.obtainedMarks);
+      const theoryMax = subjectMaxMap.get(subjectName) ?? defaultMax;
+      const practicalCap = practicalDefault ?? theoryMax;
       const max =
-        raw?.maxMarks != null
-          ? Number(raw.maxMarks)
-          : subjectMaxMap.get(subjectName) ?? defaultMax;
+        markType === "practical"
+          ? practicalCap
+          : raw?.maxMarks != null
+            ? Number(raw.maxMarks)
+            : theoryMax;
       if (!Number.isFinite(obtained) || obtained < 0) {
         return errorResponse(`Invalid obtained marks for ${subjectName}`, 400);
       }
@@ -275,11 +326,15 @@ export async function PUT(request: NextRequest) {
       }
 
       studentIdSet.add(studentId);
+      const rounded = Math.round(obtained);
+      const roundedMax = Math.round(max);
       rows.push({
         studentId: BigInt(studentId),
         subjectName,
-        obtainedMarks: Math.round(obtained),
-        maxMarks: Math.round(max),
+        obtainedMarks: markType === "theory" ? rounded : 0,
+        maxMarks: markType === "theory" ? roundedMax : theoryMax,
+        practicalObtained: markType === "practical" ? rounded : null,
+        practicalMax: markType === "practical" ? roundedMax : null,
       });
     }
 
@@ -318,20 +373,73 @@ export async function PUT(request: NextRequest) {
             subjectName: r.subjectName,
             obtainedMarks: r.obtainedMarks,
             maxMarks: r.maxMarks,
+            practicalObtained: r.practicalObtained,
+            practicalMax: r.practicalMax,
             updatedById,
           },
-          update: {
-            obtainedMarks: r.obtainedMarks,
-            maxMarks: r.maxMarks,
-            updatedById,
-          },
+          update:
+            markType === "practical"
+              ? {
+                  practicalObtained: r.practicalObtained,
+                  practicalMax: r.practicalMax,
+                  updatedById,
+                }
+              : {
+                  obtainedMarks: r.obtainedMarks,
+                  maxMarks: r.maxMarks,
+                  updatedById,
+                },
         })
       )
     );
 
-    return successResponse({ saved: rows.length }, "Marks saved successfully");
+    return successResponse(
+      { saved: rows.length, markType },
+      markType === "practical" ? "Practical marks saved" : "Theory marks saved"
+    );
   } catch (e) {
     console.error("[PUT /api/students/marks]", e);
     return errorResponse("Failed to save marks", 500);
+  }
+}
+
+/** PATCH: turn practical on or off for a course (same roles as marks entry). */
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return unauthorizedResponse();
+
+    const roleId = Number(user.roleId);
+    if (roleId !== ROLES.SUPER_ADMIN && roleId !== ROLES.ADMIN && roleId !== ROLES.SUB_ADMIN) {
+      return errorResponse("Forbidden", 403);
+    }
+
+    const body = await request.json();
+    const courseIdParam = body?.courseId;
+    if (!courseIdParam || typeof body?.hasPractical !== "boolean") {
+      return errorResponse("courseId and hasPractical are required", 400);
+    }
+
+    const courseId = BigInt(String(courseIdParam));
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true },
+    });
+    if (!course) return errorResponse("Course not found", 404);
+
+    await prisma.course.update({
+      where: { id: courseId },
+      data: { hasPractical: body.hasPractical },
+    });
+
+    return successResponse(
+      { hasPractical: body.hasPractical },
+      body.hasPractical
+        ? "Practical column enabled for this course"
+        : "Practical column hidden for this course"
+    );
+  } catch (e) {
+    console.error("[PATCH /api/students/marks]", e);
+    return errorResponse("Failed to update course practical setting", 500);
   }
 }

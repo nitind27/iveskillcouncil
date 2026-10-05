@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS `student_subject_marks` (
   `subject_name` VARCHAR(150) NOT NULL,
   `max_marks` INT NOT NULL DEFAULT 100,
   `obtained_marks` INT NOT NULL DEFAULT 0,
+  `practical_max` INT NULL,
+  `practical_obtained` INT NULL,
   `updated_by_id` BIGINT UNSIGNED NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
