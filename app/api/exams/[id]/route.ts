@@ -129,16 +129,45 @@ export async function PATCH(
     if (body.shuffleQuestions != null) data.shuffleQuestions = !!body.shuffleQuestions;
     if (body.startsAt !== undefined) data.startsAt = body.startsAt ? new Date(body.startsAt) : null;
     if (body.endsAt !== undefined) data.endsAt = body.endsAt ? new Date(body.endsAt) : null;
+    const nextMode =
+      body.accessMode === "LINK" || body.accessMode === "ASSIGNED"
+        ? body.accessMode
+        : body.convertToLink === true
+          ? "LINK"
+          : existing.accessMode;
+
     if (body.status === "DRAFT" || body.status === "PUBLISHED" || body.status === "ARCHIVED") {
       if (body.status === "PUBLISHED") {
         const qCount = await prisma.examQuestion.count({ where: { examId: BigInt(id) } });
         if (qCount < 1) return errorResponse("Add at least one question before publishing", 400);
+        if (nextMode === "ASSIGNED") {
+          const incomingTargets = Array.isArray(body.targets) ? body.targets.length : null;
+          const targetCount =
+            incomingTargets ??
+            (await prisma.examTarget.count({ where: { examId: BigInt(id) } }));
+          if (targetCount < 1) {
+            return errorResponse("Assign a franchise and course before publishing", 400);
+          }
+        }
       }
       data.status = body.status;
     }
 
+    if (body.accessMode === "LINK" || body.accessMode === "ASSIGNED") {
+      data.accessMode = body.accessMode;
+      if (body.accessMode === "LINK") {
+        if (!existing.linkToken) {
+          const { generateExamLinkToken } = await import("@/lib/exam-link");
+          data.linkToken = generateExamLinkToken();
+        }
+        if (existing.accessMode !== "LINK") data.linkActive = false;
+      } else {
+        data.linkActive = false;
+      }
+    }
+
     if (typeof body.linkActive === "boolean") {
-      if (existing.accessMode !== "LINK") {
+      if (nextMode !== "LINK") {
         return errorResponse("Only walk-in link exams can activate/deactivate a link", 400);
       }
       if (!existing.linkToken) {
@@ -149,7 +178,7 @@ export async function PATCH(
     }
 
     if (body.regenerateLink === true) {
-      if (existing.accessMode !== "LINK") {
+      if (nextMode !== "LINK") {
         return errorResponse("Only walk-in link exams have a public link", 400);
       }
       const { generateExamLinkToken } = await import("@/lib/exam-link");
@@ -165,8 +194,8 @@ export async function PATCH(
     }
 
     if (Array.isArray(body.targets)) {
-      if (existing.accessMode === "ASSIGNED" && !body.targets.length) {
-        return errorResponse("At least one target required", 400);
+      if (nextMode === "ASSIGNED" && body.targets.length === 0) {
+        return errorResponse("Select a franchise and course for portal exams", 400);
       }
       await prisma.examTarget.deleteMany({ where: { examId: BigInt(id) } });
       if (body.targets.length) {

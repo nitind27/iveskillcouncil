@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { ExamProctor, type ViolationType, LOOK_AWAY_MAX_WARNINGS } from "@/components/exams/ExamProctor";
+import { ExamAnswerFields } from "@/components/exams/ExamAnswerFields";
+import { isWrittenQuestion } from "@/lib/exam-question-types";
 import { showError, showSuccess, showWarning } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +41,11 @@ interface AttemptPayload {
   questions: Array<{
     id: string;
     text: string;
-    type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+    type: string;
     marks: number;
     options: Array<{ id: string; text: string; isCorrect?: boolean }>;
     selectedOptionIds: string[];
+    answerText?: string;
   }>;
 }
 
@@ -66,6 +69,7 @@ export default function TakeExamPage() {
   );
 
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [texts, setTexts] = useState<Record<string, string>>({});
   const [remainMs, setRemainMs] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [violations, setViolations] = useState(0);
@@ -77,10 +81,13 @@ export default function TakeExamPage() {
   useEffect(() => {
     if (!data) return;
     const map: Record<string, string[]> = {};
+    const textMap: Record<string, string> = {};
     data.questions.forEach((q) => {
       map[q.id] = q.selectedOptionIds || [];
+      textMap[q.id] = q.answerText || "";
     });
     setAnswers(map);
+    setTexts(textMap);
     setViolations(data.attempt.faceViolations || 0);
 
     const ends = new Date(data.attempt.endsAt).getTime();
@@ -142,6 +149,16 @@ export default function TakeExamPage() {
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ questionId, selectedOptionIds }),
+    });
+  };
+
+  const saveText = async (questionId: string, answerText: string) => {
+    setTexts((prev) => ({ ...prev, [questionId]: answerText }));
+    await fetch(`/api/exams/attempts/${attemptId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ questionId, answerText }),
     });
   };
 
@@ -226,8 +243,13 @@ export default function TakeExamPage() {
   const questions = data?.questions ?? [];
   const current = questions[qIndex];
   const answeredCount = useMemo(
-    () => questions.filter((q) => (answers[q.id] || []).length > 0).length,
-    [questions, answers]
+    () =>
+      questions.filter((q) =>
+        isWrittenQuestion(q.type)
+          ? (texts[q.id] || "").trim().length > 0
+          : (answers[q.id] || []).length > 0
+      ).length,
+    [questions, answers, texts]
   );
 
   if (isLoading || !data) {
@@ -346,55 +368,15 @@ export default function TakeExamPage() {
               <p className="text-base font-medium leading-relaxed text-foreground">
                 {current.text}
               </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {current.type === "MULTIPLE_CHOICE"
-                  ? "Select all correct answers"
-                  : "Select one answer"}
-              </p>
-              <div className="mt-4 space-y-2">
-                {current.options.map((opt) => {
-                  const selected = (answers[current.id] || []).includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        let next: string[];
-                        if (current.type === "SINGLE_CHOICE") {
-                          next = [opt.id];
-                        } else {
-                          const cur = answers[current.id] || [];
-                          next = selected
-                            ? cur.filter((x) => x !== opt.id)
-                            : [...cur, opt.id];
-                        }
-                        saveAnswer(current.id, next);
-                      }}
-                      className={cn(
-                        "flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left text-sm transition",
-                        selected
-                          ? "border-[#1E4A85] bg-[#1E4A85]/8 font-semibold text-[#1E4A85]"
-                          : "border-slate-200 hover:border-[#1E4A85]/30 hover:bg-slate-50"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border",
-                          current.type === "SINGLE_CHOICE" ? "rounded-full" : "rounded",
-                          selected
-                            ? "border-[#1E4A85] bg-[#1E4A85]"
-                            : "border-slate-300"
-                        )}
-                      >
-                        {selected && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                        )}
-                      </span>
-                      {opt.text}
-                    </button>
-                  );
-                })}
-              </div>
+              <ExamAnswerFields
+                questionId={current.id}
+                type={current.type}
+                options={current.options}
+                optionIds={answers[current.id] || []}
+                text={texts[current.id] || ""}
+                onPick={(ids) => saveAnswer(current.id, ids)}
+                onText={(value) => saveText(current.id, value)}
+              />
               <div className="mt-6 flex justify-between">
                 <button
                   type="button"
@@ -432,7 +414,9 @@ export default function TakeExamPage() {
             </p>
             <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-4 lg:grid-cols-5">
               {questions.map((q, i) => {
-                const done = (answers[q.id] || []).length > 0;
+                const done = isWrittenQuestion(q.type)
+                  ? (texts[q.id] || "").trim().length > 0
+                  : (answers[q.id] || []).length > 0;
                 return (
                   <button
                     key={q.id}

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ExamAttemptStatus } from "@prisma/client";
 import { arraysEqualAsSets } from "@/lib/exam-access";
+import { isWrittenQuestion, writtenAnswerMatches } from "@/lib/exam-question-types";
 
 export async function gradeAndFinalizeAttempt(
   attemptId: bigint,
@@ -26,16 +27,19 @@ export async function gradeAndFinalizeAttempt(
 
   for (const q of attempt.exam.questions) {
     maxScore += q.marks;
-    const correctIds = q.options
-      .filter((o) => o.isCorrect)
-      .map((o) => o.id.toString())
-      .sort();
     const ans = attempt.answers.find((a) => a.questionId === q.id);
-    const selected = Array.isArray(ans?.selectedOptionIds)
-      ? (ans!.selectedOptionIds as string[]).map(String).sort()
-      : [];
-
-    const isCorrect = arraysEqualAsSets(selected, correctIds);
+    const isCorrect = isWrittenQuestion(q.type)
+      ? writtenAnswerMatches(
+          q.type,
+          ans?.answerText || "",
+          q.options.filter((o) => o.isCorrect).map((o) => o.text)
+        )
+      : arraysEqualAsSets(
+          Array.isArray(ans?.selectedOptionIds)
+            ? (ans!.selectedOptionIds as string[]).map(String)
+            : [],
+          q.options.filter((o) => o.isCorrect).map((o) => o.id.toString())
+        );
     const marksAwarded = isCorrect ? q.marks : 0;
     if (isCorrect) score += q.marks;
 

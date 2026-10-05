@@ -832,6 +832,9 @@ enum ExamStatus {
 enum ExamQuestionType {
   SINGLE_CHOICE
   MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  PARAGRAPH
 }
 
 enum ExamAttemptStatus {
@@ -976,6 +979,8 @@ model ExamAnswer {
   questionId        BigInt   @map("question_id") @db.UnsignedBigInt
   /// Selected option IDs as JSON string array
   selectedOptionIds Json     @map("selected_option_ids")
+  /// Written answer for short-answer and paragraph questions
+  answerText        String?  @map("answer_text") @db.Text
   isCorrect         Boolean? @map("is_correct") @db.TinyInt
   marksAwarded      Decimal? @map("marks_awarded") @db.Decimal(10, 2)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamp

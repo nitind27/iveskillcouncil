@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/api-auth";
 import { canManageExams } from "@/lib/exam-access";
+import { asQuestionType, isWrittenQuestion, validateQuestionDraft } from "@/lib/exam-question-types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,28 +34,36 @@ export async function PUT(
     if (!questions.length) return errorResponse("Add at least one question", 400);
 
     for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      const text = String(q.text || "").trim();
-      const options = Array.isArray(q.options) ? q.options : [];
-      if (!text) return errorResponse(`Question ${i + 1}: text required`, 400);
-      if (options.length < 2) {
-        return errorResponse(`Question ${i + 1}: at least 2 options required`, 400);
-      }
-      const correct = options.filter((o: { isCorrect?: boolean }) => o.isCorrect);
-      if (!correct.length) {
-        return errorResponse(`Question ${i + 1}: mark at least one correct answer`, 400);
-      }
-      const type = q.type === "MULTIPLE_CHOICE" ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE";
-      if (type === "SINGLE_CHOICE" && correct.length !== 1) {
-        return errorResponse(`Question ${i + 1}: single choice needs exactly one correct option`, 400);
-      }
+      const problem = validateQuestionDraft(questions[i], i);
+      if (problem) return errorResponse(problem, 400);
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.examQuestion.deleteMany({ where: { examId: exam.id } });
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
-        const type = q.type === "MULTIPLE_CHOICE" ? "MULTIPLE_CHOICE" : "SINGLE_CHOICE";
+        const type = asQuestionType(q.type);
+        const options = (Array.isArray(q.options) ? q.options : []) as Array<{
+          text?: string;
+          isCorrect?: boolean;
+        }>;
+        const falseIsCorrect =
+          type === "TRUE_FALSE" &&
+          String(options.find((o) => o.isCorrect)?.text || "")
+            .trim()
+            .toLowerCase() === "false";
+        const stored =
+          type === "TRUE_FALSE"
+            ? [
+                { text: "True", isCorrect: !falseIsCorrect },
+                { text: "False", isCorrect: falseIsCorrect },
+              ]
+            : options
+                .map((o) => ({
+                  text: String(o.text || "").trim().slice(0, 500),
+                  isCorrect: isWrittenQuestion(type) ? true : !!o.isCorrect,
+                }))
+                .filter((o) => o.text);
         await tx.examQuestion.create({
           data: {
             examId: exam.id,
@@ -63,13 +72,11 @@ export async function PUT(
             marks: Math.max(1, Number(q.marks) || 1),
             sortOrder: i,
             options: {
-              create: (q.options as Array<{ text: string; isCorrect?: boolean }>).map(
-                (o, oi) => ({
-                  text: String(o.text || "").trim().slice(0, 500),
-                  isCorrect: !!o.isCorrect,
-                  sortOrder: oi,
-                })
-              ),
+              create: stored.map((o, oi) => ({
+                text: o.text,
+                isCorrect: o.isCorrect,
+                sortOrder: oi,
+              })),
             },
           },
         });

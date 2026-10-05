@@ -57,6 +57,8 @@ export default function ExamResultsPage() {
   );
   const [approving, setApproving] = useState<string | null>(null);
   const [retaking, setRetaking] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const approveRestart = async (attemptId: string) => {
     setApproving(attemptId);
@@ -102,6 +104,25 @@ export default function ExamResultsPage() {
     }
   };
 
+  const attempts = data?.attempts ?? [];
+  const summary = {
+    total: attempts.length,
+    passed: attempts.filter((a) => a.passed === true).length,
+    failed: attempts.filter((a) => a.passed === false).length,
+    live: attempts.filter((a) => a.status === "IN_PROGRESS").length,
+    stopped: attempts.filter((a) => a.status === "TERMINATED").length,
+  };
+  const visible = attempts.filter((a) => {
+    if (statusFilter !== "ALL" && a.status !== statusFilter) return false;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      a.studentName.toLowerCase().includes(q) ||
+      (a.enrollmentNumber || "").toLowerCase().includes(q) ||
+      (a.studentEmail || "").toLowerCase().includes(q)
+    );
+  });
+
   if (isLoading || !data) {
     return (
       <div className="flex justify-center py-24">
@@ -125,12 +146,50 @@ export default function ExamResultsPage() {
             Results — {data.exam.title}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Pass mark {data.exam.passPercent}% · {data.attempts.length} attempt(s)
-            {canApprove
-              ? " · Use Approve restart so the student can continue a terminated exam"
-              : ""}
+            Pass mark {data.exam.passPercent}% · {summary.total} attempt
+            {summary.total === 1 ? "" : "s"}
+            {canApprove ? " · Approve restart lets a stopped student continue" : ""}
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Attempts", value: summary.total },
+          { label: "Passed", value: summary.passed },
+          { label: "Failed", value: summary.failed },
+          { label: "In progress / stopped", value: `${summary.live} / ${summary.stopped}` },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-[#1E4A85]/12 bg-white px-4 py-3 shadow-sm"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {stat.label}
+            </p>
+            <p className="mt-1 text-2xl font-bold text-[#1E4A85]">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name, email, enrollment"
+          className="w-full rounded-xl border border-[#1E4A85]/15 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#1E4A85]/15 sm:max-w-sm"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-xl border border-[#1E4A85]/15 bg-white px-3 py-2 text-sm outline-none"
+        >
+          <option value="ALL">All statuses</option>
+          <option value="IN_PROGRESS">In progress</option>
+          <option value="SUBMITTED">Submitted</option>
+          <option value="AUTO_SUBMITTED">Auto submitted</option>
+          <option value="TERMINATED">Terminated</option>
+        </select>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-[#1E4A85]/12 bg-white shadow-sm">
@@ -147,14 +206,14 @@ export default function ExamResultsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {data.attempts.length === 0 ? (
+            {visible.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                  No attempts yet
+                  {attempts.length === 0 ? "No attempts yet" : "No attempts match this filter"}
                 </td>
               </tr>
             ) : (
-              data.attempts.map((a) => (
+              visible.map((a) => (
                 <tr key={a.id} className="hover:bg-[#1E4A85]/[0.03]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">

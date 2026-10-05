@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { ExamProctor, type ViolationType, LOOK_AWAY_MAX_WARNINGS } from "@/components/exams/ExamProctor";
+import { ExamAnswerFields } from "@/components/exams/ExamAnswerFields";
+import { isWrittenQuestion } from "@/lib/exam-question-types";
 import { showError, showSuccess, showWarning } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { examAccessFetcher, examAccessHeaders, getExamAccessKey } from "@/lib/exam-access-client";
@@ -40,10 +42,11 @@ interface AttemptPayload {
   questions: Array<{
     id: string;
     text: string;
-    type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+    type: string;
     marks: number;
     options: Array<{ id: string; text: string; isCorrect?: boolean }>;
     selectedOptionIds: string[];
+    answerText?: string;
   }>;
 }
 
@@ -74,6 +77,7 @@ export default function WalkInTakeExamPage() {
   );
 
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [texts, setTexts] = useState<Record<string, string>>({});
   const [remainMs, setRemainMs] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [violations, setViolations] = useState(0);
@@ -85,10 +89,13 @@ export default function WalkInTakeExamPage() {
   useEffect(() => {
     if (!data) return;
     const map: Record<string, string[]> = {};
+    const textMap: Record<string, string> = {};
     data.questions.forEach((q) => {
       map[q.id] = q.selectedOptionIds || [];
+      textMap[q.id] = q.answerText || "";
     });
     setAnswers(map);
+    setTexts(textMap);
     setViolations(data.attempt.faceViolations || 0);
     const ends = new Date(data.attempt.endsAt).getTime();
     const skew = Date.now() - new Date(data.attempt.serverNow).getTime();
@@ -156,6 +163,11 @@ export default function WalkInTakeExamPage() {
     await apiPost(`/api/exams/attempts/${attemptId}`, { questionId, selectedOptionIds });
   };
 
+  const saveText = async (questionId: string, answerText: string) => {
+    setTexts((prev) => ({ ...prev, [questionId]: answerText }));
+    await apiPost(`/api/exams/attempts/${attemptId}`, { questionId, answerText });
+  };
+
   const onViolation = useCallback(
     async (type: ViolationType, detail?: string) => {
       if (finished || closingRef.current) return;
@@ -212,8 +224,13 @@ export default function WalkInTakeExamPage() {
   const questions = data?.questions ?? [];
   const current = questions[qIndex];
   const answeredCount = useMemo(
-    () => questions.filter((q) => (answers[q.id] || []).length > 0).length,
-    [questions, answers]
+    () =>
+      questions.filter((q) =>
+        isWrittenQuestion(q.type)
+          ? (texts[q.id] || "").trim().length > 0
+          : (answers[q.id] || []).length > 0
+      ).length,
+    [questions, answers, texts]
   );
 
   if (!accessReady) {
@@ -346,36 +363,15 @@ export default function WalkInTakeExamPage() {
                 <span className="text-xs text-muted-foreground">{current.marks} mark(s)</span>
               </div>
               <p className="text-base font-medium leading-relaxed">{current.text}</p>
-              <div className="mt-4 space-y-2">
-                {current.options.map((opt) => {
-                  const selected = (answers[current.id] || []).includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        let next: string[];
-                        if (current.type === "SINGLE_CHOICE") next = [opt.id];
-                        else {
-                          const cur = answers[current.id] || [];
-                          next = selected
-                            ? cur.filter((x) => x !== opt.id)
-                            : [...cur, opt.id];
-                        }
-                        saveAnswer(current.id, next);
-                      }}
-                      className={cn(
-                        "flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left text-sm",
-                        selected
-                          ? "border-[#1E4A85] bg-[#1E4A85]/8 font-semibold text-[#1E4A85]"
-                          : "border-slate-200 hover:bg-slate-50"
-                      )}
-                    >
-                      {opt.text}
-                    </button>
-                  );
-                })}
-              </div>
+              <ExamAnswerFields
+                questionId={current.id}
+                type={current.type}
+                options={current.options}
+                optionIds={answers[current.id] || []}
+                text={texts[current.id] || ""}
+                onPick={(ids) => saveAnswer(current.id, ids)}
+                onText={(value) => saveText(current.id, value)}
+              />
               <div className="mt-6 flex justify-between">
                 <button
                   type="button"
@@ -412,7 +408,9 @@ export default function WalkInTakeExamPage() {
             </p>
             <div className="grid grid-cols-5 gap-1.5">
               {questions.map((q, i) => {
-                const done = (answers[q.id] || []).length > 0;
+                const done = isWrittenQuestion(q.type)
+                  ? (texts[q.id] || "").trim().length > 0
+                  : (answers[q.id] || []).length > 0;
                 return (
                   <button
                     key={q.id}

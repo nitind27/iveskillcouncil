@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { authorizeExamAttempt } from "@/lib/exam-attempt-auth";
 import { ensureAttemptNotExpired, gradeAndFinalizeAttempt } from "@/lib/exam-grade";
+import { isSinglePick, isWrittenQuestion } from "@/lib/exam-question-types";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,7 @@ export async function GET(
         text: q!.text,
         type: q!.type,
         marks: q!.marks,
-        options: q!.options.map((o) => ({
+        options: (isWrittenQuestion(q!.type) && !showCorrect ? [] : q!.options).map((o) => ({
           id: o.id.toString(),
           text: o.text,
           ...(showCorrect ? { isCorrect: o.isCorrect } : {}),
@@ -103,6 +104,7 @@ export async function GET(
             ? (ans!.selectedOptionIds as string[]).map(String)
             : [];
         })(),
+        answerText: attempt!.answers.find((a) => a.questionId === q!.id)?.answerText ?? "",
       })),
     });
   } catch (e) {
@@ -149,21 +151,41 @@ export async function POST(
     }
 
     const questionId = String(body.questionId || "");
-    const selectedOptionIds = Array.isArray(body.selectedOptionIds)
-      ? body.selectedOptionIds.map(String)
-      : [];
-
     const question = await prisma.examQuestion.findFirst({
       where: { id: BigInt(questionId), examId: attempt.examId },
       include: { options: true },
     });
     if (!question) return errorResponse("Invalid question", 400);
 
+    if (isWrittenQuestion(question.type)) {
+      const answerText = String(body.answerText ?? "").slice(0, 8000);
+      await prisma.examAnswer.upsert({
+        where: {
+          attemptId_questionId: {
+            attemptId: attempt.id,
+            questionId: question.id,
+          },
+        },
+        create: {
+          attemptId: attempt.id,
+          questionId: question.id,
+          selectedOptionIds: [],
+          answerText,
+        },
+        update: { answerText, selectedOptionIds: [] },
+      });
+      return successResponse({ saved: true }, "Answer saved");
+    }
+
+    const selectedOptionIds = Array.isArray(body.selectedOptionIds)
+      ? body.selectedOptionIds.map(String)
+      : [];
+
     const validIds = new Set(question.options.map((o) => o.id.toString()));
     if (selectedOptionIds.some((id: string) => !validIds.has(id))) {
       return errorResponse("Invalid option", 400);
     }
-    if (question.type === "SINGLE_CHOICE" && selectedOptionIds.length > 1) {
+    if (isSinglePick(question.type) && selectedOptionIds.length > 1) {
       return errorResponse("Only one option allowed", 400);
     }
 
