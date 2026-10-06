@@ -106,7 +106,7 @@ export default function FranchisePanelConfig({ franchiseId, franchiseName }: Pro
         <label className={labelCls}>Portal URL Slug <span className="text-red-500">*</span></label>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/
+            {(portalOrigin || "https://iveskillcouncil.org.in").replace(/\/$/, "")}/
           </span>
           <input
             type="text"

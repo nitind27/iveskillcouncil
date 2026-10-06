@@ -1,5 +1,5 @@
 /**
- * Path-based franchise sites: https://ivesdc.codeatinfotech.com/{slug}
+ * Path-based franchise sites: https://iveskillcouncil.org.in/{slug}
  * Edge-safe (no Prisma) — used by middleware and client shells.
  */
 

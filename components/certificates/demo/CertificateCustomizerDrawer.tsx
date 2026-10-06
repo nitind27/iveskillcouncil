@@ -2749,7 +2749,7 @@ export default function CertificateCustomizerDrawer({
                 <p>
                   <strong className="text-slate-300">Target URL:</strong>{" "}
                   <span className="font-mono text-sky-400 break-all">
-                    {(process.env.NEXT_PUBLIC_VERIFY_URL || "https://ivesdc.codeatinfotech.com").replace(/\/+$/, "")}/verify?type={isMarksheet ? "ms" : "cert"}&amp;enr={activeData.registrationNumber || "4739846"}
+                    {(process.env.NEXT_PUBLIC_VERIFY_URL || "https://iveskillcouncil.org.in").replace(/\/+$/, "")}/verify?type={isMarksheet ? "ms" : "cert"}&amp;enr={activeData.registrationNumber || "4739846"}
                   </span>
                 </p>
                 <p className="text-[9px] text-slate-500">

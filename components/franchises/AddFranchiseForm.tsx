@@ -731,7 +731,7 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
               <label className={labelClass}>Franchise portal URL *</label>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <span className="shrink-0 text-xs font-medium text-slate-500 sm:text-sm">
-                  {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/
+                  {(portalOrigin || "https://iveskillcouncil.org.in").replace(/\/$/, "")}/
                 </span>
                 <input
                   type="text"
@@ -751,7 +751,7 @@ export default function AddFranchiseForm({ onSuccess, onCancel }: AddFranchiseFo
               <p className="mt-1 text-xs text-slate-500">
                 Visitors open this franchise at{" "}
                 <strong>
-                  {(portalOrigin || "https://ivesdc.codeatinfotech.com").replace(/\/$/, "")}/{form.slug || "your-name"}
+                  {(portalOrigin || "https://iveskillcouncil.org.in").replace(/\/$/, "")}/{form.slug || "your-name"}
                 </strong>
               </p>
               <FieldError message={fieldErrors.slug} />

@@ -8,7 +8,7 @@ const sans: CSSProperties = {
 };
 
 /** Live site that serves /verify — every printed QR points here, wherever the document was printed from. */
-const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_VERIFY_URL || "https://ivesdc.codeatinfotech.com")
+const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_VERIFY_URL || "https://iveskillcouncil.org.in")
   .trim()
   .replace(/\/+$/, "");
 
