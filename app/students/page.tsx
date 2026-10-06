@@ -285,6 +285,13 @@ export default function StudentsPage() {
     ? coursesData
     : ((coursesData as { data?: unknown[] } | null)?.data ?? []);
 
+  const isInstitute = roleId === ROLES.SUB_ADMIN;
+  const { data: instituteCourseData } = useSWR<{ courses?: { id: string; name: string }[] }>(
+    isInstitute ? "/api/students/franchise-courses" : null,
+    fetcher
+  );
+  const instituteCourses = instituteCourseData?.courses ?? [];
+
   const { data, error, isLoading, mutate } = useSWR<StudentsResponse>(
     `/api/students?${queryParams.toString()}`,
     fetcher,
@@ -431,6 +438,23 @@ export default function StudentsPage() {
               ))}
             </div>
           </div>
+
+          {isInstitute && (
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="h-9 min-w-[200px] rounded-lg border border-border/70 bg-background px-3 text-sm outline-none focus:border-[#1E4A85]"
+              >
+                <option value="">All courses</option>
+                {instituteCourses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {showFilters && (
             <div className="flex flex-wrap items-center gap-2">

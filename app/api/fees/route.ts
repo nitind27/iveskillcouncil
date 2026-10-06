@@ -89,6 +89,11 @@ export async function GET(request: NextRequest) {
           user: { select: { fullName: true, email: true, phone: true } },
           course: { select: { name: true } },
           franchise: { select: { name: true } },
+          enrollments: {
+            where: { status: "ACTIVE" },
+            orderBy: { createdAt: "asc" },
+            select: { course: { select: { name: true } } },
+          },
         },
       }),
       prisma.payment.findMany({
@@ -124,7 +129,8 @@ export async function GET(request: NextRequest) {
       fullName: s.user.fullName,
       email: s.user.email,
       phone: s.user.phone,
-      courseName: s.course?.name ?? "—",
+      courseName:
+        s.enrollments.map((row) => row.course.name).join(", ") || s.course?.name || "—",
       franchiseName: s.franchise.name,
       totalFee: Number(s.totalFee),
       paidFee: Number(s.paidFee),

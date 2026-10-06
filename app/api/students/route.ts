@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       where.franchiseId = BigInt(franchiseId);
     }
     const and: Record<string, unknown>[] = [];
-    if (courseId && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
+    if (courseId && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN || roleId === ROLES.SUB_ADMIN)) {
       const cid = BigInt(courseId);
       and.push({
         OR: [

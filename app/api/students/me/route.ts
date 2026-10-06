@@ -21,6 +21,11 @@ export async function GET() {
       include: {
         course: true,
         franchise: { select: { name: true } },
+        enrollments: {
+          where: { status: "ACTIVE" },
+          orderBy: { createdAt: "asc" },
+          include: { course: true },
+        },
       },
     });
 
@@ -28,10 +33,32 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "Student record not found" }, { status: 404 });
     }
 
+    const courses =
+      student.enrollments.length > 0
+        ? student.enrollments.map((row) => ({
+            id: row.courseId.toString(),
+            courseName: row.course.name,
+            courseDescription: row.course.description,
+            durationMonths: row.course.durationMonths,
+            totalFee: Number(row.totalFee),
+          }))
+        : student.course
+          ? [
+              {
+                id: student.course.id.toString(),
+                courseName: student.course.name,
+                courseDescription: student.course.description,
+                durationMonths: student.course.durationMonths,
+                totalFee: Number(student.totalFee),
+              },
+            ]
+          : [];
+
     const data = {
-      courseName: student.course?.name ?? "—",
-      courseDescription: student.course?.description ?? null,
-      durationMonths: student.course?.durationMonths ?? null,
+      courseName: courses.map((c) => c.courseName).join(", ") || "—",
+      courseDescription: courses[0]?.courseDescription ?? null,
+      durationMonths: courses[0]?.durationMonths ?? null,
+      courses,
       franchiseName: student.franchise.name,
       totalFee: Number(student.totalFee),
       paidFee: Number(student.paidFee),

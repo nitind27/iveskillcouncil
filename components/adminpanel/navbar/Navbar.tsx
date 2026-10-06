@@ -38,6 +38,7 @@ import { fetcher } from "@/lib/fetcher";
 import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { StudentProfileDrawer } from "@/components/students/StudentProfileDrawer";
+import { AssignCourseModal } from "@/components/students/AssignCourseModal";
 import { ROLES } from "@/lib/permissions";
 import { useFranchiseAppHref } from "@/hooks/useFranchiseAppPath";
 
@@ -111,6 +112,12 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
   const [quickSearch, setQuickSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
+  const [assignStudent, setAssignStudent] = useState<{
+    id: string;
+    studentCode: string;
+    fullName: string;
+    franchiseId?: string;
+  } | null>(null);
   const barRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
@@ -761,6 +768,15 @@ export default function Navbar({ onSidebarToggle, user }: NavbarProps) {
         open={!!profileStudentId}
         studentId={profileStudentId}
         onClose={() => setProfileStudentId(null)}
+        onAssignCourse={(student) => {
+          setProfileStudentId(null);
+          setAssignStudent(student);
+        }}
+      />
+      <AssignCourseModal
+        open={!!assignStudent}
+        student={assignStudent}
+        onClose={() => setAssignStudent(null)}
       />
       <CertificateDemoModal
         key={demoModalType}

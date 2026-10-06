@@ -93,8 +93,17 @@ export function parseStudentReportFilters(sp: URLSearchParams, franchiseId: stri
 function buildWhere(f: StudentReportFilters): Prisma.StudentWhereInput {
   const and: Prisma.StudentWhereInput[] = [];
   if (f.franchiseId) and.push({ franchiseId: BigInt(f.franchiseId) });
-  if (f.courseId === "none") and.push({ courseId: null });
-  else if (f.courseId) and.push({ courseId: BigInt(f.courseId) });
+    if (f.courseId === "none") {
+      and.push({
+        courseId: null,
+        enrollments: { none: { status: "ACTIVE" } },
+      });
+    } else if (f.courseId) {
+      const cid = BigInt(f.courseId);
+      and.push({
+        OR: [{ courseId: cid }, { enrollments: { some: { courseId: cid, status: "ACTIVE" } } }],
+      });
+    }
   if (f.status !== "ALL") and.push({ status: f.status });
   if (f.gender !== "ALL") and.push({ gender: f.gender });
 
@@ -171,6 +180,11 @@ export async function buildStudentReport(filters: StudentReportFilters): Promise
       user: { select: { fullName: true, phone: true } },
       course: { select: { name: true } },
       franchise: { select: { name: true } },
+      enrollments: {
+        where: { status: "ACTIVE" },
+        orderBy: { createdAt: "asc" },
+        select: { course: { select: { name: true } } },
+      },
     },
   });
 
@@ -186,7 +200,8 @@ export async function buildStudentReport(filters: StudentReportFilters): Promise
       studentCode: s.studentCode,
       fullName: s.user.fullName || [s.firstName, s.surname].filter(Boolean).join(" "),
       phone: s.user.phone || s.alternateMobile || "",
-      courseName: s.course?.name ?? NO_COURSE,
+      courseName:
+        s.enrollments.map((row) => row.course.name).join(", ") || s.course?.name || NO_COURSE,
       franchiseName: s.franchise.name,
       admissionDate: s.admissionDate.toISOString().slice(0, 10),
       gender: s.gender || "",

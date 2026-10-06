@@ -11,6 +11,7 @@ import {
   Calendar,
   Edit2,
   RefreshCw,
+  Users,
 } from "lucide-react";
 import { showSuccess, showError, showDeleteConfirm } from "@/lib/toast";
 import Breadcrumb from "@/components/common/Breadcrumb";
@@ -54,6 +55,14 @@ export default function FranchiseCoursesPage() {
   const [courseOpen, setCourseOpen] = useState(false);
   const [editCourseId, setEditCourseId] = useState<string | null>(null);
   const [courseForm, setCourseForm] = useState<CourseFormState>(emptyCourseForm);
+  const [enrollCourse, setEnrollCourse] = useState<AssignedCourse | null>(null);
+  const [enrollSearch, setEnrollSearch] = useState("");
+  const [enrollStudents, setEnrollStudents] = useState<
+    { id: string; studentCode: string; fullName: string; phone: string | null; enrolled: boolean }[]
+  >([]);
+  const [enrollPicked, setEnrollPicked] = useState<Set<string>>(new Set());
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollSaving, setEnrollSaving] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -92,6 +101,54 @@ export default function FranchiseCoursesPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const openEnroll = async (course: AssignedCourse, search = "") => {
+    setEnrollCourse(course);
+    setEnrollSearch(search);
+    setEnrollPicked(new Set());
+    setEnrollLoading(true);
+    try {
+      const q = new URLSearchParams({ courseId: course.courseId });
+      if (search.trim()) q.set("search", search.trim());
+      const res = await fetch(`/api/franchise/courses/enroll?${q}`, { credentials: "include" });
+      const json = await res.json();
+      if (!res.ok) {
+        showError("Error", json.error || "Could not load students");
+        setEnrollStudents([]);
+        return;
+      }
+      setEnrollStudents(json.data?.students ?? []);
+    } catch {
+      setEnrollStudents([]);
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
+
+  const saveEnroll = async () => {
+    if (!enrollCourse || enrollPicked.size === 0) return;
+    setEnrollSaving(true);
+    try {
+      const res = await fetch("/api/franchise/courses/enroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          courseId: enrollCourse.courseId,
+          studentIds: [...enrollPicked],
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        showError("Error", json.error || "Could not add students");
+        return;
+      }
+      showSuccess("Students added", json.message || "Course added for the selected students");
+      setEnrollCourse(null);
+    } finally {
+      setEnrollSaving(false);
+    }
+  };
 
   const uploadCoverImage = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -399,6 +456,14 @@ export default function FranchiseCoursesPage() {
                             </span>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => openEnroll(c)}
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#1E4A85] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#1E4A85]/90"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          Add students
+                        </button>
                       </div>
                       <div className="flex shrink-0 gap-1">
                         {c.isOwn && (
@@ -444,6 +509,100 @@ export default function FranchiseCoursesPage() {
         onClearImage={() => setCourseForm((f) => ({ ...f, imageUrl: "" }))}
         showCategoryAdminLink={false}
       />
+
+      {enrollCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
+            <div className="border-b border-slate-100 px-5 py-4">
+              <h3 className="text-lg font-bold text-[#1E4A85]">Add students</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {enrollCourse.courseName}. Students already in another course stay in that course too.
+              </p>
+            </div>
+            <div className="border-b border-slate-100 px-5 py-3">
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void openEnroll(enrollCourse, enrollSearch);
+                }}
+              >
+                <input
+                  value={enrollSearch}
+                  onChange={(e) => setEnrollSearch(e.target.value)}
+                  placeholder="Search name, phone, or ID"
+                  className="h-9 flex-1 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#1E4A85]"
+                />
+                <button type="submit" className="rounded-lg border border-slate-200 px-3 text-sm font-semibold">
+                  Search
+                </button>
+              </form>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+              {enrollLoading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#1E4A85]" />
+                </div>
+              ) : enrollStudents.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No students found.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {enrollStudents.map((student) => (
+                    <li key={student.id}>
+                      <label
+                        className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${
+                          student.enrolled ? "border-slate-100 bg-slate-50 opacity-70" : "border-slate-200"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={student.enrolled}
+                          checked={student.enrolled || enrollPicked.has(student.id)}
+                          onChange={() => {
+                            setEnrollPicked((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(student.id)) next.delete(student.id);
+                              else next.add(student.id);
+                              return next;
+                            });
+                          }}
+                          className="h-4 w-4 accent-[#1E4A85]"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold">{student.fullName}</span>
+                          <span className="block text-[11px] text-muted-foreground">
+                            {student.studentCode}
+                            {student.phone ? ` · ${student.phone}` : ""}
+                            {student.enrolled ? " · already in this course" : ""}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setEnrollCourse(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                disabled={enrollSaving || enrollPicked.size === 0}
+                onClick={saveEnroll}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {enrollSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                Add {enrollPicked.size || ""} student{enrollPicked.size === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

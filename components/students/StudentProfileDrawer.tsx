@@ -79,6 +79,7 @@ interface StudentProfileDrawerProps {
     id: string;
     studentCode: string;
     fullName: string;
+    franchiseId?: string;
   }) => void;
   onStudentUpdated?: (studentId: string) => void;
   onStudentDeleted?: (studentId: string) => void;
@@ -390,6 +391,7 @@ export function StudentProfileDrawer({
                       id: data.id,
                       studentCode: data.studentCode,
                       fullName: data.fullName,
+                      franchiseId: data.franchiseId,
                     })
                   }
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C4A35A] py-3 text-sm font-bold text-[#0B1F3A]"
