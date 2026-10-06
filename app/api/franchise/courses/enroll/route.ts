@@ -94,9 +94,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const courseId = String(body.courseId || "");
-    const studentIds: string[] = Array.isArray(body.studentIds)
-      ? [...new Set(body.studentIds.map((id: unknown) => String(id)).filter(Boolean))]
-      : [];
+    const rawIds: unknown[] = Array.isArray(body.studentIds) ? body.studentIds : [];
+    const studentIds = [
+      ...new Set(rawIds.map((id) => String(id).trim()).filter((id) => id.length > 0)),
+    ];
     if (!courseId) return errorResponse("Select a course", 400);
     if (!studentIds.length) return errorResponse("Select at least one student", 400);
 
