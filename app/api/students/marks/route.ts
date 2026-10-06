@@ -95,8 +95,15 @@ export async function GET(request: NextRequest) {
     }
 
     const where: Record<string, unknown> = {
-      courseId,
       status: { not: "DROPPED" },
+      AND: [
+        {
+          OR: [
+            { courseId },
+            { enrollments: { some: { courseId, status: "ACTIVE" } } },
+          ],
+        },
+      ],
     };
 
     if (scopedFranchiseId) {
@@ -109,18 +116,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      where.OR = [
-        { studentCode: { contains: search } },
-        {
-          user: {
-            OR: [
-              { fullName: { contains: search } },
-              { email: { contains: search } },
-              { phone: { contains: search } },
-            ],
+      (where.AND as Record<string, unknown>[]).push({
+        OR: [
+          { studentCode: { contains: search } },
+          {
+            user: {
+              OR: [
+                { fullName: { contains: search } },
+                { email: { contains: search } },
+                { phone: { contains: search } },
+              ],
+            },
           },
-        },
-      ];
+        ],
+      });
     }
 
     const students = await prisma.student.findMany({
@@ -345,7 +354,10 @@ export async function PUT(request: NextRequest) {
     const students = await prisma.student.findMany({
       where: {
         id: { in: [...studentIdSet].map((id) => BigInt(id)) },
-        courseId,
+        OR: [
+          { courseId },
+          { enrollments: { some: { courseId, status: "ACTIVE" } } },
+        ],
         ...(scopedFranchiseId ? { franchiseId: scopedFranchiseId } : {}),
       },
       select: { id: true },

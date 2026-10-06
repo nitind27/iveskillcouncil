@@ -382,7 +382,7 @@ export function StudentProfileDrawer({
                 </Section>
               )}
 
-              {!data.courseAssigned && onAssignCourse && (
+              {onAssignCourse && (
                 <button
                   type="button"
                   onClick={() =>
@@ -395,7 +395,7 @@ export function StudentProfileDrawer({
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C4A35A] py-3 text-sm font-bold text-[#0B1F3A]"
                 >
                   <BookOpen className="h-4 w-4" />
-                  Assign course
+                  {data.courseAssigned ? "Add another course" : "Assign course"}
                 </button>
               )}
             </div>

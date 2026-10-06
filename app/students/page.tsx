@@ -101,6 +101,7 @@ interface StudentItem {
   franchiseName: string;
   courseId?: string | null;
   courseName: string | null;
+  courses?: { id: string; name: string; totalFee: number; primary: boolean }[];
   courseAssigned?: boolean;
   totalFee: number;
   paidFee: number;
@@ -598,12 +599,22 @@ export default function StudentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {s.courseName ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-medium">
-                            <BookOpen className="h-3.5 w-3.5 text-[#C4A35A]" />
-                            {s.courseName}
-                          </span>
-                        ) : (
+                        <div className="flex flex-col items-start gap-1.5">
+                          {(s.courses?.length
+                            ? s.courses
+                            : s.courseName
+                              ? [{ id: s.courseId || "primary", name: s.courseName, totalFee: 0, primary: true }]
+                              : []
+                          ).map((course) => (
+                            <span
+                              key={course.id}
+                              className="inline-flex max-w-[220px] items-center gap-1.5 truncate text-xs font-medium"
+                              title={course.name}
+                            >
+                              <BookOpen className="h-3.5 w-3.5 shrink-0 text-[#C4A35A]" />
+                              {course.name}
+                            </span>
+                          ))}
                           <button
                             type="button"
                             onClick={() =>
@@ -614,12 +625,12 @@ export default function StudentsPage() {
                                 franchiseId: s.franchiseId,
                               })
                             }
-                            className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#1E4A85]/20 bg-[#1E4A85]/5 px-2 py-1 text-[11px] font-bold text-[#1E4A85] hover:bg-[#1E4A85]/10"
                           >
                             <BookOpen className="h-3 w-3" />
-                            Assign course
+                            {(s.courses?.length || s.courseName) ? "Add course" : "Assign course"}
                           </button>
-                        )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-right sm:text-left">
@@ -869,7 +880,9 @@ export default function StudentsPage() {
                         ["Admission", selected.admissionDate || "—"],
                         ["Franchise", selected.franchiseName],
                         ["Student ID", selected.studentCode || "—"],
-                        ["Course", selected.courseName || "Not assigned"],
+                        ["Course", (selected.courses?.length
+                          ? selected.courses.map((c) => c.name).join(", ")
+                          : selected.courseName) || "Not assigned"],
                         ["Total fee", `₹${selected.totalFee.toLocaleString("en-IN")}`],
                         ["Paid", `₹${selected.paidFee.toLocaleString("en-IN")}`],
                         ["Pending", `₹${selected.pendingFee.toLocaleString("en-IN")}`],

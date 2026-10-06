@@ -58,6 +58,9 @@ export async function POST(
 
     const student = await prisma.student.findUnique({
       where: { userId: BigInt(user.id) },
+      include: {
+        enrollments: { where: { status: "ACTIVE" }, select: { courseId: true } },
+      },
     });
     if (!student) return errorResponse("Student profile not found", 404);
 
@@ -72,9 +75,14 @@ export async function POST(
       return errorResponse("Exam not available", 404);
     }
 
+    const enrolledCourseIds = new Set(
+      [student.courseId, ...student.enrollments.map((row) => row.courseId)]
+        .filter((id): id is bigint => id != null)
+        .map((id) => id.toString())
+    );
     const eligible = exam.targets.some(
       (t) =>
-        t.franchiseId === student.franchiseId && t.courseId === student.courseId
+        t.franchiseId === student.franchiseId && enrolledCourseIds.has(t.courseId.toString())
     );
     if (!eligible) return errorResponse("You are not assigned to this exam", 403);
 

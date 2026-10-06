@@ -42,23 +42,33 @@ export async function GET(request: NextRequest) {
     if (franchiseId && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
       where.franchiseId = BigInt(franchiseId);
     }
+    const and: Record<string, unknown>[] = [];
     if (courseId && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
-      where.courseId = BigInt(courseId);
+      const cid = BigInt(courseId);
+      and.push({
+        OR: [
+          { courseId: cid },
+          { enrollments: { some: { courseId: cid, status: "ACTIVE" } } },
+        ],
+      });
     }
     if (search) {
-      where.OR = [
-        { studentCode: { contains: search } },
-        {
-          user: {
-            OR: [
-              { fullName: { contains: search } },
-              { email: { contains: search } },
-              { phone: { contains: search } },
-            ],
+      and.push({
+        OR: [
+          { studentCode: { contains: search } },
+          {
+            user: {
+              OR: [
+                { fullName: { contains: search } },
+                { email: { contains: search } },
+                { phone: { contains: search } },
+              ],
+            },
           },
-        },
-      ];
+        ],
+      });
     }
+    if (and.length) where.AND = and;
 
     const [students, total, statusGroups] = await Promise.all([
       prisma.student.findMany({
@@ -70,6 +80,11 @@ export async function GET(request: NextRequest) {
           user: { select: { id: true, fullName: true, email: true, phone: true } },
           franchise: { select: { id: true, name: true } },
           course: { select: { id: true, name: true } },
+          enrollments: {
+            where: { status: "ACTIVE" },
+            orderBy: { createdAt: "asc" },
+            include: { course: { select: { id: true, name: true } } },
+          },
         },
       }),
       prisma.student.count({ where }),
@@ -98,7 +113,13 @@ export async function GET(request: NextRequest) {
       franchiseName: s.franchise.name,
       courseId: s.course?.id.toString() ?? null,
       courseName: s.course?.name ?? null,
-      courseAssigned: !!s.courseId,
+      courses: s.enrollments.map((row) => ({
+        id: row.course.id.toString(),
+        name: row.course.name,
+        totalFee: Number(row.totalFee),
+        primary: s.courseId?.toString() === row.courseId.toString(),
+      })),
+      courseAssigned: s.enrollments.length > 0 || !!s.courseId,
       totalFee: Number(s.totalFee),
       paidFee: Number(s.paidFee),
       pendingFee: Number(s.totalFee) - Number(s.paidFee),

@@ -18,11 +18,30 @@ export async function GET() {
 
     const student = await prisma.student.findUnique({
       where: { userId: BigInt(user.id) },
-      include: { course: { select: { id: true, name: true } } },
+      include: {
+        course: { select: { id: true, name: true } },
+        enrollments: {
+          where: { status: "ACTIVE" },
+          include: { course: { select: { id: true, name: true } } },
+        },
+      },
     });
     if (!student) return errorResponse("Student profile not found", 404);
-    if (!student.courseId) {
+    const courseIds = [
+      ...new Set(
+        [
+          student.courseId,
+          ...student.enrollments.map((row) => row.courseId),
+        ].filter((id): id is bigint => id != null)
+      ),
+    ];
+    if (!courseIds.length) {
       return successResponse({ items: [] }, "No course assigned");
+    }
+    const courseNameById = new Map<string, string>();
+    if (student.course) courseNameById.set(student.course.id.toString(), student.course.name);
+    for (const row of student.enrollments) {
+      courseNameById.set(row.course.id.toString(), row.course.name);
     }
 
     const now = new Date();
@@ -33,7 +52,7 @@ export async function GET() {
         targets: {
           some: {
             franchiseId: student.franchiseId,
-            courseId: student.courseId,
+            courseId: { in: courseIds },
           },
         },
         OR: [{ startsAt: null }, { startsAt: { lte: now } }],
@@ -41,6 +60,10 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { questions: true } },
+        targets: {
+          where: { franchiseId: student.franchiseId, courseId: { in: courseIds } },
+          select: { courseId: true },
+        },
         attempts: {
           where: { studentId: student.id },
           take: 1,
@@ -69,7 +92,11 @@ export async function GET() {
         questionCount: e._count.questions,
         requireCamera: e.requireCamera,
         requireFaceDetect: e.requireFaceDetect,
-        courseName: student.course?.name ?? "—",
+        courseName:
+          e.targets
+            .map((target) => courseNameById.get(target.courseId.toString()))
+            .filter(Boolean)
+            .join(", ") || "—",
         endsAt: e.endsAt?.toISOString() ?? null,
         attempt: attempt
           ? {

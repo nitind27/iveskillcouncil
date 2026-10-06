@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GlassModal } from "@/components/common/GlassModal";
-import { BookOpen, Hash, Loader2, Check } from "lucide-react";
-import { showError, showSuccess } from "@/lib/toast";
+import { BookOpen, Hash, Loader2, Trash2 } from "lucide-react";
+import { showDeleteConfirm, showError, showSuccess } from "@/lib/toast";
 
 interface Course {
   id: string;
   name: string;
   baseFee: number;
+}
+
+interface Enrollment {
+  id: string;
+  courseId: string;
+  courseName: string;
+  totalFee: number;
+  primary: boolean;
 }
 
 interface AssignCourseModalProps {
@@ -30,47 +38,67 @@ export function AssignCourseModal({
   student,
 }: AssignCourseModalProps) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolled, setEnrolled] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [courseId, setCourseId] = useState("");
-  const [totalFee, setTotalFee] = useState("");
+  const [selected, setSelected] = useState<Record<string, string>>({});
   const [initialPayment, setInitialPayment] = useState("");
   const [paymentMode, setPaymentMode] = useState("CASH");
 
-  useEffect(() => {
-    if (!open || !student) return;
-    setCourseId("");
-    setTotalFee("");
-    setInitialPayment("");
-    setPaymentMode("CASH");
+  const load = async () => {
+    if (!student) return;
     setLoading(true);
     const q = student.franchiseId
       ? `?franchiseId=${encodeURIComponent(student.franchiseId)}`
       : "";
-    fetch(`/api/students/franchise-courses${q}`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((d) => {
-        const items = d?.data?.courses ?? d?.data?.items ?? d?.data ?? [];
-        setCourses(Array.isArray(items) ? items : []);
-      })
-      .catch(() => setCourses([]))
-      .finally(() => setLoading(false));
-  }, [open, student]);
+    try {
+      const [courseRes, enrolledRes] = await Promise.all([
+        fetch(`/api/students/franchise-courses${q}`, { credentials: "include" }),
+        fetch(`/api/students/${student.id}/assign-course`, { credentials: "include" }),
+      ]);
+      const courseJson = await courseRes.json();
+      const enrolledJson = await enrolledRes.json();
+      const items = courseJson?.data?.courses ?? courseJson?.data?.items ?? courseJson?.data ?? [];
+      setCourses(Array.isArray(items) ? items : []);
+      setEnrolled(Array.isArray(enrolledJson?.data?.enrollments) ? enrolledJson.data.enrollments : []);
+    } catch {
+      setCourses([]);
+      setEnrolled([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const onPickCourse = (id: string) => {
-    setCourseId(id);
-    const c = courses.find((x) => x.id === id);
-    if (c) setTotalFee(String(c.baseFee));
+  useEffect(() => {
+    if (!open || !student) return;
+    setSelected({});
+    setInitialPayment("");
+    setPaymentMode("CASH");
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, student?.id]);
+
+  const enrolledIds = useMemo(() => new Set(enrolled.map((row) => row.courseId)), [enrolled]);
+  const available = courses.filter((course) => !enrolledIds.has(course.id));
+  const picked = Object.entries(selected);
+
+  const toggle = (course: Course) => {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (next[course.id] != null) delete next[course.id];
+      else next[course.id] = String(course.baseFee);
+      return next;
+    });
   };
 
   const submit = async () => {
     if (!student) return;
-    if (!courseId) {
-      await showError("Course", "Select a course");
+    if (!picked.length) {
+      await showError("Courses", "Tick at least one course to add");
       return;
     }
-    if (!totalFee || Number(totalFee) < 0) {
-      await showError("Fee", "Enter a valid total fee");
+    if (picked.some(([, fee]) => fee === "" || Number(fee) < 0 || !Number.isFinite(Number(fee)))) {
+      await showError("Fee", "Enter a valid fee for every selected course");
       return;
     }
     setSaving(true);
@@ -80,8 +108,10 @@ export function AssignCourseModal({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          courseId,
-          totalFee: Number(totalFee),
+          courses: picked.map(([courseId, totalFee]) => ({
+            courseId,
+            totalFee: Number(totalFee),
+          })),
           initialPayment: initialPayment ? Number(initialPayment) : 0,
           paymentMode,
         }),
@@ -91,10 +121,11 @@ export function AssignCourseModal({
         await showError("Error", json.error || "Failed");
         return;
       }
-      const bits = [`${student.fullName} enrolled in ${json.data?.courseName || "course"}`];
+      const names = (json.data?.added || []).map((row: { courseName: string }) => row.courseName).join(", ");
+      const bits = [`${student.fullName} added to ${names || "the selected courses"}`];
       if (json.data?.emailSent) bits.push("course details emailed");
       if (json.data?.receiptEmailSent) bits.push("fee receipt emailed");
-      await showSuccess("Course assigned", bits.join(" · "));
+      await showSuccess("Courses added", bits.join(" · "));
       onSuccess?.();
       onClose();
     } finally {
@@ -102,8 +133,28 @@ export function AssignCourseModal({
     }
   };
 
+  const removeCourse = async (row: Enrollment) => {
+    if (!student) return;
+    const ok = await showDeleteConfirm(
+      "Remove course",
+      `Remove ${row.courseName} from ${student.fullName}? Other courses stay.`
+    );
+    if (!ok.isConfirmed) return;
+    const res = await fetch(
+      `/api/students/${student.id}/assign-course?courseId=${encodeURIComponent(row.courseId)}`,
+      { method: "DELETE", credentials: "include" }
+    );
+    const json = await res.json();
+    if (!res.ok) {
+      await showError("Error", json.error || "Failed to remove");
+      return;
+    }
+    setEnrolled((prev) => prev.filter((item) => item.courseId !== row.courseId));
+    onSuccess?.();
+  };
+
   return (
-    <GlassModal open={open} onClose={onClose} title="Assign course" size="md">
+    <GlassModal open={open} onClose={onClose} title="Student courses" size="md">
       {!student ? null : (
         <div className="space-y-4">
           <div className="rounded-2xl border border-[#1E4A85]/12 bg-gradient-to-br from-[#1E4A85]/5 to-white p-4">
@@ -114,106 +165,151 @@ export function AssignCourseModal({
             </p>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Select the course for this student and set fees. This is separate from adding personal
-            details.
-          </p>
-
           {loading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-[#1E4A85]" />
             </div>
           ) : (
-            <div className="space-y-3">
+            <>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">Course</label>
-                <select
-                  value={courseId}
-                  onChange={(e) => onPickCourse(e.target.value)}
-                  className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1E4A85]/15"
-                >
-                  <option value="">Select course</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} — ₹{Number(c.baseFee).toLocaleString("en-IN")}
-                    </option>
-                  ))}
-                </select>
-                {!courses.length && (
-                  <p className="mt-1 text-[11px] text-amber-700">
-                    No courses on this franchise. Add courses under Franchise Courses first.
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1E4A85]">
+                  Already enrolled
+                </p>
+                {enrolled.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-slate-200 px-3 py-3 text-xs text-muted-foreground">
+                    No course yet. Add one or more below.
                   </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {enrolled.map((row) => (
+                      <li
+                        key={row.courseId}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-800">{row.courseName}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Fee ₹{row.totalFee.toLocaleString("en-IN")}
+                            {row.primary ? " · certificate course" : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCourse(row)}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">
-                    Total fee (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={totalFee}
-                    onChange={(e) => setTotalFee(e.target.value)}
-                    className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1E4A85]/15"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">
-                    Initial payment (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={initialPayment}
-                    onChange={(e) => setInitialPayment(e.target.value)}
-                    className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1E4A85]/15"
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-              {Number(initialPayment) > 0 && (
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">
-                    Payment mode
-                  </label>
-                  <select
-                    value={paymentMode}
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                    className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1E4A85]/15"
-                  >
-                    <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="CARD">Card</option>
-                    <option value="BANK_TRANSFER">Bank transfer</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={saving || loading}
-              onClick={submit}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <BookOpen className="h-4 w-4" />
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#1E4A85]">
+                  Add courses
+                </p>
+                {available.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Every franchise course is already added.
+                  </p>
+                ) : (
+                  <ul className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                    {available.map((course) => {
+                      const on = selected[course.id] != null;
+                      return (
+                        <li
+                          key={course.id}
+                          className={`rounded-xl border px-3 py-2 ${
+                            on ? "border-[#1E4A85] bg-[#1E4A85]/5" : "border-slate-200"
+                          }`}
+                        >
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={() => toggle(course)}
+                              className="h-4 w-4 accent-[#1E4A85]"
+                            />
+                            <span className="min-w-0 flex-1 text-sm font-medium">{course.name}</span>
+                            <span className="text-[11px] text-muted-foreground">
+                              ₹{Number(course.baseFee).toLocaleString("en-IN")}
+                            </span>
+                          </label>
+                          {on && (
+                            <label className="mt-2 block text-[11px] font-semibold text-slate-600">
+                              Fee for this course
+                              <input
+                                type="number"
+                                min={0}
+                                value={selected[course.id]}
+                                onChange={(e) =>
+                                  setSelected((prev) => ({ ...prev, [course.id]: e.target.value }))
+                                }
+                                className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-normal"
+                              />
+                            </label>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              {picked.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">
+                      Initial payment (optional)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={initialPayment}
+                      onChange={(e) => setInitialPayment(e.target.value)}
+                      className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2 text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#1E4A85]">Mode</label>
+                    <select
+                      value={paymentMode}
+                      onChange={(e) => setPaymentMode(e.target.value)}
+                      className="w-full rounded-xl border border-[#1E4A85]/15 px-3 py-2 text-sm"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="UPI">UPI</option>
+                      <option value="CARD">Card</option>
+                      <option value="BANK_TRANSFER">Bank transfer</option>
+                    </select>
+                  </div>
+                </div>
               )}
-              Assign course
-            </button>
-          </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  disabled={saving || loading || picked.length === 0}
+                  onClick={submit}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#1E4A85] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+                  Add {picked.length || ""} course{picked.length === 1 ? "" : "s"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </GlassModal>

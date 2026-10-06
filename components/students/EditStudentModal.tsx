@@ -782,14 +782,14 @@ export function EditStudentModal({
               )}
 
               <div>
-                <label className={labelClass}>Enrolled Course</label>
+                <label className={labelClass}>Certificate course</label>
                 <div className="relative">
                   <select
                     value={courseId}
                     onChange={(e) => handleCourseChange(e.target.value)}
                     className={cn(inputClass, "pl-9")}
                   >
-                    <option value="">— No Course Assigned (Unassigned) —</option>
+                    <option value="">— No certificate course —</option>
                     {courses.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name} {c.type ? `[${c.type}]` : ""} {c.baseFee != null ? `(₹${c.baseFee})` : ""}
@@ -798,6 +798,9 @@ export function EditStudentModal({
                   </select>
                   <BookOpen className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#C4A35A]" />
                 </div>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  This course is printed on the certificate. To put the student in more courses, use Add course on the student list. Existing courses are kept.
+                </p>
                 {loadingCourses && (
                   <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
                     <Loader2 className="h-3 w-3 animate-spin" /> Loading courses for franchise...

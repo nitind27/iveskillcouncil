@@ -381,6 +381,30 @@ export async function PATCH(
       return [uStudent, uUser];
     });
 
+    const nextCourseId = studentUpdate.courseId;
+    if (typeof nextCourseId === "bigint") {
+      const feeRow = await prisma.franchiseCourseFee.findUnique({
+        where: {
+          franchiseId_courseId: {
+            franchiseId: student.franchiseId,
+            courseId: nextCourseId,
+          },
+        },
+      });
+      await prisma.studentEnrollment.upsert({
+        where: {
+          studentId_courseId: { studentId: sid, courseId: nextCourseId },
+        },
+        update: { status: "ACTIVE" },
+        create: {
+          studentId: sid,
+          courseId: nextCourseId,
+          totalFee: feeRow?.customFee ?? 0,
+          status: "ACTIVE",
+        },
+      });
+    }
+
     const saved = updatedStudent ?? student;
     return successResponse(
       {

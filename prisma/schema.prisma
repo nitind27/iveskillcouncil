@@ -299,6 +299,7 @@ model Course {
   franchiseFees  FranchiseCourseFee[]
   subjectMarks   StudentSubjectMark[]
   subjects       CourseSubject[]
+  enrollments    StudentEnrollment[]
 
   @@index([franchiseId], map: "idx_course_franchise")
   @@index([category], map: "idx_course_category")
@@ -407,10 +408,30 @@ model Student {
   payments    Payment[]
   examAttempts ExamAttempt[]
   subjectMarks StudentSubjectMark[]
+  enrollments  StudentEnrollment[]
 
   @@index([franchiseId], map: "idx_student_franchise")
   @@index([courseId], map: "idx_student_course")
   @@map("students")
+}
+
+/// A student can be enrolled in more than one course. students.course_id stays the certificate course.
+model StudentEnrollment {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  studentId BigInt   @map("student_id") @db.UnsignedBigInt
+  courseId  BigInt   @map("course_id") @db.UnsignedBigInt
+  totalFee  Decimal  @default(0.00) @map("total_fee") @db.Decimal(10, 2)
+  /// ACTIVE | DROPPED
+  status    String   @default("ACTIVE") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId], map: "unique_student_course_enrollment")
+  @@index([courseId], map: "idx_enrollment_course")
+  @@map("student_enrollments")
 }
 
 enum StudentStatus {

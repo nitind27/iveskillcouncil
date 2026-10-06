@@ -37,6 +37,11 @@ export async function GET(
         },
         franchise: { select: { id: true, name: true } },
         course: { select: { id: true, name: true } },
+        enrollments: {
+          where: { status: "ACTIVE" },
+          orderBy: { createdAt: "asc" },
+          include: { course: { select: { id: true, name: true } } },
+        },
         payments: {
           orderBy: { paymentDate: "desc" },
           take: 10,
@@ -90,8 +95,11 @@ export async function GET(
         franchiseId: student.franchise.id.toString(),
         franchiseName: student.franchise.name,
         courseId: student.course?.id.toString() ?? null,
-        courseName: student.course?.name ?? null,
-        courseAssigned: !!student.courseId,
+        courseName:
+          student.enrollments.map((row) => row.course.name).join(", ") ||
+          student.course?.name ||
+          null,
+        courseAssigned: student.enrollments.length > 0 || !!student.courseId,
         totalFee,
         paidFee,
         pendingFee: totalFee - paidFee,
