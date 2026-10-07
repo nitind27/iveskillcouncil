@@ -36,8 +36,8 @@ export async function GET() {
       state: f.state,
       pincode: f.pincode,
       head: f.owner.fullName,
-      contact: f.owner.phone || "",
-      email: f.owner.email,
+      contact: f.phone || f.owner.phone || "",
+      email: f.email || f.owner.email,
       plan: f.plan.name,
     }));
 
