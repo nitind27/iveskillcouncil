@@ -79,7 +79,7 @@ export function GlassModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className={cn("fixed inset-0 z-[9999] flex items-center justify-center p-4", overlayClassName)}
+          className={cn("fixed inset-0 z-[9999] flex items-end justify-center p-0 sm:items-center sm:p-4", overlayClassName)}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? "glass-modal-title" : undefined}
@@ -100,17 +100,17 @@ export function GlassModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
-              "relative w-full max-h-[90vh] overflow-y-auto scrollbar-hide rounded-3xl bg-white border border-gray-200 shadow-2xl",
+              "relative w-full max-h-[94vh] overflow-y-auto scrollbar-hide rounded-t-3xl border border-gray-200 bg-white shadow-2xl sm:rounded-3xl",
               sizeClasses[size],
               contentClassName
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 md:p-8">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 sm:pb-6 md:p-8">
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-5 flex items-start justify-between gap-3 sm:mb-6">
                   {title && (
-                    <h2 id="glass-modal-title" className="text-xl font-bold text-gray-900">
+                    <h2 id="glass-modal-title" className="min-w-0 text-lg font-bold text-gray-900 sm:text-xl">
                       {title}
                     </h2>
                   )}

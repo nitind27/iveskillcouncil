@@ -26,7 +26,7 @@ function TestimonialCard({ item, index }: { item: TestimonialItem; index: number
       whileInView={{ opacity: 1, y: 0 }}
       viewport={VIEWPORT}
       transition={{ duration: 0.6, delay: reduce ? 0 : index * 0.1, ease: EASE_OUT }}
-      className="group relative flex w-[86%] flex-shrink-0 snap-start flex-col rounded-[1.5rem] border border-ive-line bg-white p-6 shadow-[var(--up-card-shadow)] transition-all duration-500 hover:-translate-y-1.5 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)] sm:w-[calc(50%-0.75rem)] sm:p-7 lg:w-[calc(33.333%-1rem)]"
+      className="group relative flex w-[88%] flex-shrink-0 snap-start flex-col rounded-[1.35rem] border border-ive-line bg-white p-5 shadow-[var(--up-card-shadow)] transition-all duration-500 hover:-translate-y-1.5 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)] sm:w-[calc(50%-0.75rem)] sm:rounded-[1.5rem] sm:p-7 lg:w-[calc(50%-0.75rem)] xl:w-[calc(33.333%-1rem)]"
     >
       <div className="flex items-center justify-between">
         <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ive-saffron/10 text-ive-saffron transition-colors duration-300 group-hover:bg-ive-saffron group-hover:text-white">
@@ -98,7 +98,7 @@ export default function TestimonialsSection() {
               <FiMessageSquare className="h-3.5 w-3.5 text-ive-saffron" />
               Testimonials
             </span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+            <h2 className="mt-4 text-[1.65rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
               {testimonials?.sectionTitle || "What Our Students Say"}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">Real outcomes from learners who trained with us.</p>

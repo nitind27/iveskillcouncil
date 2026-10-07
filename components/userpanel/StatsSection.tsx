@@ -35,7 +35,7 @@ export default function StatsSection({ config }: StatsSectionProps) {
   return (
     <section aria-label="Key statistics" className="relative z-10 bg-white px-4 sm:px-6 lg:px-8">
       <div className="absolute inset-x-0 top-0 h-1/2 bg-[#E9F1FB]" aria-hidden />
-      <ul className="relative mx-auto -mt-24 grid max-w-7xl grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:-mt-28 lg:grid-cols-5 lg:gap-5">
+      <ul className="relative mx-auto -mt-8 grid max-w-7xl grid-cols-2 gap-2.5 sm:-mt-10 sm:grid-cols-3 sm:gap-4 lg:-mt-16 lg:grid-cols-5 lg:gap-5">
         {stats.map((stat: StatItem, i: number) => {
           const Icon = ICON_MAP[stat.iconKey] || FiBook;
           return (
@@ -46,7 +46,7 @@ export default function StatsSection({ config }: StatsSectionProps) {
               viewport={VIEWPORT}
               transition={{ duration: 0.6, delay: reduce ? 0 : i * 0.08, ease: EASE_OUT }}
               whileHover={reduce ? undefined : { y: -6, scale: 1.02 }}
-              className={`group relative overflow-hidden rounded-2xl border border-white bg-white/90 p-5 text-center shadow-[0_24px_50px_-24px_rgba(6,27,54,0.35)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_30px_60px_-24px_rgba(6,27,54,0.45)] sm:p-6 ${
+              className={`group relative overflow-hidden rounded-2xl border border-white bg-white/90 p-3.5 text-center shadow-[0_24px_50px_-24px_rgba(6,27,54,0.35)] backdrop-blur-xl transition-shadow duration-300 hover:shadow-[0_30px_60px_-24px_rgba(6,27,54,0.45)] sm:p-6 ${
                 stats.length % 2 === 1 && i === stats.length - 1 ? "col-span-2 sm:col-span-1" : ""
               }`}
             >
@@ -54,7 +54,7 @@ export default function StatsSection({ config }: StatsSectionProps) {
               <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${TONES[i % TONES.length]}`}>
                 <Icon className="h-5 w-5" />
               </span>
-              <div className="mt-4 text-3xl font-extrabold leading-none tracking-tight text-ive-navy tabular-nums sm:text-[2.1rem]">
+              <div className="mt-3 text-2xl font-extrabold leading-none tracking-tight text-ive-navy tabular-nums sm:mt-4 sm:text-[2.1rem]">
                 <AnimatedCounter value={stat.value} duration={1.6} />
               </div>
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-ive-slate">{stat.label}</p>

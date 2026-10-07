@@ -48,7 +48,7 @@ export default function SectionHeading({
         </span>
         <h2
           className={cn(
-            "mt-4 text-[1.9rem] font-extrabold leading-[1.15] tracking-tight sm:text-4xl lg:text-[2.75rem]",
+            "mt-4 text-[1.65rem] font-extrabold leading-[1.15] tracking-tight sm:text-4xl lg:text-[2.75rem]",
             dark ? "text-white" : "text-ive-navy"
           )}
         >

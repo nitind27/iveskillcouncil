@@ -301,7 +301,7 @@ export default function UserPanelCoursesPage() {
               <FiBookOpen className="h-3.5 w-3.5" />
               All Programs
             </span>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+            <h1 className="mt-4 text-[1.75rem] font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
               {seo.coursesHeadline}
             </h1>
             <p className="mt-3 max-w-xl text-base leading-relaxed text-white/75">{seo.coursesDescription}</p>
@@ -442,7 +442,7 @@ export default function UserPanelCoursesPage() {
                       )}
                     </div>
                     )}
-                    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
                       {(slug === "other" ? items : items.slice(0, 6)).map((course, i) => (
                         <CourseCard key={course.id} course={course} index={i} imageName={cat.name} />
                       ))}
@@ -462,7 +462,7 @@ export default function UserPanelCoursesPage() {
               initial={{ opacity: 0, y: reduce ? 0 : 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+              className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"
             >
               {filtered.map((course, i) => (
                 <CourseCard

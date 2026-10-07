@@ -74,15 +74,15 @@ function Countdown({ target }: { target: number }) {
     { label: "Sec", value: Math.floor(diff / 1000) % 60 },
   ];
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-ive-line bg-white px-4 py-3 shadow-sm" role="timer" aria-label="Time left for the nearest offer">
-      <span className="text-xs font-bold uppercase leading-tight tracking-wider text-ive-slate">
+    <div className="flex max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-ive-line bg-white px-3 py-3 shadow-sm sm:gap-3 sm:px-4" role="timer" aria-label="Time left for the nearest offer">
+      <span className="text-[11px] font-bold uppercase leading-tight tracking-wider text-ive-slate sm:text-xs">
         Offer
         <br />
         ends in
       </span>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1 sm:gap-1.5">
         {parts.map((p) => (
-          <span key={p.label} className="flex w-12 flex-col items-center rounded-lg bg-ive-navy py-1.5 text-white">
+          <span key={p.label} className="flex w-10 flex-col items-center rounded-lg bg-ive-navy py-1.5 text-white sm:w-12">
             <span className="font-mono text-base font-bold leading-none tabular-nums">{String(p.value).padStart(2, "0")}</span>
             <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-white/60">{p.label}</span>
           </span>
@@ -120,8 +120,8 @@ function OfferCard({ offer, index, onClaim }: { offer: OfferItem; index: number;
       )}
     >
       <div className="flex items-start gap-4">
-        <div className={cn("flex h-[88px] w-[88px] flex-shrink-0 flex-col items-center justify-center rounded-2xl text-white shadow-lg", theme.tile)}>
-          <span className="text-[2rem] font-extrabold leading-none">{offer.discount}%</span>
+        <div className={cn("flex h-[72px] w-[72px] flex-shrink-0 flex-col items-center justify-center rounded-2xl text-white shadow-lg sm:h-[88px] sm:w-[88px]", theme.tile)}>
+          <span className="text-[1.55rem] font-extrabold leading-none sm:text-[2rem]">{offer.discount}%</span>
           <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/85">Off</span>
         </div>
         <div className="min-w-0 pt-1">
@@ -230,7 +230,7 @@ export default function OffersSection({ config }: OffersSectionProps) {
                 <FiTag className="h-3.5 w-3.5" />
                 Exclusive Student Privileges
               </span>
-              <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+              <h2 className="mt-4 text-[1.65rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
                 {offers.sectionTitle || "Current Offers"}
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
@@ -240,7 +240,7 @@ export default function OffersSection({ config }: OffersSectionProps) {
             <div className="flex justify-center lg:justify-end">{nearestExpiry !== null && <Countdown target={nearestExpiry} />}</div>
           </Reveal>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
             {items.map((offer, index) => (
               <OfferCard key={offer.id} offer={offer} index={index} onClaim={() => setSelectedOffer(offer)} />
             ))}

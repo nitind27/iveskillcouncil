@@ -50,7 +50,7 @@ export default function UserPanelFranchisesPage() {
     [f.address, f.city, f.state, f.pincode].filter(Boolean).join(", ") || "Address not specified";
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-10 px-4 sm:py-16 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Back link */}
         <motion.div
@@ -78,7 +78,7 @@ export default function UserPanelFranchisesPage() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-[var(--up-accent)]/10 border border-[var(--up-accent)]/20 text-[var(--up-accent)] text-sm font-semibold uppercase tracking-wider mb-3">
             Our Network
           </span>
-          <h1 className="text-3xl md:text-5xl font-bold text-[var(--up-text)] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-[var(--up-text)] tracking-tight">
             {config.franchise?.sectionTitle || "Our Franchise Branches"}
           </h1>
           <p className="mt-4 text-[var(--up-text-muted)] max-w-2xl mx-auto">
@@ -122,7 +122,7 @@ export default function UserPanelFranchisesPage() {
                 visible: { transition: { staggerChildren: 0.08 } },
                 hidden: {},
               }}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8"
             >
               {franchises.map((f, i) => (
                 <motion.article

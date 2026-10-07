@@ -219,23 +219,23 @@ export default function FranchisePlansPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] py-20 px-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] px-4 py-12 sm:py-16 md:py-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(168,198,58,0.12),transparent)]"/>
         <div className="absolute -bottom-1 left-0 right-0 h-16 bg-[#F8FAFC]" style={{clipPath:"ellipse(55% 100% at 50% 100%)"}}/>
         <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="max-w-4xl mx-auto text-center relative">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 border border-white/20 text-white text-sm font-semibold uppercase tracking-wider mb-5">
             <FiAward className="w-4 h-4 text-[#A8C63A]"/> Franchise Plans
           </span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
             {step === "plans" ? <>Choose the Right Plan<br/>for Your Franchise</> : "Complete Your Application"}
           </h1>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto">
+          <p className="text-white/70 text-sm sm:text-lg max-w-2xl mx-auto">
             {step === "plans" ? "Pick a plan, fill your details, upload KYC documents and pay — all in one place." : selectedPlan ? `${selectedPlan.name} Plan · ₹${selectedPlan.price.toLocaleString("en-IN")}` : ""}
           </p>
         </motion.div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
         {/* Step progress bar (form steps only) */}
         {isFormStep && step !== "processing" && (
@@ -264,20 +264,20 @@ export default function FranchisePlansPage() {
           {/* ── PLANS ── */}
           {step === "plans" && (
             <motion.div key="plans" initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-16}} transition={{duration:0.25}}>
-              <div className="grid md:grid-cols-3 gap-8 items-start">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-8 items-start">
                 {plans.map((plan,i) => {
                   const meta = PLAN_META[plan.name]||PLAN_META.SILVER;
                   return (
                     <motion.div key={plan.id} initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{delay:i*0.1,type:"spring",stiffness:100,damping:18}}
-                      className={`relative bg-white rounded-3xl border-2 ${meta.border} shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden ${meta.popular?"scale-105":""}`}>
+                      className={`relative bg-white rounded-3xl border-2 ${meta.border} shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden ${meta.popular?"md:scale-[1.02]":""}`}>
                       {meta.popular && <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#F39C12] to-[#D68910]"/>}
-                      <div className="p-8">
+                      <div className="p-5 sm:p-8">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 ${meta.badgeBg}`}>{meta.badge}</span>
                         <div className={`${meta.color} mb-2`}>{meta.icon}</div>
                         <h3 className="text-2xl font-extrabold text-[#1A1A1A] mb-1">{plan.name}</h3>
                         <p className="text-[#6B7280] text-sm mb-6">{meta.tagline}</p>
                         <div className="mb-6">
-                          <span className="text-5xl font-black text-[#1A1A1A]">₹{plan.price.toLocaleString("en-IN")}</span>
+                          <span className="text-4xl sm:text-5xl font-black text-[#1A1A1A] break-all">₹{plan.price.toLocaleString("en-IN")}</span>
                           <p className="text-[#6B7280] text-sm mt-1">Valid for {plan.durationInDays>=365?`${Math.round(plan.durationInDays/365)} year${Math.round(plan.durationInDays/365)>1?"s":""}`:plan.durationInDays+" days"}</p>
                         </div>
                         <div className="h-px bg-[#E5E7EB] mb-6"/>
@@ -312,8 +312,8 @@ export default function FranchisePlansPage() {
           {/* ── PERSONAL ── */}
           {step === "personal" && (
             <motion.div key="personal" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.25}}
-              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-8">
-              <h2 className="text-2xl font-extrabold text-[#1A1A1A] mb-2">Personal Information</h2>
+              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-4 sm:p-8">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mb-2">Personal Information</h2>
               <p className="text-[#6B7280] text-sm mb-8">Tell us about yourself — the franchise owner.</p>
               <div className="grid sm:grid-cols-2 gap-5">
                 <div><label className={labelCls}>Full Name <span className="text-red-500">*</span></label>
@@ -335,7 +335,7 @@ export default function FranchisePlansPage() {
           {/* ── BUSINESS ── */}
           {step === "business" && (
             <motion.div key="business" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.25}}
-              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-8 space-y-6">
+              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-4 sm:p-8 space-y-6">
               <div><h2 className="text-2xl font-extrabold text-[#1A1A1A] mb-1">Business Information</h2>
                 <p className="text-[#6B7280] text-sm">Details about your institute or centre.</p></div>
               <div><label className={labelCls}>Institute / Centre Name <span className="text-red-500">*</span></label>
@@ -357,7 +357,7 @@ export default function FranchisePlansPage() {
               <div><label className={labelCls}>Full Address <span className="text-red-500">*</span></label>
                 <div className="relative"><FiMapPin className="absolute left-4 top-4 w-4 h-4 text-[#9CA3AF]"/>
                   <textarea value={address} onChange={e=>setAddress(e.target.value)} rows={2} placeholder="Street, Area, Landmark" className={`${inputCls} pl-11 resize-none`}/></div></div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div><label className={labelCls}>City <span className="text-red-500">*</span></label>
                   <input type="text" value={city} onChange={e=>setCity(e.target.value)} placeholder="Mumbai" className={inputCls}/></div>
                 <div><label className={labelCls}>State <span className="text-red-500">*</span></label>
@@ -374,8 +374,8 @@ export default function FranchisePlansPage() {
           {/* ── DOCUMENTS ── */}
           {step === "documents" && (
             <motion.div key="documents" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.25}}
-              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-8">
-              <h2 className="text-2xl font-extrabold text-[#1A1A1A] mb-1">KYC Documents</h2>
+              className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-4 sm:p-8">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mb-1">KYC Documents</h2>
               <p className="text-[#6B7280] text-sm mb-8">Upload required documents. Accepted: JPG, PNG, PDF (max 5MB each).</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {docList.map(doc => {
@@ -436,8 +436,8 @@ export default function FranchisePlansPage() {
           {/* ── REVIEW ── */}
           {step === "review" && selectedPlan && (
             <motion.div key="review" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} transition={{duration:0.25}} className="space-y-6">
-              <div className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-8">
-                <h2 className="text-2xl font-extrabold text-[#1A1A1A] mb-6">Review Your Application</h2>
+              <div className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-4 sm:p-8">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#1A1A1A] mb-6">Review Your Application</h2>
                 <div className="grid sm:grid-cols-2 gap-4 text-sm mb-6">
                   {[["Full Name",fullName],["Email",email],["Phone",phone],["Institute",instituteName],["Business Type",businessType],["City",city],["State",stateName],["Pincode",pincode]].map(([k,v])=>(
                     <div key={k} className="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E5E7EB]">
@@ -462,7 +462,7 @@ export default function FranchisePlansPage() {
                   </div>
                 )}
                 {/* Plan summary */}
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-[#EEF2F7] to-[#F8FAFC] border border-[#0056b3]/15 flex items-center justify-between">
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#EEF2F7] to-[#F8FAFC] border border-[#0056b3]/15 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs text-[#6B7280] mb-1">Selected Plan</p>
                     <p className="text-xl font-extrabold text-[#1A1A1A]">{selectedPlan.name}</p>
@@ -479,7 +479,7 @@ export default function FranchisePlansPage() {
                   </div>
                 )}
                 <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} onClick={handleSubmit} disabled={submitting}
-                  className="w-full mt-6 py-4 rounded-2xl bg-[#F39C12] text-white font-bold text-lg hover:bg-[#D68910] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl">
+                  className="w-full mt-6 py-4 px-4 rounded-2xl bg-[#F39C12] text-white font-bold text-base sm:text-lg hover:bg-[#D68910] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl text-center leading-snug">
                   <FiAward className="w-5 h-5"/> Submit Application &amp; Pay ₹{selectedPlan.price.toLocaleString("en-IN")}
                 </motion.button>
                 <p className="text-center text-xs text-[#9CA3AF] mt-3">Secured by Cashfree Payments · 256-bit SSL encryption</p>
@@ -505,17 +505,17 @@ export default function FranchisePlansPage() {
 
         {/* ── Navigation footer (form steps) ── */}
         {isFormStep && step !== "review" && step !== "processing" && (
-          <div className="flex gap-4 mt-8">
-            <button onClick={goBack} className="flex items-center gap-2 px-6 py-3.5 rounded-2xl border-2 border-[#E5E7EB] text-[#374151] font-semibold hover:bg-[#F8FAFC] transition-all">
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <button onClick={goBack} className="flex w-full items-center justify-center gap-2 px-6 py-3.5 rounded-2xl border-2 border-[#E5E7EB] text-[#374151] font-semibold hover:bg-[#F8FAFC] transition-all sm:w-auto">
               <FiArrowLeft className="w-4 h-4"/> Back
             </button>
             {error && (
-              <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm">
+              <div className="flex w-full items-start gap-2 px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm sm:flex-1">
                 <FiAlertCircle className="w-4 h-4 flex-shrink-0"/>{error}
               </div>
             )}
             <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}} onClick={goNext}
-              className="ml-auto flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0056b3] text-white font-bold hover:bg-[#003366] transition-all shadow-lg">
+              className="flex w-full items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-[#0056b3] text-white font-bold hover:bg-[#003366] transition-all shadow-lg sm:ml-auto sm:w-auto">
               Continue <FiArrowRight className="w-4 h-4"/>
             </motion.button>
           </div>

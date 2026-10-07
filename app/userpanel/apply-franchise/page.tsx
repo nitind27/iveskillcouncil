@@ -143,7 +143,7 @@ export default function ApplyFranchisePage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4 py-16">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-[#E5E7EB] p-10 text-center">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-[#E5E7EB] p-6 sm:p-10 text-center">
           <div className="w-20 h-20 rounded-full bg-[#A8C63A]/15 flex items-center justify-center mx-auto mb-6">
             <FiCheckCircle className="w-10 h-10 text-[#A8C63A]" />
           </div>
@@ -163,19 +163,19 @@ export default function ApplyFranchisePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero */}
-      <div className="relative bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] py-14 px-4 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#0056b3] via-[#003366] to-[#002244] py-10 px-4 overflow-hidden sm:py-14">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(168,198,58,0.12),transparent)]" />
         <div className="absolute -bottom-1 left-0 right-0 h-10 bg-[#F8FAFC]" style={{ clipPath: "ellipse(55% 100% at 50% 100%)" }} />
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto text-center relative">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 border border-white/20 text-white text-sm font-semibold uppercase tracking-wider mb-4">
             <FiBriefcase className="w-4 h-4 text-[#A8C63A]" /> Franchise Application
           </span>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Apply for a Franchise</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2">Apply for a Franchise</h1>
           <p className="text-white/70">Fill in your details and upload KYC documents. We&apos;ll review and get back to you.</p>
         </motion.div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* Step indicator */}
         <div className="flex items-center justify-between mb-10 relative">
           <div className="absolute top-4 left-0 right-0 h-0.5 bg-[#E5E7EB] -z-10" />
@@ -201,7 +201,7 @@ export default function ApplyFranchisePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25 }}
-            className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-8"
+            className="bg-white rounded-3xl border border-[#E5E7EB] shadow-lg p-4 sm:p-8"
           >
             {/* ── STEP 0: Personal Info ── */}
             {step === 0 && (
@@ -242,7 +242,7 @@ export default function ApplyFranchisePage() {
                 </div>
                 <div>
                   <label className={labelCls}>Business Type <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {[{ v: "INDIVIDUAL", l: "Individual / Proprietor" }, { v: "ENTITY", l: "Registered Entity (Pvt/LLP/Trust)" }].map(({ v, l }) => (
                       <button key={v} type="button" onClick={() => setBusinessType(v)}
                         className={`p-4 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${businessType === v ? "border-[#0056b3] bg-[#0056b3]/05 text-[#0056b3]" : "border-[#E5E7EB] text-[#374151] hover:border-[#0056b3]/40"}`}>

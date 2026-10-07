@@ -71,7 +71,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
             <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-ive-saffron/20 blur-[100px]" aria-hidden />
             <div className="up-tricolor absolute inset-x-0 top-0 z-10 h-[3px]" aria-hidden />
 
-            <div className="relative grid lg:grid-cols-[0.95fr_1.35fr_0.8fr]">
+            <div className="relative grid lg:grid-cols-[0.9fr_1.3fr_0.85fr]">
               <div className="group relative h-52 overflow-hidden sm:h-64 lg:h-auto lg:[clip-path:polygon(0_0,100%_0,86%_100%,0_100%)]">
                 <img
                   src={BANNER_IMAGE}
@@ -126,7 +126,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
           {/* Featured branch card */}
           {highlight && (
             <Reveal delay={0.05} className="mt-8 overflow-hidden rounded-[1.75rem] border border-ive-line bg-white shadow-[var(--up-card-shadow)] sm:mt-10">
-              <div className="grid lg:grid-cols-[1fr_1.15fr_1fr]">
+              <div className="grid md:grid-cols-2 lg:grid-cols-[1fr_1.15fr_1fr]">
                 <div className="group relative min-h-[220px] overflow-hidden bg-ive-mist">
                   <img
                     src={highlightSrc}
@@ -190,7 +190,7 @@ export default function FranchiseSection({ config }: FranchiseSectionProps) {
                   </div>
                 </div>
 
-                <div className="relative min-h-[240px] border-t border-ive-line bg-ive-mist lg:border-l lg:border-t-0">
+                <div className="relative min-h-[220px] border-t border-ive-line bg-ive-mist md:col-span-2 md:min-h-[280px] lg:col-span-1 lg:min-h-0 lg:border-l lg:border-t-0">
                   {mapQuery ? (
                     <iframe
                       title={`Map showing ${highlight.name}`}

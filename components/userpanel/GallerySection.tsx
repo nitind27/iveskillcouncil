@@ -271,7 +271,7 @@ export default function GallerySection({ config }: GallerySectionProps) {
             <FiImage className="h-3.5 w-3.5 text-ive-saffron" />
             Moments &amp; Achievements
           </span>
-          <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">{gallery.sectionTitle}</h2>
+          <h2 className="mt-4 text-[1.65rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">{gallery.sectionTitle}</h2>
           <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
             Awards, events and proud moments — a glimpse of our institute&apos;s journey.
           </p>

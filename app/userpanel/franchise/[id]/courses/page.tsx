@@ -150,7 +150,7 @@ export default function FranchiseCoursesPage() {
                 visible: { transition: { staggerChildren: 0.06 } },
                 hidden: {},
               }}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3"
             >
               {courses.map((course, i) => (
                 <motion.article

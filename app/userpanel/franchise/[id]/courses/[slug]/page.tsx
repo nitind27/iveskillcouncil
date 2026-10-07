@@ -101,7 +101,7 @@ export default function FranchiseCourseDetailPage() {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -134,12 +134,12 @@ export default function FranchiseCourseDetailPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent md:bg-gradient-to-r md:from-transparent md:to-black/30" />
             </div>
-            <div className="md:col-span-3 p-6 md:p-10 flex flex-col justify-center">
+            <div className="md:col-span-3 p-4 sm:p-6 md:p-10 flex flex-col justify-center">
               <span className="inline-flex items-center gap-2 text-[var(--up-accent)] text-sm font-medium mb-2">
                 <FiMapPin className="w-4 h-4" />
                 {course.franchise.name}
               </span>
-              <h1 className="text-2xl md:text-4xl font-bold text-[var(--up-text)] mb-4">
+              <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-[var(--up-text)] mb-4 break-words">
                 {course.title}
               </h1>
               <p className="text-[var(--up-text-muted)] mb-6">
@@ -153,13 +153,13 @@ export default function FranchiseCourseDetailPage() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                 <motion.button
                   type="button"
                   onClick={handleBook}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-[var(--up-accent)] text-white font-bold shadow-lg hover:bg-[var(--up-accent-hover)] transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[var(--up-accent)] text-white font-bold shadow-lg hover:bg-[var(--up-accent-hover)] transition-colors sm:w-auto"
                 >
                   <FiShoppingCart className="w-5 h-5" />
                   Book Now
@@ -169,7 +169,7 @@ export default function FranchiseCourseDetailPage() {
                   onClick={handleEnquire}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-2 px-6 py-4 rounded-xl border-2 border-[var(--up-border)] bg-[var(--up-bg-card)] text-[var(--up-text)] font-bold hover:border-[var(--up-accent)]/50 transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 border-[var(--up-border)] bg-[var(--up-bg-card)] text-[var(--up-text)] font-bold hover:border-[var(--up-accent)]/50 transition-colors sm:w-auto"
                 >
                   <FiSend className="w-5 h-5" />
                   Enquire Now

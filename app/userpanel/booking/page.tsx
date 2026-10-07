@@ -260,7 +260,7 @@ function BookingContent() {
           >
             <div className="overflow-hidden rounded-[1.4rem] border border-ive-line bg-white shadow-[0_18px_40px_-28px_rgba(6,27,54,0.4)]">
               <div className="h-1 bg-gradient-to-r from-ive-saffron via-ive-royal to-ive-emerald" aria-hidden />
-              <div className="p-6 md:p-8">
+              <div className="p-4 sm:p-6 md:p-8">
               <h2 className="mb-2 text-xl font-extrabold text-ive-navy">Enquire now</h2>
               <p className="mb-6 text-sm text-ive-slate">
                 Share your details and address. We’ll get back to you for the selected course(s).

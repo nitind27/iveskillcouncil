@@ -66,7 +66,7 @@ export default function CTAStrip() {
         </div>
 
         <div className="text-center lg:text-left">
-          <h2 className="text-[1.9rem] font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
+          <h2 className="text-[1.65rem] font-extrabold leading-tight tracking-tight text-white sm:text-4xl">
             Start Your <span className="text-ive-saffron">Learning Journey</span>
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-white/70 lg:mx-0">
@@ -99,7 +99,7 @@ export default function CTAStrip() {
               </span>
             </motion.div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)] sm:flex-row">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)] md:flex-row">
               <label htmlFor="cta-email" className="sr-only">Email address</label>
               <input
                 id="cta-email"
@@ -111,15 +111,15 @@ export default function CTAStrip() {
                 autoComplete="email"
                 className="min-w-0 flex-1 rounded-xl px-4 py-3 text-sm text-ive-ink placeholder:text-ive-slate/70 focus:outline-none focus:ring-2 focus:ring-ive-royal/20"
               />
-              <button type="submit" className={upButton("navy", "lg", "flex-shrink-0")}>
+              <button type="submit" className={upButton("navy", "lg", "w-full flex-shrink-0 md:w-auto")}>
                 Subscribe
                 <FiSend className="h-4 w-4" />
               </button>
             </form>
           )}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-            <Magnetic>
-              <Link href={up("/userpanel/courses")} className={upButton("primary", "lg")}>
+          <div className="mt-4 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">
+            <Magnetic className="w-full sm:w-auto">
+              <Link href={up("/userpanel/courses")} className={upButton("primary", "lg", "w-full sm:w-auto")}>
                 Apply Now
                 <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
               </Link>

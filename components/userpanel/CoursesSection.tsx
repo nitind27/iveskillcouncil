@@ -45,7 +45,7 @@ function CourseCard({ course, index, href }: { course: CourseItem; index: number
       viewport={VIEWPORT}
       transition={{ duration: 0.6, delay: reduce ? 0 : index * 0.08, ease: EASE_OUT }}
       whileHover={reduce ? undefined : { y: -8, scale: 1.015 }}
-      className="group flex w-[82%] flex-shrink-0 snap-start flex-col overflow-hidden rounded-[1.4rem] border border-ive-line bg-white p-2.5 shadow-[var(--up-card-shadow)] transition-[box-shadow,border-color] duration-500 hover:border-ive-royal/30 hover:shadow-[0_28px_60px_-28px_rgba(18,78,150,0.45)] sm:w-[46%] lg:w-auto"
+      className="group flex w-[86%] flex-shrink-0 snap-start flex-col overflow-hidden rounded-[1.25rem] border border-ive-line bg-white p-2.5 shadow-[var(--up-card-shadow)] transition-[box-shadow,border-color] duration-500 hover:border-ive-royal/30 hover:shadow-[0_28px_60px_-28px_rgba(18,78,150,0.45)] sm:w-[47%] md:w-auto md:rounded-[1.4rem]"
     >
       <Link href={href} tabIndex={-1} aria-hidden className="relative block aspect-[16/11] overflow-hidden rounded-2xl bg-ive-mist">
         <img
@@ -129,7 +129,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
               <FiBookOpen className="h-3.5 w-3.5 text-ive-saffron" />
               Our Courses
             </span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+            <h2 className="mt-4 text-[1.65rem] font-extrabold tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
               {courses.sectionTitle || "Featured Courses"}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-ive-slate">
@@ -144,7 +144,7 @@ export default function CoursesSection({ config }: CoursesSectionProps) {
           </div>
         </Reveal>
 
-        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 md:pb-0 xl:grid-cols-4 xl:gap-6 [&::-webkit-scrollbar]:hidden">
           {items.map((course, i) => (
             <CourseCard key={course.id} course={course} index={i} href={up(`/userpanel/courses/${getSlug(course)}`)} />
           ))}

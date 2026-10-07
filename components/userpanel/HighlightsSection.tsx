@@ -135,7 +135,7 @@ export default function HighlightsSection({ config }: { config: UserPanelConfig 
             }}
             className="relative rounded-[1.75rem] border border-ive-line bg-ive-mist p-2 shadow-[0_30px_80px_-35px_rgba(6,27,54,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-ive-saffron sm:p-3"
           >
-            <div className="relative aspect-[8/3] w-full overflow-hidden rounded-[1.25rem] bg-ive-line">
+            <div className="relative aspect-[3/1] w-full overflow-hidden rounded-[1.1rem] bg-[#E7EEF6] sm:aspect-[8/3] sm:rounded-[1.25rem]">
               <AnimatePresence initial={false} custom={direction}>
                 <motion.img
                   key={`${index}-${src}`}
@@ -149,7 +149,7 @@ export default function HighlightsSection({ config }: { config: UserPanelConfig 
                   decoding="async"
                   draggable={false}
                   onError={() => markFailed(src)}
-                  className="absolute inset-0 h-full w-full select-none object-cover object-center"
+                  className="absolute inset-0 h-full w-full select-none object-contain object-center"
                 />
               </AnimatePresence>
               {images.length > 1 && <img src={nextSrc} alt="" className="hidden" aria-hidden loading="lazy" onError={() => markFailed(nextSrc)} />}

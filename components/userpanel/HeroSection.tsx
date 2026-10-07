@@ -54,7 +54,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
     <button
       type="button"
       onClick={scrollToHighlights}
-      className="group flex items-center gap-3.5 rounded-2xl border border-white/70 bg-white/85 py-2.5 pl-2.5 pr-5 text-left shadow-[0_20px_50px_-20px_rgba(6,27,54,0.45)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
+      className="group flex w-full max-w-sm items-center gap-3.5 rounded-2xl border border-white/70 bg-white/85 py-2.5 pl-2.5 pr-4 text-left shadow-[0_20px_50px_-20px_rgba(6,27,54,0.45)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-white sm:w-auto sm:pr-5"
     >
       <span className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-ive-saffron text-white shadow-[0_10px_24px_-8px_rgba(255,133,0,0.8)]">
         <span className="absolute inset-0 animate-ping rounded-full bg-ive-saffron/40 motion-reduce:animate-none" aria-hidden />
@@ -108,12 +108,12 @@ export default function HeroSection({ config }: HeroSectionProps) {
       <span className="up-float pointer-events-none absolute left-[46%] top-28 hidden h-16 w-16 rounded-full border-2 border-dashed border-ive-saffron/40 lg:block" aria-hidden />
       <span className="up-float pointer-events-none absolute bottom-48 left-[8%] hidden h-3 w-3 rounded-full bg-ive-emerald/60 lg:block [animation-delay:-3s]" aria-hidden />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-36 pt-10 sm:px-6 sm:pt-14 lg:min-h-[640px] lg:grid-cols-12 lg:px-8 lg:pb-44 lg:pt-16">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 pb-16 pt-8 sm:gap-10 sm:px-6 sm:pb-20 sm:pt-12 lg:min-h-[640px] lg:grid-cols-12 lg:px-8 lg:pb-44 lg:pt-16">
         <motion.div style={{ y: contentY }} className="lg:col-span-6 xl:col-span-6">
           <motion.div variants={container} initial="hidden" animate="show">
             <motion.span
               variants={item}
-              className="inline-flex items-center gap-2 rounded-full border border-ive-royal/15 bg-white/80 py-1 pl-1 pr-3.5 text-xs font-semibold text-ive-royal shadow-sm backdrop-blur"
+              className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-ive-royal/15 bg-white/80 py-1 pl-1 pr-3.5 text-left text-xs font-semibold leading-snug text-ive-royal shadow-sm backdrop-blur"
             >
               <span className="rounded-full bg-ive-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                 {COUNCIL.shortName}
@@ -123,7 +123,7 @@ export default function HeroSection({ config }: HeroSectionProps) {
 
             <motion.h1
               variants={item}
-              className="mt-6 text-[2.35rem] font-extrabold leading-[1.08] tracking-tight text-ive-navy sm:text-5xl lg:text-[3.6rem]"
+              className="mt-5 text-[1.85rem] font-extrabold leading-[1.12] tracking-tight text-ive-navy min-[400px]:text-[2.15rem] sm:mt-6 sm:text-5xl lg:text-[3.35rem] xl:text-[3.6rem]"
             >
               Empowering Skills,
               <br />
@@ -142,14 +142,14 @@ export default function HeroSection({ config }: HeroSectionProps) {
               </motion.p>
             )}
 
-            <motion.div variants={item} className="mt-8 flex flex-wrap gap-3">
-              <Magnetic>
-                <Link href={up(heroCtaHref(hero?.ctaPrimary?.href || "/userpanel/courses"))} className={upButton("primary", "lg", "px-7")}>
+            <motion.div variants={item} className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
+              <Magnetic className="w-full sm:w-auto">
+                <Link href={up(heroCtaHref(hero?.ctaPrimary?.href || "/userpanel/courses"))} className={upButton("primary", "lg", "w-full px-7 sm:w-auto")}>
                   {hero?.ctaPrimary?.label || "View Courses"}
                   <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
                 </Link>
               </Magnetic>
-              <Link href={up(heroCtaHref(hero?.ctaSecondary?.href || "/userpanel#offers"))} className={upButton("outline", "lg", "px-7")}>
+              <Link href={up(heroCtaHref(hero?.ctaSecondary?.href || "/userpanel#offers"))} className={upButton("outline", "lg", "w-full px-7 sm:w-auto")}>
                 {hero?.ctaSecondary?.label || "Explore Offers"}
               </Link>
             </motion.div>
@@ -214,10 +214,10 @@ export default function HeroSection({ config }: HeroSectionProps) {
           transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT }}
           className="relative lg:hidden"
         >
-          <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem] border-4 border-white shadow-[0_30px_70px_-30px_rgba(6,27,54,0.5)]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.35rem] border-4 border-white shadow-[0_30px_70px_-30px_rgba(6,27,54,0.5)] sm:aspect-[16/10] sm:rounded-[1.75rem]">
             <img src={HERO_IMAGE} alt={`${config.seo.instituteName} skill training in ${config.seo.city}, ${config.seo.district}`} loading="eager" decoding="async" className="h-full w-full object-cover object-[70%_center]" />
           </div>
-          <div className="absolute -bottom-6 left-4 right-4 flex justify-center sm:justify-start">{journeyCard}</div>
+          <div className="mt-4 flex justify-center sm:justify-start">{journeyCard}</div>
         </motion.div>
       </div>
     </section>

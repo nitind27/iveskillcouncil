@@ -96,7 +96,7 @@ function Collage({ enrollments, founderName, founderRole }: { enrollments: numbe
       <div className="up-dot-pattern pointer-events-none absolute -left-6 -top-6 h-40 w-40 rounded-3xl" aria-hidden />
       <div className="pointer-events-none absolute -bottom-6 -right-6 h-48 w-48 rounded-full bg-ive-saffron/10 blur-2xl" aria-hidden />
 
-      <div className="relative grid h-[440px] grid-cols-12 grid-rows-12 sm:h-[540px]">
+      <div className="relative grid h-[340px] grid-cols-12 grid-rows-12 min-[400px]:h-[400px] sm:h-[500px] lg:h-[540px]">
         <motion.div
           whileHover={reduce ? undefined : { scale: 1.015 }}
           className={cn(frame, "relative z-10 col-span-7 col-start-1 row-span-11 row-start-2")}
@@ -121,7 +121,7 @@ function Collage({ enrollments, founderName, founderRole }: { enrollments: numbe
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: 0.25, duration: 0.6 }}
-        className="up-float absolute -left-3 top-[18%] z-40 flex max-w-[190px] items-start gap-2.5 rounded-2xl border border-ive-line bg-white p-3 shadow-xl sm:-left-6"
+        className="up-float absolute left-1 top-[6%] z-40 flex max-w-[min(52%,168px)] items-start gap-2 rounded-2xl border border-ive-line bg-white p-2.5 shadow-xl sm:-left-4 sm:top-[18%] sm:max-w-[190px] sm:gap-2.5 sm:p-3"
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-ive-saffron text-white">
           <FaGraduationCap className="h-5 w-5" />
@@ -138,7 +138,7 @@ function Collage({ enrollments, founderName, founderRole }: { enrollments: numbe
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4, duration: 0.6 }}
-          className="absolute -bottom-4 left-6 z-40 flex items-center gap-3 rounded-2xl bg-ive-navy px-4 py-3 text-white shadow-xl"
+          className="absolute bottom-1 left-2 z-40 flex items-center gap-2.5 rounded-2xl bg-ive-navy px-3 py-2.5 text-white shadow-xl sm:-bottom-4 sm:left-6 sm:gap-3 sm:px-4 sm:py-3"
         >
           <FiUsers className="h-5 w-5 text-ive-saffron" />
           <span>
@@ -181,9 +181,9 @@ export default function AboutSection({ config }: AboutSectionProps) {
   const enrollments = config.stats?.find((s) => s.id === "enrollments")?.value ?? 0;
 
   return (
-    <section id="about" className="relative isolate overflow-hidden bg-white px-4 pb-24 pt-20 sm:px-6 sm:pt-28 lg:px-8">
+    <section id="about" className="relative isolate overflow-x-clip bg-white px-4 pb-16 pt-16 sm:overflow-hidden sm:px-6 sm:pb-24 sm:pt-24 lg:px-8">
       <FlagWave rotate={9} opacity={0.09} className="-right-48 bottom-6 w-[560px] sm:w-[720px] lg:-right-64 lg:w-[880px]" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-14 xl:gap-20">
         <Reveal x={-30}>
           <Collage enrollments={enrollments} founderName={config.seo.founderName} founderRole={config.seo.founderRole} />
         </Reveal>
@@ -194,7 +194,7 @@ export default function AboutSection({ config }: AboutSectionProps) {
               <span className="h-1.5 w-1.5 rounded-full bg-ive-saffron" />
               About {COUNCIL.shortName}
             </span>
-            <h2 className="mt-4 text-[1.9rem] font-extrabold leading-[1.15] tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
+            <h2 className="mt-4 text-[1.65rem] font-extrabold leading-[1.15] tracking-tight text-ive-navy sm:text-4xl lg:text-[2.6rem]">
               Institute of Vocational Education &amp; <span className="text-ive-royal">Skill Development Council</span>
             </h2>
             <div className="mt-5 flex items-center gap-1.5" aria-hidden>
@@ -205,13 +205,13 @@ export default function AboutSection({ config }: AboutSectionProps) {
             <p className="mt-5 text-base leading-relaxed text-ive-slate md:text-[17px]">{about.description}</p>
           </Reveal>
 
-          <ul className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <ul className="mt-8 grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
             {features.map((f, i) => (
               <Reveal
                 as="li"
                 key={f.label}
                 delay={0.06 + i * 0.06}
-                className="group rounded-2xl border border-ive-line bg-white p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)]"
+                className="group rounded-2xl border border-ive-line bg-white p-3 text-center transition-all duration-300 hover:-translate-y-1 hover:border-ive-royal/25 hover:shadow-[var(--up-card-shadow-hover)] sm:p-4"
               >
                 <span className={cn("mx-auto flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110", f.color)}>
                   <f.icon className="h-5 w-5" />
@@ -222,8 +222,8 @@ export default function AboutSection({ config }: AboutSectionProps) {
             ))}
           </ul>
 
-          <Reveal delay={0.1} className="mt-8 flex flex-wrap gap-3">
-            <Link href={up(aboutButtonHref(about.buttonHref))} className={upButton("primary", "lg")}>
+          <Reveal delay={0.1} className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link href={up(aboutButtonHref(about.buttonHref))} className={upButton("primary", "lg", "w-full sm:w-auto")}>
               {about.buttonLabel}
               <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
             </Link>
@@ -232,7 +232,7 @@ export default function AboutSection({ config }: AboutSectionProps) {
               onClick={() => setMissionOpen((o) => !o)}
               aria-expanded={missionOpen}
               aria-controls="about-mission"
-              className={upButton("outline", "lg")}
+              className={upButton("outline", "lg", "w-full sm:w-auto")}
             >
               Our Mission
               <FiChevronDown className={cn("h-4 w-4 transition-transform duration-300", missionOpen && "rotate-180")} />

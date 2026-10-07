@@ -200,21 +200,21 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
   return (
     <>
       <header
-        className="fixed inset-x-0 top-0 z-[100] isolate transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        className="fixed inset-x-0 top-0 z-[100] isolate pt-[env(safe-area-inset-top,0px)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
         style={{ transform: scrolled ? "translateY(calc(-1 * var(--up-topbar-height)))" : "translateY(0)" }}
       >
         {/* Official info bar */}
         <div className="relative h-[var(--up-topbar-height)] border-b border-ive-line bg-white text-ive-slate">
           <div className="up-tricolor absolute inset-x-0 top-0 h-[2px]" aria-hidden />
-          <div className="mx-auto flex h-full max-w-7xl items-center gap-5 px-4 text-[11.5px] font-medium sm:px-6 lg:px-8">
-            <div className="flex min-w-0 flex-shrink-0 items-center gap-4">
-              <a href={`mailto:${COUNCIL.email}`} className="hidden items-center gap-1.5 transition-colors hover:text-ive-navy md:inline-flex">
-                <FiMail className="h-3.5 w-3.5 text-ive-saffron" />
-                {COUNCIL.email}
+          <div className="mx-auto flex h-full max-w-7xl items-center gap-2 overflow-hidden px-3 text-[11px] font-medium sm:gap-4 sm:px-6 sm:text-[11.5px] lg:gap-5 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <a href={`mailto:${COUNCIL.email}`} className="hidden min-w-0 items-center gap-1.5 transition-colors hover:text-ive-navy md:inline-flex">
+                <FiMail className="h-3.5 w-3.5 shrink-0 text-ive-saffron" />
+                <span className="truncate">{COUNCIL.email}</span>
               </a>
-              <a href={`tel:${COUNCIL.helpline}`} className="inline-flex items-center gap-1.5 transition-colors hover:text-ive-navy">
-                <FiPhone className="h-3.5 w-3.5 text-ive-saffron" />
-                +91 {COUNCIL.helpline}
+              <a href={`tel:${COUNCIL.helpline}`} className="inline-flex min-w-0 items-center gap-1.5 transition-colors hover:text-ive-navy">
+                <FiPhone className="h-3.5 w-3.5 shrink-0 text-ive-saffron" />
+                <span className="truncate">+91 {COUNCIL.helpline}</span>
               </a>
               <span className="hidden items-center gap-1.5 xl:inline-flex" title="Corporate Identification Number">
                 <FiShield className="h-3.5 w-3.5 text-ive-emerald" />
@@ -234,9 +234,9 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             </div>
 
             <div className="ml-auto flex flex-shrink-0 items-center gap-1 sm:gap-2">
-              <Link href={dashboardOrLoginHref} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-semibold text-ive-navy transition-colors hover:bg-ive-mist">
-                <FiUserCheck className="h-3.5 w-3.5 text-ive-royal" />
-                {authLabel}
+              <Link href={dashboardOrLoginHref} className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 font-semibold text-ive-navy transition-colors hover:bg-ive-mist sm:px-2">
+                <FiUserCheck className="h-3.5 w-3.5 shrink-0 text-ive-royal" />
+                <span className="max-[420px]:sr-only">{authLabel}</span>
               </Link>
               {!loggedIn && (
                 <>
@@ -263,12 +263,12 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               : "bg-white shadow-[0_1px_0_rgba(6,27,54,0.06)]"
           )}
         >
-          <div className="mx-auto flex h-[var(--up-header-height)] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-            <Link href={basePath} className="group flex min-w-0 flex-shrink-0 items-center gap-3" aria-label={`${site.name} home`}>
+          <div className="mx-auto flex h-[var(--up-header-height)] max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6 lg:px-8">
+            <Link href={basePath} className="group flex min-w-0 items-center gap-2 sm:gap-3" aria-label={`${site.name} home`}>
               {logo("nav")}
               <span className="hidden min-w-0 border-l border-ive-line pl-3 sm:block">
-                <span className="block truncate text-[15px] font-extrabold leading-tight tracking-tight text-ive-navy">{site.name}</span>
-                <span className="mt-0.5 block max-w-[210px] text-[9.5px] font-bold uppercase leading-tight tracking-[0.06em] text-ive-slate">
+                <span className="block truncate text-[13px] font-extrabold leading-tight tracking-tight text-ive-navy md:text-[15px]">{site.name}</span>
+                <span className="mt-0.5 block max-w-[9.5rem] truncate text-[9px] font-bold uppercase leading-tight tracking-[0.06em] text-ive-slate md:max-w-[210px] md:text-[9.5px]">
                   {COUNCIL.fullName}
                 </span>
               </span>
@@ -383,8 +383,8 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
             </ul>
 
             <div className="flex flex-shrink-0 items-center gap-2">
-              <Magnetic className="hidden sm:inline-flex">
-                <Link href={up("/userpanel/courses")} className={upButton("primary", "md", "px-6")}>
+              <Magnetic className="hidden md:inline-flex">
+                <Link href={up("/userpanel/courses")} className={upButton("primary", "md", "px-4 lg:px-6")}>
                   Apply Now
                   <FiArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
                 </Link>
@@ -426,7 +426,7 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: reduce ? 0 : "100%", opacity: reduce ? 0 : 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 34 }}
-              className="fixed bottom-0 right-0 top-0 z-[201] flex w-[min(88vw,370px)] flex-col bg-white shadow-2xl"
+              className="fixed bottom-0 right-0 top-0 z-[201] flex w-[min(92vw,420px)] flex-col bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-2xl"
             >
               <div className="relative overflow-hidden bg-ive-navy px-5 pb-5 pt-4 text-white">
                 <div className="up-grid-pattern absolute inset-0 opacity-30" aria-hidden />
@@ -542,12 +542,12 @@ export default function UserPanelNavbar({ config, userName }: UserPanelNavbarPro
                 </div>
               </nav>
 
-              <div className="grid grid-cols-2 gap-2 border-t border-ive-line px-3 pb-5 pt-3">
-                <Link href={dashboardOrLoginHref} onClick={() => setMobileOpen(false)} className={upButton("outline", "md")}>
-                  <FiLogIn className="h-4 w-4" /> {loggedIn ? authLabel : "Login"}
+              <div className="grid grid-cols-2 gap-2 border-t border-ive-line px-3 pb-4 pt-3">
+                <Link href={dashboardOrLoginHref} onClick={() => setMobileOpen(false)} className={upButton("outline", "md", "px-2 text-[13px]")}>
+                  <FiLogIn className="h-4 w-4 shrink-0" /> {loggedIn ? authLabel : "Login"}
                 </Link>
-                <Link href={up("/userpanel/courses")} onClick={() => setMobileOpen(false)} className={upButton("primary", "md")}>
-                  Apply Now <FiArrowRight className="h-4 w-4" />
+                <Link href={up("/userpanel/courses")} onClick={() => setMobileOpen(false)} className={upButton("primary", "md", "px-2 text-[13px]")}>
+                  Apply Now <FiArrowRight className="h-4 w-4 shrink-0" />
                 </Link>
               </div>
             </motion.aside>

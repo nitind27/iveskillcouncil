@@ -218,7 +218,7 @@ export default function UserPanelFooter({ config }: UserPanelFooterProps) {
               </span>
             </div>
             <p className="max-w-sm text-sm leading-relaxed text-white/65">{footer.tagline}</p>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/75">
+            <p className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/75">
               <FiShield className="h-3.5 w-3.5 text-ive-emerald" />
               CIN: <span className="font-mono">{COUNCIL.cin}</span>
             </p>
