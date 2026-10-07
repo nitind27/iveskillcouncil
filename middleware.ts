@@ -134,7 +134,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/uploads/") ||
-    /\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|mp4|webm)$/i.test(pathname)
+    /\.(png|jpe?g|gif|webp|svg|ico|html?|txt|xml|pdf|webmanifest|woff2?|ttf|eot|mp4|webm)$/i.test(pathname)
   ) {
     return NextResponse.next();
   }
