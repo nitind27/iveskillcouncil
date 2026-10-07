@@ -1,18 +1,6 @@
-import type { Metadata } from "next";
-import UserDashboard from "@/components/userpanel/UsertDashboard";
-import { homeMetadata } from "@/lib/seo";
-import { loadSeoConfig } from "@/lib/seo-server";
-import { getRequestSiteUrl } from "@/lib/site-url";
+import { permanentRedirect } from "next/navigation";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const seo = await loadSeoConfig();
-  return homeMetadata(getRequestSiteUrl(), seo);
-}
-
+/** Public homepage is https://iveskillcouncil.org.in/ */
 export default function UserPanelHomePage() {
-  return (
-    <div>
-      <UserDashboard />
-    </div>
-  );
+  permanentRedirect("/");
 }

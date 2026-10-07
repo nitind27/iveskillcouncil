@@ -39,15 +39,15 @@ export interface SeoConfig {
 
 export const defaultSeo: SeoConfig = {
   enabled: true,
-  title: "Best Computer Course in Tapi | IVESDC Eklavya Institute Songadh",
+  title: "Best Computer Course in Tapi | IVESDC Eklavya Education Hub Songadh",
   description:
-    "Yashvant Prajapati, owner of IVESDC, runs Eklavya Institute in Songadh, Tapi. Join the best computer course in Songadh — practical computer training and skill development.",
+    "Yashvant Prajapati, owner of IVESDC, runs Eklavya Education Hub in Songadh, Tapi. Join the best computer course in Songadh — practical computer training and skill development.",
   keywords: [
     "IVESDC",
     "Yashvant Prajapati",
     "Yashvant Prajapati owner of IVESDC",
-    "Eklavya Institute Songadh",
-    "Eklavya Institute",
+    "Eklavya Education Hub Songadh",
+    "Eklavya Education Hub",
     "best computer course",
     "best computer course in Tapi",
     "best computer course in Songadh",
@@ -55,23 +55,23 @@ export const defaultSeo: SeoConfig = {
     "computer training Tapi",
     "vocational course Songadh",
     "યશવંત પ્રજાપતિ",
-    "એકલવ્ય ઇન્સ્ટિટ્યૂટ સોંગઢ",
+    "એકલવ્ય એજ્યુકેશન હબ સોનગઢ",
   ],
   headline: "Best Computer Course in Songadh, Tapi",
   intro:
-    "IVESDC — the Institute of Vocational Education & Skill Development Council — is led by Yashvant Prajapati, owner of IVESDC. At Eklavya Institute in Fort-Songadh, District Tapi, Gujarat, students join the best computer course in Tapi: classroom computer training, vocational courses, and skill programs built for jobs.",
+    "IVESDC — the Institute of Vocational Education & Skill Development Council — is led by Yashvant Prajapati, owner of IVESDC. At Eklavya Education Hub in Fort-Songadh, District Tapi, Gujarat, students join the best computer course in Tapi: classroom computer training, vocational courses, and skill programs built for jobs.",
   localLine:
-    "સોંગઢ, જિ. તાપીમાં બેસ્ટ કમ્પ્યુટર કોર્સ — યશવંત પ્રજાપતિ, ઓનર ઓફ IVESDC, એકલવ્ય ઇન્સ્ટિટ્યૂટ.",
+    "સોનગઢ, તાપી જિલ્લામાં શ્રેષ્ઠ કમ્પ્યુટર શિક્ષણ માટે — યશવંત પ્રજાપતિ, IVESDC અને એકલવ્ય એજ્યુકેશન હબના સંચાલક.",
   coursesTitle: "Best Computer Courses in Songadh, Tapi | IVESDC",
   coursesHeadline: "Best Computer Courses in Songadh, Tapi",
   coursesDescription:
-    "Computer courses at IVESDC Eklavya Institute, Songadh. Yashvant Prajapati's centre in Tapi for practical computer training and vocational skill programs.",
-  franchisesTitle: "IVESDC Centres | Eklavya Institute Songadh, Tapi",
+    "Computer courses at IVESDC Eklavya Education Hub, Songadh. Yashvant Prajapati's centre in Tapi for practical computer training and vocational skill programs.",
+  franchisesTitle: "IVESDC Centres | Eklavya Education Hub Songadh, Tapi",
   franchisesDescription:
-    "Find IVESDC training centres. Eklavya Institute, Songadh, Dist. Tapi — owned by Yashvant Prajapati — for computer courses and skill development.",
+    "Find IVESDC training centres. Eklavya Education Hub, Songadh, Dist. Tapi — owned by Yashvant Prajapati — for computer courses and skill development.",
   siteName: "IVESDC",
   organizationName: "Institute of Vocational Education & Skill Development Council",
-  instituteName: "Eklavya Institute",
+  instituteName: "Eklavya Education Hub",
   founderName: "Yashvant Prajapati",
   founderRole: "Owner & Managing Director",
   city: "Songadh",
@@ -158,7 +158,7 @@ function pageMetadata(
     description,
     keywords: seo.keywords,
     applicationName: seo.siteName,
-    authors: [{ name: seo.founderName, url: absoluteUrl(siteUrl, "/userpanel") }],
+    authors: [{ name: seo.founderName, url: absoluteUrl(siteUrl, "/") }],
     creator: seo.founderName,
     alternates: { canonical },
     robots: seo.enabled
@@ -187,7 +187,7 @@ export function brandMetadata(siteUrl: string, seo: SeoConfig): Metadata {
   const home = pageMetadata(
     siteUrl,
     seo,
-    "/userpanel",
+    "/",
     `${seo.siteName} | ${seo.instituteName}, ${seo.city}`,
     seo.description
   );
@@ -196,7 +196,7 @@ export function brandMetadata(siteUrl: string, seo: SeoConfig): Metadata {
 }
 
 export function homeMetadata(siteUrl: string, seo: SeoConfig): Metadata {
-  return pageMetadata(siteUrl, seo, "/userpanel", seo.title, seo.description);
+  return pageMetadata(siteUrl, seo, "/", seo.title, seo.description);
 }
 
 export function coursesMetadata(siteUrl: string, seo: SeoConfig): Metadata {
@@ -208,7 +208,7 @@ export function franchisesMetadata(siteUrl: string, seo: SeoConfig): Metadata {
 }
 
 export function organizationJsonLd(siteUrl: string, seo: SeoConfig): Record<string, unknown> {
-  const url = absoluteUrl(siteUrl, "/userpanel");
+  const url = absoluteUrl(siteUrl, "/");
   const logo = absoluteUrl(siteUrl, seo.ogImage);
   return {
     "@context": "https://schema.org",

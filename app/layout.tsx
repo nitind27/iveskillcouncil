@@ -34,9 +34,9 @@ const notoGujarati = Noto_Sans_Gujarati({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "IVESDC | Eklavya Institute, Songadh",
+  title: "Best Computer Course in Tapi | IVESDC Eklavya Education Hub Songadh",
   description:
-    "IVESDC (Eklavya Institute), Songadh, Tapi — computer courses and vocational skill development led by Yashvant Prajapati.",
+    "Yashvant Prajapati, owner of IVESDC, runs Eklavya Education Hub in Songadh, Tapi. Join the best computer course in Songadh — practical computer training and skill development.",
   applicationName: "IVESDC",
 };
 

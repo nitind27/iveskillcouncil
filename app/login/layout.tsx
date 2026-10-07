@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: { absolute: "Login | IVESDC" },
-  description: "Sign in to IVESDC — Eklavya Institute, Songadh.",
+  description: "Sign in to IVESDC — Eklavya Education Hub, Songadh.",
   robots: { index: false, follow: false },
 };
 

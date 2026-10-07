@@ -38,7 +38,6 @@ export default function UserDashboard() {
   return (
     <>
       <HeroSection config={config} userName={userName} />
-      <SeoSpotlight config={config} />
       <StatsSection config={config} />
       <NoticeBoard notices={config.notices} />
       <AboutSection config={config} />
@@ -48,6 +47,7 @@ export default function UserDashboard() {
       <OffersSection config={config} />
       <TestimonialsSection />
       <GallerySection config={config} />
+      <SeoSpotlight config={config} />
       <CTAStrip />
     </>
   );

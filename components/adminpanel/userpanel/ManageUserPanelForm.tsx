@@ -150,7 +150,7 @@ export default function ManageUserPanelForm() {
   const [noticeUploading, setNoticeUploading] = useState(false);
   const [noticeUploadError, setNoticeUploadError] = useState<string | null>(null);
   const [keywordText, setKeywordText] = useState(defaultConfig.seo.keywords.join("\n"));
-  const [previewHost, setPreviewHost] = useState("ivesdc.org");
+  const [previewHost, setPreviewHost] = useState("iveskillcouncil.org.in");
 
   useEffect(() => {
     fetch("/api/admin/userpanel-config")
@@ -1308,7 +1308,7 @@ export default function ManageUserPanelForm() {
 
               <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Google preview</p>
-                <p className="mt-2 text-xs text-[#4d5156]">{previewHost}/userpanel</p>
+                <p className="mt-2 text-xs text-[#4d5156]">https://{previewHost.replace(/^https?:\/\//, "")}</p>
                 <p className="mt-0.5 text-lg leading-snug text-[#1a0dab]">{config.seo.title || "Page title"}</p>
                 <p className="mt-1 text-sm leading-relaxed text-[#4d5156]">{config.seo.description || "Description"}</p>
               </div>
