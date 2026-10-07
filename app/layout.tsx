@@ -38,6 +38,9 @@ export const metadata: Metadata = {
   description:
     "Yashvant Prajapati, owner of IVESDC, runs Eklavya Education Hub in Songadh, Tapi. Join the best computer course in Songadh — practical computer training and skill development.",
   applicationName: "IVESDC",
+  verification: {
+    google: "sBvhwP4AiD0KQUF5R8x2uFFZSn_dajTcyUZ1HtqlWy4",
+  },
 };
 
 export default function RootLayout({
