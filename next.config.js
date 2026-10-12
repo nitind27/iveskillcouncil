@@ -15,13 +15,13 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'react-icons'],
     // Keep pdfkit outside webpack so Helvetica.afm resolves from node_modules
-    serverComponentsExternalPackages: ['pdfkit', 'fontkit', 'png-js', 'linebreak'],
+    serverComponentsExternalPackages: ['pdfkit', 'fontkit', 'png-js', 'linebreak', 'exceljs'],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = config.externals || [];
       if (Array.isArray(config.externals)) {
-        config.externals.push('pdfkit');
+        config.externals.push('pdfkit', 'exceljs');
       }
     }
     return config;

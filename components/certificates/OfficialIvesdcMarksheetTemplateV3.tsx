@@ -344,7 +344,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   const HOLOGRAM_MM = 23; /* hologram guide 23mm × 23mm */
   const stampSrc = data.stampUrl || "/certificates/stamp.png";
   const directorSigSrc = data.directorSignatureUrl || "/certificates/signature.png";
-  const rowH = Math.max(18, Math.round(17 * fontScale));
+  const baseRowH = Math.max(18, Math.round(17 * fontScale));
   const headerTitleFs = Math.max(17.5, Math.round((data.titleFontSize || 19) * fontScale * 10) / 10);
   const headerSubFs = Math.max(11.5, Math.round(headerTitleFs * 0.72));
   const marksHeadingFs = Math.max(18, Math.round(22 * fontScale));
@@ -381,7 +381,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
   const govFs = Math.max(8, Math.round(8.5 * fontScale * 10) / 10);
 
   const rawSubjects =
-    data.subjects && data.subjects.length > 0 ? data.subjects.slice(0, 8) : [...DEFAULT_SUBJECTS];
+    data.subjects && data.subjects.length > 0 ? [...data.subjects] : [...DEFAULT_SUBJECTS];
   const subjects = [...rawSubjects];
   while (subjects.length < 6) {
     subjects.push({
@@ -396,6 +396,12 @@ export default function OfficialIvesdcMarksheetTemplateV3({
       grade: "",
     });
   }
+  const namedSubjectCount = subjects.filter((s) => s.name?.trim()).length;
+  // Keep the marks table inside the A4 frame when a course has more than 8 papers.
+  const rowH =
+    namedSubjectCount > 8
+      ? Math.max(15, Math.floor((baseRowH * 8) / namedSubjectCount))
+      : baseRowH;
 
   const hasMarks = subjects.some(
     (s) => s.name && (s.totalObtained > 0 || s.marksTheory > 0 || (s.marksPractical || 0) > 0)
@@ -944,7 +950,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 const rowBg = idx % 2 === 0 ? C.rowAWash : C.rowBWash;
                 return (
                   <tr
-                    key={sub.code || idx}
+                    key={`${idx}-${sub.code || sub.name || "row"}`}
                     style={{
                       height: rowH,
                       backgroundColor: rowBg,

@@ -32,6 +32,8 @@ import {
   Trash2,
   Award,
   FileText,
+  Download,
+  ChevronDown,
 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { useAuth } from "@/contexts/AuthContext";
@@ -196,6 +198,8 @@ export default function StudentsPage() {
   const [certStudentId, setCertStudentId] = useState<string | null>(null);
   const [certTab, setCertTab] = useState<"vocational" | "marksheet">("vocational");
   const [photoPreview, setPhotoPreview] = useState<{ url: string; name: string } | null>(null);
+  const [exporting, setExporting] = useState<"filtered" | "all" | null>(null);
+  const [exportMenu, setExportMenu] = useState(false);
 
   const handleDelete = async (student: StudentItem) => {
     const res = await showDeleteConfirm(
@@ -227,6 +231,42 @@ export default function StudentsPage() {
       await showError("Error", "Failed to delete student. Please try again.");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const downloadStudents = async (scope: "filtered" | "all") => {
+    setExporting(scope);
+    setExportMenu(false);
+    try {
+      const params = new URLSearchParams();
+      params.set("scope", scope);
+      if (scope === "filtered") {
+        if (debouncedSearch) params.set("search", debouncedSearch);
+        if (franchiseId) params.set("franchiseId", franchiseId);
+        if (courseId) params.set("courseId", courseId);
+        if (statusFilter !== "ALL") params.set("status", statusFilter);
+      }
+      const response = await fetch(`/api/students/export?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const json = await response.json().catch(() => ({}));
+        await showError("Download failed", json.error || "Could not export students");
+        return;
+      }
+      const blob = await response.blob();
+      const match = response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/);
+      const filename = match?.[1] || `students-${scope}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      await showError("Download failed", "Could not export students. Please try again.");
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -322,6 +362,9 @@ export default function StudentsPage() {
   }, [page, pagination.totalPages]);
 
   const pendingFeesCount = items.filter((s) => s.pendingFee > 0).length;
+  const hasExportFilters = Boolean(
+    debouncedSearch || franchiseId || courseId || statusFilter !== "ALL"
+  );
 
   return (
     <div className="space-y-5 pb-8">
@@ -391,6 +434,59 @@ export default function StudentsPage() {
               <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
               Refresh
             </button>
+            <div className="relative">
+              <div className="inline-flex h-9 overflow-hidden rounded-lg border border-white/20 bg-white/10">
+                <button
+                  type="button"
+                  disabled={exporting !== null}
+                  onClick={() => downloadStudents(hasExportFilters ? "filtered" : "all")}
+                  className="inline-flex items-center gap-1.5 px-3 text-xs font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
+                >
+                  {exporting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  {hasExportFilters ? "Download filtered" : "Download Excel"}
+                </button>
+                {hasExportFilters && (
+                  <button
+                    type="button"
+                    disabled={exporting !== null}
+                    aria-label="More download options"
+                    aria-expanded={exportMenu}
+                    onClick={() => setExportMenu((open) => !open)}
+                    className="inline-flex w-8 items-center justify-center border-l border-white/20 text-white transition hover:bg-white/15 disabled:opacity-60"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {exportMenu && hasExportFilters && (
+                <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-lg border border-[#1E4A85]/15 bg-white py-1 text-slate-800 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => downloadStudents("filtered")}
+                    className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-[#1E4A85]/5"
+                  >
+                    Filtered list
+                    <span className="mt-0.5 block font-medium text-slate-500">
+                      Current search, status and course
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadStudents("all")}
+                    className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-[#1E4A85]/5"
+                  >
+                    All students
+                    <span className="mt-0.5 block font-medium text-slate-500">
+                      Ignore filters, include every course
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => setAddModalOpen(true)}
