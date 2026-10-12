@@ -20,8 +20,8 @@ type CourseBits = {
   durationMonths: number;
   durationValue: number | null;
   durationUnit: string | null;
-  level: string;
-  mode: string;
+  level: string | null;
+  mode: string | null;
   certificateType: string | null;
 };
 
@@ -457,12 +457,13 @@ export async function GET(request: NextRequest) {
     let courseIndex = 0;
     let courseFeeTotal = 0;
     for (const student of students) {
-      const rows = student.enrollments.map((row) => ({
-        course: row.course,
-        fee: money(row.totalFee),
-        status: row.status,
-        primary: student.courseId?.toString() === row.courseId.toString(),
-      }));
+      const rows: { course: CourseBits; fee: number; status: string; primary: boolean }[] =
+        student.enrollments.map((row) => ({
+          course: row.course,
+          fee: money(row.totalFee),
+          status: row.status,
+          primary: student.courseId?.toString() === row.courseId.toString(),
+        }));
       if (rows.length === 0 && student.course) {
         rows.push({ course: student.course, fee: money(student.totalFee), status: "ACTIVE", primary: true });
       }
@@ -475,8 +476,8 @@ export async function GET(request: NextRequest) {
             durationMonths: 0,
             durationValue: null,
             durationUnit: null,
-            level: "",
-            mode: "",
+            level: null,
+            mode: null,
             certificateType: null,
           },
           fee: 0,
