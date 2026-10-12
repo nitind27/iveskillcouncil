@@ -8,6 +8,7 @@ import React, { useId, type CSSProperties } from "react";
 import { Cinzel, Cormorant_Garamond, Libre_Baskerville, Montserrat, Source_Sans_3 } from "next/font/google";
 import type { CertificateDemoData } from "./demo/types";
 import CertificateQRCode from "./CertificateQRCode";
+import { publicVerifySite } from "@/lib/verify-url";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import PartnerLogos from "./PartnerLogos";
 
@@ -206,7 +207,7 @@ export default function OfficialIvesdcCertTemplate({
   const certNo = data.certificateNumber || data.serialNumber || "IVESDC/CERT/2025/000123";
   const enrollNo = data.registrationNumber || "4739846";
 
-  const verifySite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
+  const verifySite = publicVerifySite(data.verificationWebsite);
   const tagline = data.tagline || "Building a Skilled and Self-Reliant Nation";
   const accred1 = data.accreditationLine1 || "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,";
   const accred2 = data.accreditationLine2 || "Ministry of Corporate Affairs, Government of India";

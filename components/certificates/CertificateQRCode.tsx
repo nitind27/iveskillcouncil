@@ -2,15 +2,13 @@
 
 import React, { useEffect, useState, useMemo, type CSSProperties } from "react";
 import QRCode from "qrcode";
+import { VERIFY_ORIGIN } from "@/lib/verify-url";
 
 const sans: CSSProperties = {
   fontFamily: "Arial, Helvetica, -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
-/** Live site that serves /verify — every printed QR points here, wherever the document was printed from. */
-const VERIFY_ORIGIN = (process.env.NEXT_PUBLIC_VERIFY_URL || "https://iveskillcouncil.org.in")
-  .trim()
-  .replace(/\/+$/, "");
+/** Live site that serves /verify — every printed QR points here, including Eklavya prints. */
 
 /**
  * All-uppercase short link (`HTTPS://HOST/V/M/<enr>/<id>`) so the QR uses alphanumeric mode:
@@ -35,7 +33,7 @@ export interface CertificateQRCodeProps {
   certificateNo?: string;
   /** Student full name */
   studentName?: string;
-  /** Verification website domain without protocol (e.g. www.iveskillcouncil.edu.in) */
+  /** Kept for older templates. The QR always encodes https://iveskillcouncil.org.in. */
   verificationWebsite?: string;
   /** Size of the QR code square in px (default: 80 for marksheet, 58 for cert) */
   size?: number;

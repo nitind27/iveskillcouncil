@@ -4,6 +4,7 @@ import React, { type CSSProperties } from "react";
 import type { CertificateDemoData, MarksheetSubject } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import CertificateQRCode from "./CertificateQRCode";
+import { publicVerifySite } from "@/lib/verify-url";
 import { isDefaultStatementBanner } from "./StatementOfMarksBanner";
 
 interface Props {
@@ -126,7 +127,7 @@ export default function OfficialIvesdcMarksheetTemplateV2({
   const bannerSrc = isDefaultStatementBanner(data.customBannerUrl)
     ? EXACT_BANNER
     : `${data.customBannerUrl}${data.customBannerUrl!.includes("?") ? "&" : "?"}v=6`;
-  const verifyWebsite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
+  const verifyWebsite = publicVerifySite(data.verificationWebsite);
   const nsqfFont = Math.max(8.2, Math.round(8.8 * fontScale * 10) / 10);
   const rowH = Math.max(22, Math.round(28 * fontScale));
   /** Verify column = QR + hologram; keep under ~42% of content width */

@@ -2737,7 +2737,7 @@ export default function CertificateCustomizerDrawer({
                   enrollmentNo={activeData.registrationNumber || "4739846"}
                   certificateNo={activeData.certificateNumber || activeData.serialNumber}
                   studentName={activeData.studentName}
-                  verificationWebsite={activeData.verificationWebsite || "www.iveskillcouncil.edu.in"}
+                  verificationWebsite="https://iveskillcouncil.org.in"
                   size={Math.min(currentQrSize, 85)}
                   color="#0E2A54"
                   mode="card"
@@ -2749,7 +2749,7 @@ export default function CertificateCustomizerDrawer({
                 <p>
                   <strong className="text-slate-300">Target URL:</strong>{" "}
                   <span className="font-mono text-sky-400 break-all">
-                    {(process.env.NEXT_PUBLIC_VERIFY_URL || "https://iveskillcouncil.org.in").replace(/\/+$/, "")}/verify?type={isMarksheet ? "ms" : "cert"}&amp;enr={activeData.registrationNumber || "4739846"}
+                    https://iveskillcouncil.org.in/verify?type={isMarksheet ? "ms" : "cert"}&amp;enr={activeData.registrationNumber || "4739846"}
                   </span>
                 </p>
                 <p className="text-[9px] text-slate-500">
@@ -3647,7 +3647,7 @@ export default function CertificateCustomizerDrawer({
                 </label>
                 <input
                   type="text"
-                  value={activeData.verificationWebsite || "www.iveskillcouncil.edu.in"}
+                  value={activeData.verificationWebsite || "https://iveskillcouncil.org.in"}
                   onChange={(e) => onFieldChange("verificationWebsite", e.target.value)}
                   className="w-full rounded-lg border border-white/15 bg-slate-950/80 px-2 py-1.5 text-xs text-white outline-none focus:border-[#C4A35A]"
                 />

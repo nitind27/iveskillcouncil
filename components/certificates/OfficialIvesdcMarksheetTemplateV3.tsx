@@ -11,6 +11,7 @@ import { performanceLabelFromPercent } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import PartnerLogos from "./PartnerLogos";
 import CertificateQRCode from "./CertificateQRCode";
+import { publicVerifySite } from "@/lib/verify-url";
 
 /**
  * Typography roles (certificate):
@@ -362,7 +363,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
 
   const enrollNo = data.registrationNumber || data.barcodeNumber || "4739846";
   const certNo = data.certificateNumber || data.serialNumber || "00001";
-  const verifySite = data.verificationWebsite || "www.iveskillcouncil.edu.in";
+  const verifySite = publicVerifySite(data.verificationWebsite);
   const verifyEmail = data.verificationEmail || "official.iveskillcouncil@gmail.com";
   const tagline = data.tagline || "Building a Skilled and Self-Reliant Nation";
   const accred1 =

@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import type { CertificateDemoData, MarksheetSubject } from "./demo/types";
 import EnrollmentBarcode from "./EnrollmentBarcode";
 import CertificateQRCode from "./CertificateQRCode";
+import { publicVerifySite, VERIFY_ORIGIN } from "@/lib/verify-url";
 
 interface Props {
   data: CertificateDemoData;
@@ -64,7 +65,7 @@ Course: ${data.courseName}
 Total Marks: ${totalObtained}/${totalMax} (${displayPercent}%)
 Result: ${data.status || "PASS"} (Grade ${data.grade || "A+"})
 Date of Issue: ${data.issueDate}
-Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in"}/verify`;
+Verify Online: ${VERIFY_ORIGIN}/verify`;
 
     QRCode.toDataURL(verifyPayload, {
       width: 140,
@@ -682,7 +683,7 @@ Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in
                   enrollmentNo={data.registrationNumber || "4739846"}
                   certificateNo={data.certificateNumber || data.serialNumber || "IVESDC/MS/2025/000123"}
                   studentName={data.studentName}
-                  verificationWebsite={data.verificationWebsite || "www.iveskillcouncil.edu.in"}
+                  verificationWebsite={publicVerifySite(data.verificationWebsite)}
                   size={data.qrCodeSize || 80}
                   color="#000000"
                   mode="marksheet"
@@ -708,7 +709,7 @@ Verify Online: https://${data.verificationWebsite || "www.iveskillcouncil.edu.in
         {activeBorder !== "guilloche" && (
           <div className="shrink-0 -mx-3 mt-1 flex h-[24px] items-center justify-center bg-[#0E2A54] px-4">
             <span className="text-[10px] font-bold tracking-wide text-white" style={sans}>
-              Verify this Marksheet by Scan QR Code or Log on: {data.verificationWebsite || "www.iveskillcouncil.edu.in"} | Mail: {data.verificationEmail || "official.iveskillcouncil@gmail.com"}
+              Verify this Marksheet by Scan QR Code or Log on: {publicVerifySite(data.verificationWebsite)} | Mail: {data.verificationEmail || "official.iveskillcouncil@gmail.com"}
             </span>
           </div>
         )}

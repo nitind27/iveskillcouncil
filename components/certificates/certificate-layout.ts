@@ -17,7 +17,7 @@ export const CERT_STATIC = {
     "Office Address: 2nd Floor, Vimla Nivas, Near New Bank of Baroda, Junagam Main Road, Fort-Songadh. Under the General Administration Vibhait Department, Government of Gujarat Certificate according to Letter No.CRR-10-2007-120320, G.P. New Sachivalaya, Gandhinagar, Date: 13-08-2008.",
   signatory: "HEAD OF THE INSTITUTE (ATC) EXAM EXECUTIVE",
   affiliationsTitle: "GOVERNMENT RECOGNITIONS & AFFILIATIONS",
-  contact: "www.iveskillcouncil.edu.in  |  verify.iveskillcouncil@gmail.com  |  +91 9925222523",
+  contact: "https://iveskillcouncil.org.in  |  verify.iveskillcouncil@gmail.com  |  +91 9925222523",
   gradeSystem:
     "Grade System: A+ : Excellent (85% & Above)  |  A : Very Good (70% to 84%)  |  B : Good (55% to 69%)  |  C : Average (40% to 54%)",
   registeredOffice:
@@ -57,6 +57,6 @@ export function buildCertificateQrPayload(data: {
     `ATC: ${data.atcName}`,
     `Issue Date: ${data.issueDate}`,
     "verify.iveskillcouncil@gmail.com",
-    "www.iveskillcouncil.edu.in",
+    "https://iveskillcouncil.org.in",
   ].join("\n");
 }

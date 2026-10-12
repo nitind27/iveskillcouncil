@@ -266,7 +266,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     registeredOffice: "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
     govOrderText:
       "Under The General Administration Department Govt. of Gujarat vide it's Resolution GR\nNo. CRR/12/2007/120320/G5, Dt : 13-8-2008 by Sachivalay Gandhinagar",
-    verificationWebsite: "www.iveskillcouncil.edu.in",
+    verificationWebsite: "https://iveskillcouncil.org.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     gradeSystem: [
       { grade: "A+", label: "Excellent", range: "85% & Above" },
@@ -365,7 +365,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     accreditationLine3: "ISO 9001:2015 & ISO 21001:2018 Certified Organization",
     registeredOffice: "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
     govOrderText: "Under the General Adm Vahiwat Dept.\nGovt. of Gujarat Certificate According to\nLetter No. CRR - 10 - 2007 - 120520\nG.P. New Sachivalaya Gandhinagar\nDate : 13-8-2008",
-    verificationWebsite: "www.iveskillcouncil.edu.in",
+    verificationWebsite: "https://iveskillcouncil.org.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     gradeSystem: [
       { grade: "A+", label: "Excellent", range: "85% & Above" },
@@ -542,7 +542,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
       "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat - 394680",
     govOrderText:
       "Under The General Adm Vahivat Dept.\nGovt. of Gujarat Certificate According to\nLetter No. CRR - 10 - 2007 - 120320.\nG.P. New Sachivalaya Gandhinagar\ndate: 13-8-2008",
-    verificationWebsite: "www.iveskillcouncil.edu.in",
+    verificationWebsite: "https://iveskillcouncil.org.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     gradeSystem: [
       { grade: "A+", label: "Excellent", range: "85% & Above" },
@@ -724,7 +724,7 @@ export const SAMPLE_CERTIFICATE_PRESETS: Record<CertificateTypeId, CertificateDe
     accreditationLine3: "",
     registeredOffice:
       "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680",
-    verificationWebsite: "www.iveskillcouncil.edu.in",
+    verificationWebsite: "https://iveskillcouncil.org.in",
     verificationEmail: "official.iveskillcouncil@gmail.com",
     barcodeTextWords:
       "I V E S D C  TWO  FIVE  ZERO  FOUR  SEVEN  EIGHT  ONE",

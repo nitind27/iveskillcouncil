@@ -409,7 +409,7 @@ function LegacyMarksheetTemplate({ data }: { data: CertificateDemoData }) {
           </div>
 
           <p className="mt-1 text-center text-[6.5px] text-slate-400">
-            Any alteration or erasure renders this statement of marks invalid · www.iveskillcouncil.edu.in
+            Any alteration or erasure renders this statement of marks invalid · https://iveskillcouncil.org.in
           </p>
         </div>
       </div>
