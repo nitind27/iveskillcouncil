@@ -60,6 +60,8 @@ function SheetThumb({ kind, data, scale, id }: { kind: OfficialDocKind; data: Ce
 interface Props {
   /** Students to load; `null` keeps the preview closed. */
   studentIds: string[] | null;
+  /** Print this course for students who are enrolled in more than one. */
+  courseId?: string | null;
   onClose: () => void;
   choice?: DocChoice;
   onChoiceChange?: (choice: DocChoice) => void;
@@ -68,7 +70,14 @@ interface Props {
 }
 
 /** Full-screen preview of Certificate of Completion + Result 3 for one or many students, with A4 batch print. */
-export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, onChoiceChange, extraAction }: Props) {
+export function OfficialBatchPreview({
+  studentIds,
+  courseId,
+  onClose,
+  choice: choiceProp,
+  onChoiceChange,
+  extraAction,
+}: Props) {
   const [innerChoice, setInnerChoice] = useState<DocChoice>("both");
   const choice = choiceProp ?? innerChoice;
   const setChoice = (c: DocChoice) => {
@@ -110,7 +119,10 @@ export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, 
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ studentIds: idsKey.split(",") }),
+          body: JSON.stringify({
+            studentIds: idsKey.split(","),
+            ...(courseId ? { courseId } : {}),
+          }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || "Failed to load documents");
@@ -130,7 +142,7 @@ export function OfficialBatchPreview({ studentIds, onClose, choice: choiceProp, 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey]);
+  }, [idsKey, courseId]);
 
   if (!studentIds || !mounted) return <>{batch.node}</>;
 

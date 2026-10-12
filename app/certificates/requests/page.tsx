@@ -705,11 +705,13 @@ export default function CertificatesRequestsPage() {
         <>
           <StudentOfficialCertificatesModal
             studentId={printStudentId}
+            courseId={courseId || null}
             open={!!printStudentId}
             onClose={() => setPrintStudentId(null)}
           />
           <OfficialBatchPreview
             studentIds={batchPrintIds}
+            courseId={courseId || null}
             onClose={() => setBatchPrintIds(null)}
             extraAction={
               batchPrintCertIds.length > 0 ? (

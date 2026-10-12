@@ -46,23 +46,28 @@ export async function loadOfficialLayouts(): Promise<OfficialLayouts> {
   return SAMPLE_CERTIFICATE_PRESETS;
 }
 
+const certificateCourseSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  durationMonths: true,
+  durationValue: true,
+  durationUnit: true,
+  certificateSubject: true,
+  hasPractical: true,
+  practicalMarks: true,
+} satisfies Prisma.CourseSelect;
+
 const studentInclude = Prisma.validator<Prisma.StudentInclude>()({
   user: { select: { fullName: true } },
   franchise: {
     select: { id: true, name: true, slug: true, address: true, city: true, state: true, pincode: true },
   },
-  course: {
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      durationMonths: true,
-      durationValue: true,
-      durationUnit: true,
-      certificateSubject: true,
-      hasPractical: true,
-      practicalMarks: true,
-    },
+  course: { select: certificateCourseSelect },
+  enrollments: {
+    where: { status: "ACTIVE" },
+    orderBy: { createdAt: "asc" },
+    select: { courseId: true, course: { select: certificateCourseSelect } },
   },
   certificates: {
     where: { status: { in: ["ISSUED", "APPROVED"] } },
@@ -79,6 +84,20 @@ const studentInclude = Prisma.validator<Prisma.StudentInclude>()({
 });
 
 type StudentWithRelations = Prisma.StudentGetPayload<{ include: typeof studentInclude }>;
+type CertificateCourse = NonNullable<StudentWithRelations["course"]>;
+
+/** Primary course, or the selected course when the student is also enrolled in it. */
+function pickCertificateCourse(
+  student: StudentWithRelations,
+  requestedCourseId?: bigint | null
+): CertificateCourse | null {
+  if (requestedCourseId) {
+    if (student.course && student.course.id === requestedCourseId) return student.course;
+    const enrolled = student.enrollments.find((row) => row.courseId === requestedCourseId)?.course;
+    if (enrolled) return enrolled;
+  }
+  return student.course ?? student.enrollments[0]?.course ?? null;
+}
 
 export async function findStudentsForOfficialDocuments(where: Prisma.StudentWhereInput, take: number) {
   return prisma.student.findMany({
@@ -93,21 +112,25 @@ export async function findStudentForOfficialDocuments(id: bigint) {
   return prisma.student.findUnique({ where: { id }, include: studentInclude });
 }
 
-async function buildSource(student: StudentWithRelations): Promise<StudentCertificateSource> {
+async function buildSource(
+  student: StudentWithRelations,
+  requestedCourseId?: bigint | null
+): Promise<StudentCertificateSource> {
   let subjects = null as ReturnType<typeof buildMarksheetSubjects> | null;
   let marksPercent: number | null = null;
+  const course = pickCertificateCourse(student, requestedCourseId);
 
-  if (student.courseId) {
-    await ensureCourseSubjectsFromLegacy(student.courseId);
+  if (course) {
+    await ensureCourseSubjectsFromLegacy(course.id);
 
     const [courseSubjects, subjectMarks] = await Promise.all([
       prisma.courseSubject.findMany({
-        where: { courseId: student.courseId },
+        where: { courseId: course.id },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         select: { name: true, maxMarks: true, sortOrder: true },
       }),
       prisma.studentSubjectMark.findMany({
-        where: { studentId: student.id, courseId: student.courseId },
+        where: { studentId: student.id, courseId: course.id },
         select: {
           subjectName: true,
           maxMarks: true,
@@ -121,8 +144,8 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
     subjects = buildMarksheetSubjects({
       courseSubjects,
       marks: subjectMarks,
-      hasPractical: Boolean(student.course?.hasPractical),
-      practicalDefaultMax: student.course?.practicalMarks ?? null,
+      hasPractical: Boolean(course.hasPractical),
+      practicalDefaultMax: course.practicalMarks ?? null,
     });
     if (subjects.length === 0) {
       subjects = null;
@@ -149,11 +172,11 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
   }
 
   const attempt = student.examAttempts[0];
-  const courseSlug = student.course?.slug?.trim() || "";
+  const courseSlug = course?.slug?.trim() || "";
   const courseCode = courseSlug
     ? courseSlug.replace(/-/g, "/").toUpperCase()
-    : student.course?.name
-      ? student.course.name
+    : course?.name
+      ? course.name
           .split(/\s+/)
           .map((w) => w[0])
           .join("")
@@ -188,11 +211,11 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
     franchiseState: student.franchise.state,
     franchisePincode: student.franchise.pincode,
     franchiseId: student.franchise.id.toString(),
-    courseName: student.course?.name ?? null,
+    courseName: course?.name ?? null,
     courseCode,
-    durationMonths: student.course?.durationMonths ?? student.course?.durationValue ?? null,
-    durationValue: student.course?.durationValue ?? student.course?.durationMonths ?? null,
-    durationUnit: student.course?.durationUnit ?? "Months",
+    durationMonths: course?.durationMonths ?? course?.durationValue ?? null,
+    durationValue: course?.durationValue ?? course?.durationMonths ?? null,
+    durationUnit: course?.durationUnit ?? "Months",
     certificateNumber: /^IVESDC\//.test(student.certificates[0]?.certificateNumber ?? "")
       ? student.certificates[0].certificateNumber
       : null,
@@ -209,9 +232,9 @@ async function buildSource(student: StudentWithRelations): Promise<StudentCertif
 export async function buildStudentOfficialDocuments(
   student: StudentWithRelations,
   layouts: OfficialLayouts,
-  options: { assignMarksheetNo?: boolean } = {}
+  options: { assignMarksheetNo?: boolean; courseId?: bigint | null } = {}
 ): Promise<StudentOfficialDocuments> {
-  const source = await buildSource(student);
+  const source = await buildSource(student, options.courseId);
 
   const vocational = fillCertificateFromStudent(layouts.vocational, source, "vocational");
   const marksheet = fillCertificateFromStudent(

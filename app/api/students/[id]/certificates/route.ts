@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * (subjects, marks, ATC, photo, enrollment) — layout from saved template.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -36,8 +36,10 @@ export async function GET(
       return errorResponse("Cannot view student from another franchise", 403);
     }
 
+    const courseParam = request.nextUrl.searchParams.get("courseId") || "";
+    const courseId = /^\d+$/.test(courseParam) ? BigInt(courseParam) : null;
     const layouts = await loadOfficialLayouts();
-    const docs = await buildStudentOfficialDocuments(student, layouts);
+    const docs = await buildStudentOfficialDocuments(student, layouts, { courseId });
 
     return successResponse(docs, "Student certificates");
   } catch (err) {

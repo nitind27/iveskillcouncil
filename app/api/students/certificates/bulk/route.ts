@@ -36,22 +36,35 @@ export async function POST(request: NextRequest) {
     };
 
     const where: Prisma.StudentWhereInput = {};
+    const courseId =
+      body.courseId && /^\d+$/.test(String(body.courseId)) ? BigInt(body.courseId) : null;
     const ids = (body.studentIds || []).filter((v) => /^\d+$/.test(String(v)));
     if (ids.length > 0) {
       where.id = { in: ids.map((v) => BigInt(v)) };
     } else {
       if (body.franchiseId) where.franchiseId = BigInt(body.franchiseId);
-      if (body.courseId) where.courseId = BigInt(body.courseId);
       if (body.status === "ACTIVE" || body.status === "COMPLETED" || body.status === "DROPPED") {
         where.status = body.status;
       }
+      const and: Prisma.StudentWhereInput[] = [];
+      if (courseId) {
+        and.push({
+          OR: [
+            { courseId },
+            { enrollments: { some: { courseId, status: "ACTIVE" } } },
+          ],
+        });
+      }
       const search = (body.search || "").trim();
       if (search) {
-        where.OR = [
-          { studentCode: { contains: search } },
-          { user: { fullName: { contains: search } } },
-        ];
+        and.push({
+          OR: [
+            { studentCode: { contains: search } },
+            { user: { fullName: { contains: search } } },
+          ],
+        });
       }
+      if (and.length) where.AND = and;
     }
 
     const students = await findStudentsForOfficialDocuments(where, MAX_BATCH);
@@ -61,7 +74,9 @@ export async function POST(request: NextRequest) {
     const items: StudentOfficialDocuments[] = new Array(students.length);
     for (let i = 0; i < students.length; i += CONCURRENCY) {
       const chunk = students.slice(i, i + CONCURRENCY);
-      const built = await Promise.all(chunk.map((s) => buildStudentOfficialDocuments(s, layouts)));
+      const built = await Promise.all(
+        chunk.map((s) => buildStudentOfficialDocuments(s, layouts, { courseId }))
+      );
       built.forEach((doc, j) => {
         items[i + j] = doc;
       });

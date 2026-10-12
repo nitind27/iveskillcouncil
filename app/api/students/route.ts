@@ -111,8 +111,16 @@ export async function GET(request: NextRequest) {
       profileImageUrl: s.profileImageUrl || null,
       franchiseId: s.franchise.id.toString(),
       franchiseName: s.franchise.name,
-      courseId: s.course?.id.toString() ?? null,
-      courseName: s.course?.name ?? null,
+      courseId:
+        (courseId &&
+          s.enrollments.find((row) => row.course.id.toString() === courseId)?.course.id.toString()) ||
+        s.course?.id.toString() ||
+        null,
+      courseName:
+        (courseId &&
+          s.enrollments.find((row) => row.course.id.toString() === courseId)?.course.name) ||
+        s.course?.name ||
+        null,
       courses: s.enrollments.map((row) => ({
         id: row.course.id.toString(),
         name: row.course.name,

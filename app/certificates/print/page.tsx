@@ -521,6 +521,7 @@ export default function CertificatePrintCenterPage() {
 
       <OfficialBatchPreview
         studentIds={previewIds}
+        courseId={courseId || null}
         onClose={() => setPreviewIds(null)}
         choice={choice}
         onChoiceChange={setChoice}

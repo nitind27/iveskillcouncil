@@ -23,30 +23,74 @@ function getFranchiseFilter(user: { roleId: number; franchiseId?: string | null 
   return {};
 }
 
-function mapCertItem(c: {
-  id: bigint;
-  certificateNumber: string;
-  status: string;
-  issueDate: Date | null;
-  createdAt: Date;
-  student: {
-    id: bigint;
-    studentCode: string;
-    courseId: bigint | null;
-    user: { fullName: string; email: string };
-    course: { id: bigint; name: string } | null;
+function studentOnCourse(courseId: string): Prisma.StudentWhereInput | null {
+  if (!/^\d+$/.test(courseId)) return null;
+  const cid = BigInt(courseId);
+  return {
+    OR: [
+      { courseId: cid },
+      { enrollments: { some: { courseId: cid, status: "ACTIVE" } } },
+    ],
   };
-  franchise: { id: bigint; name: string };
-}) {
+}
+
+function studentListFilter(courseId: string, search: string): Prisma.StudentWhereInput | undefined {
+  const and: Prisma.StudentWhereInput[] = [];
+  const course = studentOnCourse(courseId);
+  if (course) and.push(course);
+  const term = search.trim();
+  if (term) {
+    and.push({
+      OR: [
+        { studentCode: { contains: term } },
+        { user: { fullName: { contains: term } } },
+      ],
+    });
+  }
+  if (!and.length) return undefined;
+  return and.length === 1 ? and[0] : { AND: and };
+}
+
+function mapCertItem(
+  c: {
+    id: bigint;
+    certificateNumber: string;
+    status: string;
+    issueDate: Date | null;
+    createdAt: Date;
+    student: {
+      id: bigint;
+      studentCode: string;
+      courseId: bigint | null;
+      user: { fullName: string; email: string };
+      course: { id: bigint; name: string } | null;
+      enrollments: { course: { id: bigint; name: string } }[];
+    };
+    franchise: { id: bigint; name: string };
+  },
+  filterCourseId: string
+) {
+  const courses: { id: string; name: string }[] = [];
+  const pushCourse = (course: { id: bigint; name: string } | null | undefined) => {
+    if (!course) return;
+    const id = course.id.toString();
+    if (!courses.some((row) => row.id === id)) courses.push({ id, name: course.name });
+  };
+  pushCourse(c.student.course);
+  for (const row of c.student.enrollments) pushCourse(row.course);
+
+  const selected = filterCourseId ? courses.find((row) => row.id === filterCourseId) : undefined;
+  const shown = selected ? [selected] : courses;
+
   return {
     id: c.id.toString(),
     studentId: c.student.id.toString(),
     studentCode: c.student.studentCode,
-    courseId: c.student.courseId?.toString() ?? null,
+    courseId: shown[0]?.id ?? c.student.courseId?.toString() ?? null,
     franchiseId: c.franchise.id.toString(),
     studentName: c.student.user.fullName,
     studentEmail: c.student.user.email,
-    courseName: c.student.course?.name ?? "—",
+    courseName: shown.length ? shown.map((row) => row.name).join(", ") : "—",
     franchiseName: c.franchise.name,
     certificateNumber: c.certificateNumber,
     status: c.status,
@@ -77,15 +121,8 @@ export async function GET(request: NextRequest) {
     if (franchiseId && /^\d+$/.test(franchiseId) && (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN)) {
       baseWhere.franchiseId = BigInt(franchiseId);
     }
-    const studentWhere: Prisma.StudentWhereInput = {};
-    if (courseId && /^\d+$/.test(courseId)) studentWhere.courseId = BigInt(courseId);
-    if (search) {
-      studentWhere.OR = [
-        { studentCode: { contains: search } },
-        { user: { fullName: { contains: search } } },
-      ];
-    }
-    if (Object.keys(studentWhere).length) baseWhere.student = studentWhere;
+    const studentWhere = studentListFilter(courseId || "", search);
+    if (studentWhere) baseWhere.student = studentWhere;
 
     const where: Prisma.CertificateWhereInput = { ...baseWhere };
     const statuses = (status || "")
@@ -106,6 +143,10 @@ export async function GET(request: NextRequest) {
             include: {
               user: { select: { fullName: true, email: true } },
               course: { select: { id: true, name: true } },
+              enrollments: {
+                where: { status: "ACTIVE" },
+                select: { course: { select: { id: true, name: true } } },
+              },
             },
           },
           franchise: { select: { id: true, name: true } },
@@ -115,7 +156,7 @@ export async function GET(request: NextRequest) {
       prisma.certificate.groupBy({ by: ["status"], where: baseWhere, _count: { _all: true } }),
     ]);
 
-    const items = certificates.map(mapCertItem);
+    const items = certificates.map((row) => mapCertItem(row, courseId || ""));
     const counts = { REQUESTED: 0, APPROVED: 0, ISSUED: 0, REJECTED: 0 };
     for (const g of grouped) counts[g.status] = g._count._all;
 
@@ -195,7 +236,14 @@ export async function POST(request: NextRequest) {
             : {};
 
       const students = await prisma.student.findMany({
-        where: { courseId: cid, ...franchiseFilter, status: { in: ["ACTIVE", "COMPLETED"] } },
+        where: {
+          ...franchiseFilter,
+          status: { in: ["ACTIVE", "COMPLETED"] },
+          OR: [
+            { courseId: cid },
+            { enrollments: { some: { courseId: cid, status: "ACTIVE" } } },
+          ],
+        },
         select: { id: true },
       });
 
@@ -289,20 +337,12 @@ export async function PUT(request: NextRequest) {
     if (Array.isArray(body.ids) && body.ids.length) {
       ids = Array.from(new Set(body.ids.map(String).filter((v) => /^\d+$/.test(v)))).map((v) => BigInt(v));
     } else if (body.franchiseId && /^\d+$/.test(String(body.franchiseId))) {
-      const studentWhere: Prisma.StudentWhereInput = {};
-      if (body.courseId && /^\d+$/.test(String(body.courseId))) studentWhere.courseId = BigInt(body.courseId);
-      const search = String(body.search || "").trim();
-      if (search) {
-        studentWhere.OR = [
-          { studentCode: { contains: search } },
-          { user: { fullName: { contains: search } } },
-        ];
-      }
+      const studentWhere = studentListFilter(String(body.courseId || ""), String(body.search || ""));
       const rows = await prisma.certificate.findMany({
         where: {
           franchiseId: BigInt(body.franchiseId),
           status: status === "ISSUED" ? "APPROVED" : "REQUESTED",
-          ...(Object.keys(studentWhere).length ? { student: studentWhere } : {}),
+          ...(studentWhere ? { student: studentWhere } : {}),
         },
         select: { id: true },
         take: MAX_BULK,

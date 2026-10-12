@@ -1231,6 +1231,7 @@ export default function StudentsPage() {
       />
       <StudentOfficialCertificatesModal
         studentId={certStudentId}
+        courseId={courseId || null}
         open={!!certStudentId}
         initialTab={certTab}
         onClose={() => setCertStudentId(null)}

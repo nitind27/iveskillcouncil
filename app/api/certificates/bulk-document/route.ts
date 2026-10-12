@@ -33,7 +33,15 @@ export async function POST(request: NextRequest) {
     } else {
       const where: Record<string, unknown> = { status };
       if (franchiseId) where.franchiseId = BigInt(franchiseId);
-      if (courseId) where.student = { courseId: BigInt(courseId) };
+      if (courseId && /^\d+$/.test(String(courseId))) {
+        const cid = BigInt(courseId);
+        where.student = {
+          OR: [
+            { courseId: cid },
+            { enrollments: { some: { courseId: cid, status: "ACTIVE" } } },
+          ],
+        };
+      }
 
       const certs = await prisma.certificate.findMany({
         where,

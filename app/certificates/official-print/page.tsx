@@ -474,6 +474,7 @@ export default function OfficialPrintCenterPage() {
 
       <OfficialBatchPreview
         studentIds={previewIds}
+        courseId={courseId || null}
         onClose={() => setPreviewIds(null)}
         choice={choice}
         onChoiceChange={setChoice}

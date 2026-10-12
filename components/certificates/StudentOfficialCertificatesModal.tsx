@@ -15,6 +15,8 @@ type CertTab = OfficialDocKind;
 
 interface Props {
   studentId: string | null;
+  /** When set, print this course even if the student is also enrolled in another. */
+  courseId?: string | null;
   open: boolean;
   initialTab?: CertTab;
   onClose: () => void;
@@ -22,6 +24,7 @@ interface Props {
 
 export function StudentOfficialCertificatesModal({
   studentId,
+  courseId,
   open,
   initialTab = "vocational",
   onClose,
@@ -40,7 +43,8 @@ export function StudentOfficialCertificatesModal({
     if (!studentId) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/students/${studentId}/certificates`, { credentials: "include" })
+    const qs = courseId ? `?courseId=${encodeURIComponent(courseId)}` : "";
+    fetch(`/api/students/${studentId}/certificates${qs}`, { credentials: "include" })
       .then(async (r) => {
         const json = await r.json();
         if (!r.ok) throw new Error(json.error || "Failed to load certificates");
@@ -51,7 +55,7 @@ export function StudentOfficialCertificatesModal({
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed"))
       .finally(() => setLoading(false));
-  }, [studentId]);
+  }, [studentId, courseId]);
 
   useEffect(() => {
     if (!open) return;
