@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Link2, Loader2, Lock, Trash2, X } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, Link2, Loader2, Lock, Trash2, X } from "lucide-react";
 import { collectCertificateStudentIds } from "@/components/certificates/CertificateJpegZipDialog";
 import { showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,30 @@ function absUrl(path: string) {
   return `${window.location.origin}${path}`;
 }
 
+function usernameIssue(value: string) {
+  const username = value.trim();
+  if (!username) return "Enter a username.";
+  if (username.length < 3) return "Username must be at least 3 characters.";
+  if (username.length > 40) return "Username must be 40 characters or fewer.";
+  if (!/^[A-Za-z0-9._-]+$/.test(username)) {
+    return "Username can use only letters, numbers, a dot (.), underscore (_), or hyphen (-).";
+  }
+  return "";
+}
+
+function passwordIssue(value: string) {
+  if (!value) return "Enter a password.";
+  if (value.length < 6) return `Password must be at least 6 characters. ${value.length} entered.`;
+  if (value.length > 72) return "Password must be 72 characters or fewer.";
+  return "";
+}
+
+function confirmIssue(password: string, confirm: string) {
+  if (!confirm) return "Type the password again to confirm it.";
+  if (confirm !== password) return "Passwords do not match.";
+  return "";
+}
+
 export function ShareCertificateLinkModal({
   open,
   onClose,
@@ -48,6 +72,9 @@ export function ShareCertificateLinkModal({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [kinds, setKinds] = useState<Kind>("both");
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ path: string; username: string; studentCount: number } | null>(null);
@@ -61,6 +88,9 @@ export function ShareCertificateLinkModal({
     if (!open) return;
     setCreated(null);
     setCopied(null);
+    setAttempted(false);
+    setShowPassword(false);
+    setShowConfirm(false);
     setLoadingRecent(true);
     void fetch("/api/certificates/share", { credentials: "include" })
       .then((res) => res.json())
@@ -82,11 +112,14 @@ export function ShareCertificateLinkModal({
     }
   };
 
+  const usernameError = usernameIssue(username);
+  const passwordError = passwordIssue(password);
+  const confirmError = confirmIssue(password, confirm);
+  const formErrors = [usernameError, passwordError, confirmError].filter(Boolean);
+
   const createLink = async () => {
-    if (password !== confirm) {
-      await showError("Passwords do not match", "Type the same password in both fields.");
-      return;
-    }
+    setAttempted(true);
+    if (formErrors.length) return;
     setSaving(true);
     try {
       const ids = selectedIds.length
@@ -207,29 +240,80 @@ export function ShareCertificateLinkModal({
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="off"
                     placeholder="viewer01"
-                    className="mt-1 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm font-normal outline-none focus:border-[#1E4A85]"
+                    className={cn(
+                      "mt-1 w-full rounded-xl border bg-white px-3 py-2 text-sm font-normal outline-none focus:border-[#1E4A85]",
+                      attempted && usernameError ? "border-red-400" : "border-border"
+                    )}
                   />
+                  <span className={cn("mt-1 block font-normal", attempted && usernameError ? "text-red-600" : "text-muted-foreground")}>
+                    {attempted && usernameError ? usernameError : "3–40 characters: letters, numbers, . _ or -"}
+                  </span>
                 </label>
                 <label className="block text-xs font-semibold text-[#0B1F3A]">
                   Password
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                    className="mt-1 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm font-normal outline-none focus:border-[#1E4A85]"
-                  />
+                  <span className="relative mt-1 block">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className={cn(
+                        "w-full rounded-xl border bg-white py-2 pl-3 pr-10 text-sm font-normal outline-none focus:border-[#1E4A85]",
+                        attempted && passwordError ? "border-red-400" : "border-border"
+                      )}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((open) => !open)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#1E4A85] hover:bg-[#F5E6C8]"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </span>
+                  <span className={cn("mt-1 block font-normal", attempted && passwordError ? "text-red-600" : "text-muted-foreground")}>
+                    {attempted && passwordError ? passwordError : "At least 6 characters, up to 72."}
+                  </span>
                 </label>
               </div>
               <label className="block text-xs font-semibold text-[#0B1F3A]">
                 Confirm password
-                <input
-                  type="password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  className="mt-1 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm font-normal outline-none focus:border-[#1E4A85]"
-                />
+                <span className="relative mt-1 block">
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    autoComplete="new-password"
+                    className={cn(
+                      "w-full rounded-xl border bg-white py-2 pl-3 pr-10 text-sm font-normal outline-none focus:border-[#1E4A85]",
+                      attempted && confirmError ? "border-red-400" : "border-border"
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((open) => !open)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#1E4A85] hover:bg-[#F5E6C8]"
+                    aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </span>
+                <span
+                  className={cn(
+                    "mt-1 block font-normal",
+                    confirm && confirm === password
+                      ? "text-emerald-700"
+                      : (attempted || (confirm.length > 0 && confirm.length >= password.length)) && confirmError
+                        ? "text-red-600"
+                        : "text-muted-foreground"
+                  )}
+                >
+                  {confirm && confirm === password
+                    ? "Passwords match."
+                    : (attempted || (confirm.length > 0 && password.length > 0 && confirm.length >= password.length)) && confirmError
+                      ? confirmError
+                      : "Type the same password again."}
+                </span>
               </label>
               <div>
                 <p className="text-xs font-semibold text-[#0B1F3A]">What they can open</p>
@@ -254,10 +338,20 @@ export function ShareCertificateLinkModal({
                   ))}
                 </div>
               </div>
+              {attempted && formErrors.length ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <p className="font-semibold">Create link is waiting for these details:</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {formErrors.map((message) => (
+                      <li key={message}>{message}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void createLink()}
-                disabled={saving || !username.trim() || password.length < 6}
+                disabled={saving}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#C4A35A] px-4 py-2.5 text-sm font-bold text-[#0B1F3A] disabled:opacity-40"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
