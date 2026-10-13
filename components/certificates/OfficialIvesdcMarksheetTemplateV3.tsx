@@ -371,7 +371,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,";
   const accred2 =
     data.accreditationLine2 ||
-    "Ministry of Corporate Affairs, Government of India, ISO 21001:2018 & ISO 9001:2015 Certified Organization";
+    "Ministry of Corporate Affairs, Government of India, ISO 21001:2025 & ISO 9001:2015 Certified Organization";
   const accred3 = data.accreditationLine3 || "";
   const DEFAULT_GOV_ORDER =
     "Under The General Administration Department\nGovt. of Gujarat vide its Resolution\nGR No. CRR /10/2007/120320/G5, Dt :13-8-2008\nby Sachivalay Gandhinagar";

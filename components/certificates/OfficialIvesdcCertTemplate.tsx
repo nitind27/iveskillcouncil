@@ -211,7 +211,7 @@ export default function OfficialIvesdcCertTemplate({
   const tagline = data.tagline || "Building a Skilled and Self-Reliant Nation";
   const accred1 = data.accreditationLine1 || "An Autonomous Body Registered under Section 8 of the Companies Act, 2013,";
   const accred2 = data.accreditationLine2 || "Ministry of Corporate Affairs, Government of India";
-  const accred3 = data.accreditationLine3 || "ISO 21001:2018 & ISO 9001:2015 Certified Organization";
+  const accred3 = data.accreditationLine3 || "ISO 21001:2025 & ISO 9001:2015 Certified Organization";
   const registeredOffice =
     data.registeredOffice ||
     "F-107, Dev Krishna Residency, Gunsada, Sub. Dist. Ukai, Dist. Tapi, Gujarat – 394680";
@@ -309,7 +309,22 @@ export default function OfficialIvesdcCertTemplate({
           >
             व्यावसायिक शिक्षा एवं कौशल विकास परिषद्
           </h2>
-          <div className="mt-1 px-10 py-2" style={{ background: `linear-gradient(180deg, ${C.orangeHi}, ${C.orange} 45%, ${C.orangeLo})`, clipPath: "polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%)" }}>
+          <p
+            lang="hi"
+            className="font-devanagari font-bold"
+            style={{
+              marginTop: 2,
+              color: C.orangeLo,
+              fontFamily: "var(--font-devanagari), 'Noto Sans Devanagari', sans-serif",
+              fontSize: "18px",
+              fontWeight: 700,
+              lineHeight: 1.35,
+              letterSpacing: "0.01em",
+            }}
+          >
+            हुनर की नई उड़ान से बनेगा हिंदुस्तान!
+          </p>
+          <div className="mt-0.5 px-10 py-1.5" style={{ background: `linear-gradient(180deg, ${C.orangeHi}, ${C.orange} 45%, ${C.orangeLo})`, clipPath: "polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%)" }}>
             <p className={`${fontInstitution.className} font-extrabold leading-none text-white`} style={{ fontSize: "17px", letterSpacing: "0.015em" }}>{tagline}</p>
           </div>
           <div className={`${fontSerif.className} mt-1 w-full space-y-0.5 font-bold leading-snug`} style={{ color: C.ink, fontSize: "15px" }}>
@@ -345,7 +360,7 @@ export default function OfficialIvesdcCertTemplate({
           </div>
         </header>
 
-        <div className="cert-title-block mt-2 flex w-full shrink-0 flex-col items-center text-center">
+        <div className="cert-title-block mt-1 flex w-full shrink-0 flex-col items-center text-center">
           <h1
             className={`${fontDisplay.className} w-full font-bold uppercase leading-none`}
             style={{
@@ -367,7 +382,7 @@ export default function OfficialIvesdcCertTemplate({
         </div>
 
         <section
-          className="mt-2 grid w-full shrink-0 items-start"
+          className="mt-1 grid w-full shrink-0 items-start"
           style={{ gridTemplateColumns: "158px minmax(0, 1fr) 176px" }}
         >
           <aside className="flex shrink-0 flex-col items-center justify-self-start self-start">

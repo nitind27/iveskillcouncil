@@ -10,7 +10,7 @@ export const CERT_STATIC = {
   orgName: "INSTITUTE OF VOCATION EDUCATION AND SKILL DEVELOPMENT COUNCIL",
   accreditation: [
     "An Autonomous Body Registered under Section 8 of the Companies Act, 2013, Ministry of Corporate Affairs, Government of India, and Registered under N.C.T Govt. of India, New Delhi.",
-    "ISO 21001:2018 & ISO 9001:2015 Certified Organization",
+    "ISO 21001:2025 & ISO 9001:2015 Certified Organization",
     "Accredited By: NSDC Training Partner",
   ],
   officeAddress:

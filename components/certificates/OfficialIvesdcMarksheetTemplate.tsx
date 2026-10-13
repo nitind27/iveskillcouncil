@@ -265,7 +265,7 @@ Verify Online: ${VERIFY_ORIGIN}/verify`;
                 <p>{data.accreditationLine1 || "An Autonomous Body Registered under Section 8 of the Companies Act, 2013"}</p>
                 <p>{data.accreditationLine2 || "Ministry of Corporate Affairs, Government of India"}</p>
                 <p className="font-extrabold">
-                  {data.accreditationLine3 || "ISO 9001:2015 & ISO 21001:2018 Certified Organization"}
+                  {data.accreditationLine3 || "ISO 9001:2015 & ISO 21001:2025 Certified Organization"}
                 </p>
               </div>
             </div>

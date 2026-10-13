@@ -84,7 +84,7 @@ export function DiplomaCertTemplate({ data }: { data: CertificateDemoData }) {
             An Autonomous Body Registered under Section 8 of the Companies Act, 2013, MCA, Govt. of India
           </p>
           <p className="text-[7px] font-semibold text-[#8B6914]" style={sans}>
-            ISO 9001:2015 & ISO 21001:2018 Certified Council · Skill India Mission Partner
+            ISO 9001:2015 & ISO 21001:2025 Certified Council · Skill India Mission Partner
           </p>
         </div>
 
@@ -452,7 +452,7 @@ export function AtcAffiliationTemplate({ data }: { data: CertificateDemoData }) 
             Registered under Ministry of Corporate Affairs (MCA), Government of India
           </p>
           <p className="text-[7.5px] font-bold text-[#8B6914]" style={sans}>
-            ISO 9001:2015 & ISO 21001:2018 Certified National Vocational Body
+            ISO 9001:2015 & ISO 21001:2025 Certified National Vocational Body
           </p>
         </div>
 
