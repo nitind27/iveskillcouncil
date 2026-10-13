@@ -1,7 +1,22 @@
 import { prisma } from "@/lib/prisma";
-import { parseExamFeesByPlan } from "@/lib/course-utils";
 
 export const GST_RATE = 0.18;
+
+/** Certificate royalty per student, before GST. Matched on course duration in months. */
+export const ROYALTY_SLABS = [
+  { months: 3, label: "3 months", amount: 270 },
+  { months: 6, label: "6 months", amount: 699 },
+  { months: 12, label: "1 year", amount: 799 },
+  { months: 18, label: "18 months", amount: 1599 },
+] as const;
+
+export function royaltySlab(months: number) {
+  return ROYALTY_SLABS.find((slab) => slab.months === months) ?? null;
+}
+
+function durationLabel(months: number) {
+  return royaltySlab(months)?.label ?? `${months} month${months === 1 ? "" : "s"}`;
+}
 
 export type CourseFeeRow = {
   courseId: string;
@@ -14,18 +29,31 @@ export type CourseFeeRow = {
   totalAmount: number;
   gst: number;
   totalWithGst: number;
-  /** Certificate royalty per student for the franchise plan(s); null when it differs across plans. */
+  durationMonths: number;
+  durationLabel: string;
+  /** Certificate royalty per student for this course duration; null when that duration has no rate. */
   royaltyPerStudent: number | null;
   royalty: number;
   royaltyGst: number;
-  /** Students whose franchise plan has no exam / certificate fee set on this course. */
+  /** Students on a course duration that has no royalty rate. */
   royaltyMissing: number;
+};
+
+export type RoyaltySlabTotal = {
+  months: number;
+  label: string;
+  amount: number;
+  students: number;
+  royalty: number;
+  royaltyGst: number;
+  total: number;
 };
 
 export type CourseFeeSummary = {
   gstRate: number;
   rows: CourseFeeRow[];
-  totals: Omit<CourseFeeRow, "courseId" | "courseName" | "category" | "feePerStudent" | "royaltyPerStudent"> & {
+  slabs: RoyaltySlabTotal[];
+  totals: Omit<CourseFeeRow, "courseId" | "courseName" | "category" | "feePerStudent" | "royaltyPerStudent" | "durationMonths" | "durationLabel"> & {
     courses: number;
   };
 };
@@ -50,14 +78,10 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
   const courseIds = Array.from(new Set(groups.map((g) => g.courseId!.toString()))).map((id) => BigInt(id));
   const franchiseIds = Array.from(new Set(groups.map((g) => g.franchiseId.toString()))).map((id) => BigInt(id));
 
-  const [courses, franchises, customFees] = await Promise.all([
+  const [courses, customFees] = await Promise.all([
     prisma.course.findMany({
       where: { id: { in: courseIds } },
-      select: { id: true, name: true, category: true, baseFee: true, examFeesByPlan: true },
-    }),
-    prisma.franchise.findMany({
-      where: { id: { in: franchiseIds } },
-      select: { id: true, plan: { select: { name: true } } },
+      select: { id: true, name: true, category: true, baseFee: true, durationMonths: true },
     }),
     prisma.franchiseCourseFee.findMany({
       where: { courseId: { in: courseIds }, franchiseId: { in: franchiseIds } },
@@ -66,7 +90,6 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
   ]);
 
   const courseById = new Map(courses.map((c) => [c.id.toString(), c]));
-  const planByFranchise = new Map(franchises.map((f) => [f.id.toString(), String(f.plan?.name || "").toUpperCase()]));
   const customFeeByKey = new Map(customFees.map((f) => [`${f.courseId}|${f.franchiseId}`, Number(f.customFee)]));
   const zeroFeeByKey = new Map(zeroFeeGroups.map((g) => [`${g.courseId}|${g.franchiseId}`, g._count._all]));
 
@@ -81,8 +104,7 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
     const fee = customFeeByKey.get(key) ?? Number(course.baseFee);
     const amount = Number(g._sum.totalFee ?? 0) + (zeroFeeByKey.get(key) ?? 0) * fee;
 
-    const plan = planByFranchise.get(g.franchiseId.toString()) || "";
-    const examFee = parseExamFeesByPlan(course.examFeesByPlan).find((r) => r.plan === plan)?.examFee;
+    const slab = royaltySlab(course.durationMonths);
 
     const row =
       byCourse.get(courseKey) ??
@@ -95,6 +117,8 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
         totalAmount: 0,
         gst: 0,
         totalWithGst: 0,
+        durationMonths: course.durationMonths,
+        durationLabel: durationLabel(course.durationMonths),
         royaltyPerStudent: null,
         royalty: 0,
         royaltyGst: 0,
@@ -103,9 +127,9 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
       };
     row.students += count;
     row.totalAmount += amount;
-    if (examFee != null && examFee > 0) {
-      row.royalty += examFee * count;
-      row.royaltyRates.add(examFee);
+    if (slab) {
+      row.royalty += slab.amount * count;
+      row.royaltyRates.add(slab.amount);
     } else {
       row.royaltyMissing += count;
     }
@@ -126,7 +150,22 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
         royaltyGst: round2(royaltyGst),
       };
     })
-    .sort((a, b) => b.students - a.students || b.totalAmount - a.totalAmount);
+    .sort((a, b) => b.students - a.students || a.courseName.localeCompare(b.courseName));
+
+  const slabs: RoyaltySlabTotal[] = ROYALTY_SLABS.map((slab) => {
+    const matched = rows.filter((row) => row.durationMonths === slab.months);
+    const royalty = matched.reduce((sum, row) => sum + row.royalty, 0);
+    const royaltyGst = royalty * GST_RATE;
+    return {
+      months: slab.months,
+      label: slab.label,
+      amount: slab.amount,
+      students: matched.reduce((sum, row) => sum + row.students, 0),
+      royalty: round2(royalty),
+      royaltyGst: round2(royaltyGst),
+      total: round2(royalty + royaltyGst),
+    };
+  });
 
   const totals = rows.reduce(
     (acc, r) => ({
@@ -145,6 +184,7 @@ export async function getCourseFeeSummary(franchiseId: string | null): Promise<C
   return {
     gstRate: GST_RATE,
     rows,
+    slabs,
     totals: {
       ...totals,
       totalAmount: round2(totals.totalAmount),

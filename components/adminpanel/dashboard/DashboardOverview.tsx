@@ -73,6 +73,7 @@ export default function DashboardOverview({
   franchiseId,
 }: DashboardOverviewProps) {
   const isAdmin = roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN;
+  const isInstituteAdmin = roleId === ROLES.ADMIN;
   const showCourseFees = isAdmin || roleId === ROLES.SUB_ADMIN;
   const pendingTotal = (stats.pendingFees ?? 0) + (stats.pendingCertificates ?? 0);
   const leadTotal =
@@ -139,7 +140,7 @@ export default function DashboardOverview({
         <HeroKpi label="Pending" value={String(pendingTotal)} sub={`${stats.pendingFees ?? 0} fees · ${stats.pendingCertificates ?? 0} certificates`} icon={AlertTriangle} tone="amber" onClick={() => onCardClick(buildCard("pending_fees", stats))} />
       </div>
 
-      {showCourseFees && <CourseFeeSummary franchiseId={franchiseId} />}
+      {showCourseFees && <CourseFeeSummary franchiseId={franchiseId} royaltyOnly={isInstituteAdmin} />}
 
       {/* Quick Actions — compact single row, full width */}
       {quickActions.length > 0 && (
@@ -169,7 +170,7 @@ export default function DashboardOverview({
 
       {/* Bottom row — equal height cards */}
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {/* Recent Payments */}
+        {!isInstituteAdmin ? (
         <Card className="flex h-full flex-col rounded-2xl border border-[#E3E9F2] bg-white shadow-[0_10px_28px_-18px_rgba(6,27,54,0.35)]">
           <CardHeader className="border-b border-border/50 bg-muted/30 !px-4 !py-2.5">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -200,6 +201,7 @@ export default function DashboardOverview({
             )}
           </CardContent>
         </Card>
+        ) : null}
 
         <TodayAttendanceCard
           stats={stats}
