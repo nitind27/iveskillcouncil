@@ -80,7 +80,7 @@ export const defaultSeo: SeoConfig = {
   postalCode: "394670",
   streetAddress: "Shivaji Nagar, Fort-Songadh, Dist-Tapi, Gujarat - 394670",
   phone: "9925222523",
-  email: "iveskillcouncil@gmail.com",
+  email: "official.iveskillcouncil@gmail.com",
   ogImage: "/logo/IVESDC%20LOGO-01.png",
 };
 

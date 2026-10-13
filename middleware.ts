@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/userpanel",
   "/certificates/templates",
   "/api/certificates/templates",
+  "/certificates/share",
 ];
 const isPublicPath = (path: string) =>
   path === "/" ||
@@ -39,7 +40,9 @@ const isProtectedPath = (path: string) =>
   path.startsWith("/courses") ||
   path.startsWith("/analytics") ||
   path.startsWith("/subscription") ||
-  (path.startsWith("/certificates") && !path.startsWith("/certificates/templates")) ||
+  (path.startsWith("/certificates") &&
+    !path.startsWith("/certificates/templates") &&
+    !path.startsWith("/certificates/share")) ||
   path.startsWith("/payments") ||
   path.startsWith("/attendance") ||
   path.startsWith("/reports") ||

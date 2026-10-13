@@ -56,7 +56,9 @@ function isPublicPath(path: string) {
     path === "/login" ||
     path === "/verify" ||
     path.startsWith("/verify/") ||
-    path.startsWith("/userpanel")
+    path.startsWith("/userpanel") ||
+    path.startsWith("/certificates/share") ||
+    path.startsWith("/exam-link")
   );
 }
 

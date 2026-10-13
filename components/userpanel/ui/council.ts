@@ -7,7 +7,7 @@ export const COUNCIL = {
   helpline: "9925222523",
   address: "Shivaji Nagar, Fort-Songadh, Dist-Tapi, Gujarat - 394670",
   cin: "U88900GJ2026NPL175855",
-  email: "iveskillcouncil@gmail.com",
+  email: "official.iveskillcouncil@gmail.com",
 } as const;
 
 export const COUNCIL_TEAM: { name: string; role: string; phone?: string; photo: string }[] = [

@@ -14,6 +14,7 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/verify/") ||
     pathname.startsWith("/userpanel") ||
     pathname.startsWith("/exam-link") ||
+    pathname.startsWith("/certificates/share") ||
     pathname === "/f" ||
     pathname.startsWith("/f/") ||
     isFranchisePublicSitePath(pathname) ||

@@ -425,7 +425,7 @@ export function AtcAffiliationTemplate({ data }: { data: CertificateDemoData }) 
 
   useEffect(() => {
     buildQr(
-      `IVESDC ATC AFFILIATION ACCREDITATION\nATC Code: ${data.atcCode}\nCenter: ${data.atcName}\nLocation: ${data.trainingCentre}\nValidity: ${data.trainingStart} to ${data.trainingEnd}\nStatus: Officially Accredited Training Centre\nVerify: iveskillcouncil@gmail.com`,
+      `IVESDC ATC AFFILIATION ACCREDITATION\nATC Code: ${data.atcCode}\nCenter: ${data.atcName}\nLocation: ${data.trainingCentre}\nValidity: ${data.trainingStart} to ${data.trainingEnd}\nStatus: Officially Accredited Training Centre\nVerify: official.iveskillcouncil@gmail.com`,
       120
     ).then(setQrUrl).catch(() => setQrUrl(null));
   }, [data]);

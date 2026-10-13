@@ -16,6 +16,7 @@ import {
   Files,
   Loader2,
   Download,
+  Link2,
   Printer,
   RefreshCw,
   Search,
@@ -31,6 +32,7 @@ import {
   CertificateJpegZipDialog,
   collectCertificateStudentIds,
 } from "@/components/certificates/CertificateJpegZipDialog";
+import { ShareCertificateLinkModal } from "@/components/certificates/ShareCertificateLinkModal";
 
 type CertRow = {
   id: string;
@@ -95,6 +97,7 @@ export default function CertificatePrintCenterPage() {
   const [selected, setSelected] = useState<Map<string, CertRow>>(new Map());
   const [previewIds, setPreviewIds] = useState<string[] | null>(null);
   const [zipIds, setZipIds] = useState<string[] | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const [zipPreparing, setZipPreparing] = useState(false);
   const [choice, setChoice] = useState<DocChoice>("both");
   const [loadingAll, setLoadingAll] = useState<DocChoice | null>(null);
@@ -418,6 +421,15 @@ export default function CertificatePrintCenterPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={() => setShareOpen(true)}
+              disabled={!targetCount}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#C4A35A] bg-[#F5E6C8] px-3 py-2 text-xs font-bold text-[#0B1F3A] transition hover:bg-[#EBD7A4] disabled:opacity-40"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              Share link ({selected.size || Math.min(total, 100)})
+            </button>
+            <button
+              type="button"
               onClick={() => void openJpegZip()}
               disabled={!targetCount || zipPreparing || !!zipIds}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[#1E4A85]/30 bg-white px-3 py-2 text-xs font-bold text-[#0B1F3A] transition hover:bg-[#F5E6C8] disabled:opacity-40"
@@ -561,6 +573,13 @@ export default function CertificatePrintCenterPage() {
         <b>Background graphics</b>.
       </p>
 
+      <ShareCertificateLinkModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        selectedIds={Array.from(new Set(Array.from(selected.values()).map((row) => row.studentId)))}
+        filters={{ status, franchiseId, courseId, search }}
+        countHint={selected.size || Math.min(total, 100)}
+      />
       <CertificateJpegZipDialog
         studentIds={zipIds}
         courseId={courseId || null}

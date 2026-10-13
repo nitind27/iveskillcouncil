@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toJpeg } from "html-to-image";
 import JSZip from "jszip";
-import { Loader2, X } from "lucide-react";
+import { Award, FileText, X } from "lucide-react";
 import type { CertificateDemoData } from "@/components/certificates/demo/types";
 import { OfficialDocumentSheet, type OfficialDocKind } from "@/components/certificates/OfficialDocumentPrint";
 import { showError, showSuccess } from "@/lib/toast";
@@ -134,6 +134,15 @@ export function CertificateJpegZipDialog({
   onCloseRef.current = onClose;
   const [mounted, setMounted] = useState(false);
   const [label, setLabel] = useState("Preparing certificates…");
+  const [progress, setProgress] = useState({
+    phase: "load" as "load" | "capture" | "pack",
+    index: 0,
+    total: 0,
+    name: "",
+    part: "" as "" | "certificate" | "result",
+    done: 0,
+    pages: 0,
+  });
   const [sheet, setSheet] = useState<{ kind: OfficialDocKind; data: CertificateDemoData; key: string } | null>(null);
 
   useEffect(() => setMounted(true), []);
@@ -147,6 +156,7 @@ export function CertificateJpegZipDialog({
     const run = async () => {
       try {
         setLabel(`Loading ${ids.length} student${ids.length === 1 ? "" : "s"}…`);
+        setProgress({ phase: "load", index: 0, total: ids.length, name: "", part: "", done: 0, pages: ids.length * 2 });
         const docs = await loadDocs(ids, courseId);
         if (cancelled || cancelRef.current) return;
         if (!docs.length) {
@@ -159,6 +169,8 @@ export function CertificateJpegZipDialog({
         const folder = zip.folder("certificates") ?? zip;
         const used = new Set<string>();
         let failed = 0;
+        let step = 0;
+        const pages = docs.length * 2;
 
         for (let i = 0; i < docs.length; i += 1) {
           if (cancelled || cancelRef.current) return;
@@ -168,16 +180,27 @@ export function CertificateJpegZipDialog({
           used.add(unique);
 
           for (const part of [
-            { kind: "vocational" as const, data: doc.vocational, suffix: "certificate" },
-            { kind: "marksheet" as const, data: doc.marksheet, suffix: "result" },
+            { kind: "vocational" as const, data: doc.vocational, suffix: "certificate" as const },
+            { kind: "marksheet" as const, data: doc.marksheet, suffix: "result" as const },
           ]) {
             if (cancelled || cancelRef.current) return;
-            setLabel(`${i + 1} of ${docs.length} · ${doc.studentName || doc.studentCode} · ${part.suffix === "certificate" ? "Certificate" : "Result"}`);
+            const partLabel = part.suffix === "certificate" ? "Certificate" : "Result";
+            setLabel(`${i + 1} of ${docs.length} · ${doc.studentName || doc.studentCode} · ${partLabel}`);
+            setProgress({
+              phase: "capture",
+              index: i + 1,
+              total: docs.length,
+              name: doc.studentName || doc.studentCode,
+              part: part.suffix,
+              done: step,
+              pages,
+            });
             setSheet({ kind: part.kind, data: part.data, key: `${doc.studentId}-${part.suffix}` });
             await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             const node = hostRef.current?.querySelector(".certificate-sheet") as HTMLElement | null;
             if (!node) {
               failed += 1;
+              step += 1;
               continue;
             }
             try {
@@ -188,6 +211,16 @@ export function CertificateJpegZipDialog({
             } catch {
               failed += 1;
             }
+            step += 1;
+            setProgress({
+              phase: "capture",
+              index: i + 1,
+              total: docs.length,
+              name: doc.studentName || doc.studentCode,
+              part: part.suffix,
+              done: step,
+              pages,
+            });
           }
         }
 
@@ -200,6 +233,7 @@ export function CertificateJpegZipDialog({
         }
 
         setLabel("Packing ZIP…");
+        setProgress((prev) => ({ ...prev, phase: "pack", part: "", done: prev.pages || prev.done, name: "Packing the ZIP" }));
         setSheet(null);
         const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
         const day = new Date().toISOString().slice(0, 10);
@@ -241,12 +275,13 @@ export function CertificateJpegZipDialog({
       >
         {sheet ? <OfficialDocumentSheet kind={sheet.kind} data={sheet.data} printId={`zip-${sheet.key}`} /> : null}
       </div>
-      <div className="fixed inset-0 z-[10320] flex items-center justify-center bg-[#0B1F3A]/92 p-4 text-white">
-        <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#0B1F3A] p-5 shadow-2xl">
-          <div className="flex items-start justify-between gap-3">
+      <div className="fixed inset-0 z-[10320] flex items-center justify-center bg-[#071525] p-4 text-white">
+        <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-[#C4A35A]/35 bg-[#0B1F3A] shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+          <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#C4A35A] to-transparent" />
+          <div className="flex items-start justify-between gap-3 px-5 pt-5">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#C4A35A]">High quality JPEG</p>
-              <h2 className="mt-1 text-lg font-bold">Certificate + Result ZIP</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#C4A35A]">Print studio</p>
+              <h2 className="mt-1 text-lg font-bold">Building JPEG ZIP</h2>
             </div>
             <button
               type="button"
@@ -260,13 +295,65 @@ export function CertificateJpegZipDialog({
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-4 flex items-center gap-2 text-sm text-white/80">
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#C4A35A]" />
-            <span>{label}</span>
-          </p>
-          <p className="mt-3 text-xs leading-relaxed text-white/50">
-            Each student gets two clear JPEG files: certificate and statement of marks. Keep this tab open until the ZIP downloads.
-          </p>
+
+          <div className="px-5 pb-5 pt-4">
+            <div className="flex items-center gap-4">
+              <div
+                className={`grid h-24 w-24 shrink-0 place-items-center rounded-full ${progress.phase === "load" ? "animate-spin" : ""}`}
+                style={{
+                  background:
+                    progress.phase === "load"
+                      ? "conic-gradient(from 0deg, #C4A35A, transparent 70%)"
+                      : `conic-gradient(#C4A35A ${Math.min(100, progress.pages ? (progress.done / progress.pages) * 100 : 0) * 3.6}deg, rgba(255,255,255,0.12) 0deg)`,
+                }}
+              >
+                <div className="grid h-[4.6rem] w-[4.6rem] place-items-center rounded-full bg-[#0B1F3A]">
+                  <span className="text-xl font-bold tabular-nums">
+                    {progress.phase === "load" ? "…" : `${Math.min(100, Math.round(progress.pages ? (progress.done / progress.pages) * 100 : 0))}%`}
+                  </span>
+                </div>
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-base font-semibold">{progress.name || "Gathering students"}</p>
+                <p className="mt-1 text-xs text-white/60">
+                  {progress.phase === "pack"
+                    ? "Sealing the archive"
+                    : progress.total
+                      ? `Student ${Math.max(progress.index, 1)} of ${progress.total}`
+                      : label}
+                </p>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-[#C4A35A] transition-[width] duration-300"
+                    style={{ width: `${progress.phase === "load" ? 8 : Math.min(100, progress.pages ? (progress.done / progress.pages) * 100 : 0)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[
+                { id: "certificate" as const, label: "Certificate", Icon: Award },
+                { id: "result" as const, label: "Result", Icon: FileText },
+              ].map((card) => {
+                const active = progress.part === card.id;
+                const Icon = card.Icon;
+                return (
+                  <div
+                    key={card.id}
+                    className={`rounded-2xl border px-3 py-3 ${active ? "border-[#C4A35A] bg-[#C4A35A]/15" : "border-white/10 bg-white/5"}`}
+                  >
+                    <Icon className={`h-4 w-4 ${active ? "text-[#C4A35A]" : "text-white/40"}`} />
+                    <p className="mt-2 text-xs font-bold">{card.label}</p>
+                    <p className="text-[10px] text-white/50">{active ? "Capturing this page" : progress.phase === "pack" ? "Saved" : "Waiting"}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-4 text-xs leading-relaxed text-white/45">
+              {label}. Keep this tab open until the ZIP downloads. Certificate and result artwork stay the same.
+            </p>
+          </div>
         </div>
       </div>
     </>,
