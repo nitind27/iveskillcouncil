@@ -166,7 +166,8 @@ export function CertificateJpegZipDialog({
         }
 
         const zip = new JSZip();
-        const folder = zip.folder("certificates") ?? zip;
+        const certificateFolder = zip.folder("certificates") ?? zip;
+        const resultFolder = zip.folder("results") ?? zip;
         const used = new Set<string>();
         let failed = 0;
         let step = 0;
@@ -207,7 +208,8 @@ export function CertificateJpegZipDialog({
               const dataUrl = await captureJpeg(node);
               const base64 = dataUrl.split(",")[1];
               if (!base64) throw new Error("Empty image");
-              folder.file(`${unique}_${part.suffix}.jpg`, base64, { base64: true });
+              const target = part.suffix === "certificate" ? certificateFolder : resultFolder;
+              target.file(`${unique}.jpg`, base64, { base64: true });
             } catch {
               failed += 1;
             }
@@ -246,7 +248,7 @@ export function CertificateJpegZipDialog({
 
         const skipped = studentIds.length > ids.length ? ` First ${MAX_STUDENTS} students only.` : "";
         const miss = failed ? ` ${failed} page(s) could not be captured.` : "";
-        await showSuccess("ZIP downloaded", `${docs.length} student(s), certificate + result JPEG.${skipped}${miss}`);
+        await showSuccess("ZIP downloaded", `${docs.length} student(s). Open the ZIP: certificates folder and results folder.${skipped}${miss}`);
         onCloseRef.current();
       } catch (err) {
         if (!cancelled && !cancelRef.current) {
@@ -345,13 +347,16 @@ export function CertificateJpegZipDialog({
                   >
                     <Icon className={`h-4 w-4 ${active ? "text-[#C4A35A]" : "text-white/40"}`} />
                     <p className="mt-2 text-xs font-bold">{card.label}</p>
-                    <p className="text-[10px] text-white/50">{active ? "Capturing this page" : progress.phase === "pack" ? "Saved" : "Waiting"}</p>
+                    <p className="text-[10px] text-white/50">
+                      {card.id === "certificate" ? "certificates/" : "results/"}
+                      {active ? " · capturing" : progress.phase === "pack" ? " · saved" : ""}
+                    </p>
                   </div>
                 );
               })}
             </div>
             <p className="mt-4 text-xs leading-relaxed text-white/45">
-              {label}. Keep this tab open until the ZIP downloads. Certificate and result artwork stay the same.
+              {label}. One ZIP, two folders: certificates and results. Keep this tab open until it downloads.
             </p>
           </div>
         </div>
