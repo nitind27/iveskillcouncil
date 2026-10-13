@@ -60,11 +60,13 @@ export function CreateCertificateModal({ open, onClose, onSuccess }: CreateCerti
       .then((r) => r.json())
       .then((json) => {
         const raw = json?.data ?? json;
-        const list = Array.isArray(raw) ? raw : (raw?.items ?? []);
+        const list = Array.isArray(raw)
+          ? raw
+          : (raw?.courses ?? raw?.items ?? raw?.data ?? []);
         setCourses(
-          list.map((c: { id: string; name: string; courseName?: string }) => ({
-            id: c.id,
-            name: c.name ?? c.courseName ?? "Course",
+          (Array.isArray(list) ? list : []).map((c: { id: string | number; name?: string; courseName?: string }) => ({
+            id: String(c.id),
+            name: c.name || c.courseName || "Course",
           }))
         );
       })

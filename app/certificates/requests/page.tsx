@@ -58,6 +58,25 @@ interface CertResponse {
 
 type BulkStatus = "APPROVED" | "REJECTED" | "ISSUED";
 
+function courseOptions(data: unknown): { id: string; name: string }[] {
+  const record = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+  const raw = Array.isArray(data)
+    ? data
+    : Array.isArray(record?.courses)
+      ? record.courses
+      : Array.isArray(record?.items)
+        ? record.items
+        : Array.isArray(record?.data)
+          ? record.data
+          : [];
+  return raw
+    .map((row) => {
+      const course = row as { id?: string | number; name?: string; courseName?: string };
+      return { id: String(course.id ?? ""), name: course.name || course.courseName || "Course" };
+    })
+    .filter((course) => course.id);
+}
+
 const PRINTABLE = new Set(["APPROVED", "ISSUED"]);
 const MAX_PRINT = 100;
 
@@ -119,18 +138,13 @@ export default function CertificatesRequestsPage() {
     ? franchisesData
     : ((franchisesData as { data?: unknown[] } | null)?.data ?? []);
 
-  const coursesUrl =
-    roleId === ROLES.SUB_ADMIN ? "/api/students/franchise-courses" : "/api/courses?limit=200";
+  const coursesUrl = !user
+    ? null
+    : roleId === ROLES.SUB_ADMIN
+      ? "/api/students/franchise-courses"
+      : "/api/courses?limit=200";
   const { data: coursesData } = useSWR(coursesUrl, fetcher);
-  const coursesRaw = Array.isArray(coursesData)
-    ? coursesData
-    : ((coursesData as { items?: unknown[] } | null)?.items ??
-      (coursesData as { data?: unknown[] } | null)?.data ??
-      []);
-  const courses = (coursesRaw as { id: string; name: string; courseName?: string }[]).map((c) => ({
-    id: c.id,
-    name: c.name ?? c.courseName ?? "Course",
-  }));
+  const courses = courseOptions(coursesData);
 
   const { data, error, isLoading, mutate } = useSWR<CertResponse>(
     `/api/certificates?${queryParams.toString()}`,
