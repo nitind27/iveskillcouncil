@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Printer,
+  Download,
   Info,
   Search,
   Building2,
@@ -35,6 +36,10 @@ import { cn } from "@/lib/utils";
 import { CreateCertificateModal } from "@/components/certificates/CreateCertificateModal";
 import { StudentOfficialCertificatesModal } from "@/components/certificates/StudentOfficialCertificatesModal";
 import { OfficialBatchPreview } from "@/components/certificates/OfficialBatchPreview";
+import {
+  CertificateJpegZipDialog,
+  collectCertificateStudentIds,
+} from "@/components/certificates/CertificateJpegZipDialog";
 
 interface CertItem {
   id: string;
@@ -110,6 +115,8 @@ export default function CertificatesRequestsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [printStudentId, setPrintStudentId] = useState<string | null>(null);
   const [batchPrintIds, setBatchPrintIds] = useState<string[] | null>(null);
+  const [zipIds, setZipIds] = useState<string[] | null>(null);
+  const [zipPreparing, setZipPreparing] = useState(false);
   const [batchPrintCertIds, setBatchPrintCertIds] = useState<string[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selected, setSelected] = useState<Map<string, CertItem>>(new Map());
@@ -217,6 +224,38 @@ export default function CertificatesRequestsPage() {
     }
   };
 
+  const openJpegZip = async (explicitIds?: string[]) => {
+    const picked = Array.from(new Set((explicitIds || []).filter(Boolean)));
+    if (picked.length) {
+      setZipIds(picked);
+      return;
+    }
+    setZipPreparing(true);
+    try {
+      const { ids, total } = await collectCertificateStudentIds({
+        status: status && status !== "REJECTED" ? status : "APPROVED,ISSUED",
+        franchiseId,
+        courseId,
+        search,
+      });
+      if (!ids.length) {
+        await showError("Nothing to download", "No students in this filter to export.");
+        return;
+      }
+      setZipIds(ids.slice(0, 100));
+      if (total > 100) {
+        void showSuccess(
+          "Large batch",
+          `This filter has ${total} students. The ZIP includes the first 100. Filter by course or franchise and download again for the rest.`
+        );
+      }
+    } catch (err) {
+      await showError("Download failed", err instanceof Error ? err.message : "Could not load students");
+    } finally {
+      setZipPreparing(false);
+    }
+  };
+
   const openBatchPrint = (rows: CertItem[]) => {
     const printable = rows.filter((c) => PRINTABLE.has(c.status));
     if (!printable.length) return;
@@ -293,6 +332,15 @@ export default function CertificatesRequestsPage() {
             </div>
             {canPrint && (
               <>
+                <button
+                  type="button"
+                  disabled={zipPreparing || !!zipIds}
+                  onClick={() => void openJpegZip()}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold text-[#0B1F3A] transition hover:bg-[#F5E6C8] disabled:opacity-50"
+                >
+                  {zipPreparing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                  JPEG ZIP
+                </button>
                 <Link
                   href="/certificates/print"
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
@@ -488,6 +536,17 @@ export default function CertificatesRequestsPage() {
               <XCircle className="h-3.5 w-3.5" />
               Reject ({selectedPending.length})
             </button>
+            {canPrint && (
+              <button
+                type="button"
+                disabled={!!zipIds}
+                onClick={() => void openJpegZip(selectedList.map((row) => row.studentId))}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#1E4A85]/30 bg-white px-2.5 py-1.5 text-xs font-bold text-[#0B1F3A] disabled:opacity-40"
+              >
+                <Download className="h-3.5 w-3.5" />
+                JPEG ZIP ({selectedList.length})
+              </button>
+            )}
             {canPrint && (
               <button
                 type="button"
@@ -722,6 +781,11 @@ export default function CertificatesRequestsPage() {
             courseId={courseId || null}
             open={!!printStudentId}
             onClose={() => setPrintStudentId(null)}
+          />
+          <CertificateJpegZipDialog
+            studentIds={zipIds}
+            courseId={courseId || null}
+            onClose={() => setZipIds(null)}
           />
           <OfficialBatchPreview
             studentIds={batchPrintIds}

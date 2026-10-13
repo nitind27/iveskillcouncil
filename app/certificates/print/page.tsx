@@ -15,6 +15,7 @@ import {
   FileText,
   Files,
   Loader2,
+  Download,
   Printer,
   RefreshCw,
   Search,
@@ -26,6 +27,10 @@ import { canPrintCertificates } from "@/lib/certificate-access";
 import { showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { OfficialBatchPreview, type DocChoice } from "@/components/certificates/OfficialBatchPreview";
+import {
+  CertificateJpegZipDialog,
+  collectCertificateStudentIds,
+} from "@/components/certificates/CertificateJpegZipDialog";
 
 type CertRow = {
   id: string;
@@ -89,6 +94,8 @@ export default function CertificatePrintCenterPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Map<string, CertRow>>(new Map());
   const [previewIds, setPreviewIds] = useState<string[] | null>(null);
+  const [zipIds, setZipIds] = useState<string[] | null>(null);
+  const [zipPreparing, setZipPreparing] = useState(false);
   const [choice, setChoice] = useState<DocChoice>("both");
   const [loadingAll, setLoadingAll] = useState<DocChoice | null>(null);
 
@@ -174,6 +181,32 @@ export default function CertificatePrintCenterPage() {
         }
       return next;
     });
+  };
+
+  const openJpegZip = async () => {
+    const picked = Array.from(new Set(Array.from(selected.values()).map((row) => row.studentId)));
+    if (picked.length) {
+      setZipIds(picked);
+      return;
+    }
+    setZipPreparing(true);
+    try {
+      const { ids } = await collectCertificateStudentIds({
+        status,
+        franchiseId,
+        courseId,
+        search,
+      });
+      if (!ids.length) {
+        await showError("Nothing to download", "No students in this filter to export.");
+        return;
+      }
+      setZipIds(ids.slice(0, 100));
+    } catch (err) {
+      await showError("Download failed", err instanceof Error ? err.message : "Could not load students");
+    } finally {
+      setZipPreparing(false);
+    }
   };
 
   const openPrint = (studentIds: string[], docChoice: DocChoice) => {
@@ -383,6 +416,15 @@ export default function CertificatePrintCenterPage() {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void openJpegZip()}
+              disabled={!targetCount || zipPreparing || !!zipIds}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#1E4A85]/30 bg-white px-3 py-2 text-xs font-bold text-[#0B1F3A] transition hover:bg-[#F5E6C8] disabled:opacity-40"
+            >
+              {zipPreparing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              JPEG ZIP ({selected.size || Math.min(total, 100)})
+            </button>
             {PRINT_ACTIONS.map((a) => {
               const Icon = a.icon;
               return (
@@ -519,6 +561,11 @@ export default function CertificatePrintCenterPage() {
         <b>Background graphics</b>.
       </p>
 
+      <CertificateJpegZipDialog
+        studentIds={zipIds}
+        courseId={courseId || null}
+        onClose={() => setZipIds(null)}
+      />
       <OfficialBatchPreview
         studentIds={previewIds}
         courseId={courseId || null}
