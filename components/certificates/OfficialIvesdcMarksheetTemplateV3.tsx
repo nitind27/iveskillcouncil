@@ -398,11 +398,12 @@ export default function OfficialIvesdcMarksheetTemplateV3({
     });
   }
   const namedSubjectCount = subjects.filter((s) => s.name?.trim()).length;
-  // Keep the marks table inside the A4 frame when a course has more than 8 papers.
-  const rowH =
-    namedSubjectCount > 8
-      ? Math.max(15, Math.floor((baseRowH * 8) / namedSubjectCount))
-      : baseRowH;
+  // More than 8 papers must stay inside the same table height, or the footer address sits on the border.
+  const compactMarks = namedSubjectCount > 8;
+  const rowH = compactMarks
+    ? Math.max(13, Math.floor((baseRowH * 8) / namedSubjectCount))
+    : baseRowH;
+  const marksFs = compactMarks ? Math.max(9, tableFs - 2) : tableFs;
 
   const hasMarks = subjects.some(
     (s) => s.name && (s.totalObtained > 0 || s.marksTheory > 0 || (s.marksPractical || 0) > 0)
@@ -578,7 +579,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
         className="relative z-[2] flex h-full min-h-0 w-full flex-col overflow-hidden"
         style={{
           paddingTop: padT,
-          paddingBottom: padB,
+          paddingBottom: compactMarks ? padB + 16 : padB,
           paddingLeft: padL,
           paddingRight: padR,
           boxSizing: "border-box",
@@ -858,7 +859,8 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             maxWidth: contentW,
             marginTop: secGap,
             ...sans,
-            fontSize: `${tableFs}px`,
+            fontSize: `${marksFs}px`,
+            lineHeight: compactMarks ? 1.05 : undefined,
             ...panelShell,
           }}
         >
@@ -955,6 +957,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                     style={{
                       height: rowH,
                       backgroundColor: rowBg,
+                      lineHeight: compactMarks ? 1.05 : undefined,
                     }}
                   >
                     <td
@@ -968,7 +971,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                       style={{
                         color: C.navy,
                         borderBottom: `1px solid ${C.ruleSoft}`,
-                        fontSize: `${Math.max(9, tableFs - 1)}px`,
+                        fontSize: `${Math.max(8, marksFs - 1)}px`,
                       }}
                     >
                       {empty ? "" : sub.code || ""}
@@ -1001,7 +1004,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                       style={{
                         color: C.navy,
                         borderBottom: `1px solid ${C.ruleSoft}`,
-                        fontSize: `${tableFs + 1}px`,
+                        fontSize: `${marksFs}px`,
                         background: idx % 2 === 0 ? C.navyWash : C.navyWashStrong,
                       }}
                     >
@@ -1012,7 +1015,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                       style={{
                         color: C.navy,
                         borderBottom: `1px solid ${C.ruleSoft}`,
-                        fontSize: `${Math.max(9, tableFs - 0.5)}px`,
+                        fontSize: `${Math.max(8, marksFs - 0.5)}px`,
                       }}
                     >
                       {remark}
@@ -1025,7 +1028,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               <tr
                 style={{
                   background: C.aggregate,
-                  height: rowH + 6,
+                  height: compactMarks ? rowH + 2 : rowH + 6,
                 }}
               >
                 <td
@@ -1500,7 +1503,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
               borderRadius: 16,
               background: `linear-gradient(180deg, #FFFDF8 0%, ${C.paperWarm} 100%)`,
               boxShadow: `inset 0 0 0 1px ${C.navy}, 0 1px 0 rgba(255,255,255,0.7)`,
-              padding: "14px 10px 6px",
+              padding: compactMarks ? "12px 8px 4px" : "14px 10px 6px",
             }}
           >
             <div
@@ -1524,7 +1527,7 @@ export default function OfficialIvesdcMarksheetTemplateV3({
                 Empanelled with
               </span>
             </div>
-            <PartnerLogos height={122} padding={5} />
+            <PartnerLogos height={compactMarks ? 96 : 122} padding={compactMarks ? 3 : 5} />
             <div
               className={`${fontBody.className} mt-1.5 flex items-center justify-center font-bold text-white`}
               style={{
@@ -1543,16 +1546,16 @@ export default function OfficialIvesdcMarksheetTemplateV3({
             </div>
           </div>
 
-          <div className="mt-1.5 w-full shrink-0 text-center">
+          <div className={`${compactMarks ? "mt-1" : "mt-1.5"} w-full shrink-0 pb-1 text-center`}>
             <p
               className={`${fontBody.className} font-semibold`}
-              style={{ color: C.navy, fontSize: "15px", lineHeight: 1.35, whiteSpace: "nowrap" }}
+              style={{ color: C.navy, fontSize: compactMarks ? "13px" : "15px", lineHeight: 1.25, whiteSpace: "nowrap" }}
             >
               This certificate can be verified by scanning the QR Code or visiting {verifySite}
             </p>
             <p
               className={`${fontBody.className} mt-0.5 font-semibold`}
-              style={{ color: C.navy, fontSize: "15px", lineHeight: 1.35, whiteSpace: "nowrap" }}
+              style={{ color: C.navy, fontSize: compactMarks ? "13px" : "15px", lineHeight: 1.25, whiteSpace: "nowrap" }}
             >
               <span className="font-bold">Registered Office:</span>{" "}
               {data.registeredOffice ||
